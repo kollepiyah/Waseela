@@ -100,14 +100,14 @@ async function setupAdmin() {
 
 async function seedSettings() {
   const branding = {
-    namaLembaga: 'Pondok Pesantren Waseela',
+    namaLembaga: 'Waseela',
     namaPondokSingkat: 'Waseela',
     txtAppName: 'Waseela',
     txtHeaderBar: 'Waseela',
-    appTitle: 'Waseela — Portal Pesantren',
-    motto: 'Satu aplikasi untuk seluruh pesantren',
-    kopLine1: 'PONDOK PESANTREN WASEELA',
-    kopLine2: 'PORTAL MANAJEMEN PESANTREN',
+    appTitle: 'Waseela — Portal Manajemen',
+    motto: 'Satu aplikasi untuk seluruh lembaga',
+    kopLine1: 'WASEELA',
+    kopLine2: 'PORTAL MANAJEMEN LEMBAGA',
     namaChannel: 'Waseela Channel',
     adminUsername: ADMIN_USER
   }
