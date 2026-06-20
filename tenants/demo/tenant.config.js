@@ -25,15 +25,15 @@ export default {
   plan: 'premium',
   featureOverrides: {}, // kosong — semua dikontrol panel demo saat runtime
 
-  // === Firebase project SANDBOX (Console → Project settings → Web app) — ISI INI ===
+  // === Firebase project SANDBOX (waseela-id) ===
   firebaseConfig: {
-    apiKey: '',
-    authDomain: '',
-    projectId: '',
-    storageBucket: '',
-    messagingSenderId: '',
-    appId: '',
-    measurementId: ''
+    apiKey: 'AIzaSyDEd5UKDcsy0QC1B1x_75L1VaTgasTzGTE',
+    authDomain: 'waseela-id.firebaseapp.com',
+    projectId: 'waseela-id',
+    storageBucket: 'waseela-id.firebasestorage.app',
+    messagingSenderId: '31586326439',
+    appId: '1:31586326439:web:c8f394228777130242c882',
+    measurementId: 'G-0P9771H5GE'
   },
 
   // === Branding demo (SEED; bisa diubah admin via UI Pengaturan) ===
