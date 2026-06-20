@@ -51,9 +51,15 @@ console.log(`[waseela] ✓ capacitor.config: appId=${cfg.appId}  appName=${cfg.a
 //     1 project = 1 site default → cukup projects.default (tanpa hosting target mapping).
 const projectId = cfg.firebaseConfig?.projectId
 if (projectId) {
-  const rc = { projects: { default: projectId } }
+  // hostingSite: nama site Hosting (default = projectId = site default project). Override
+  //   bila project punya >1 site (mis. demo pakai 'waseela'). Target 'main' dipakai firebase.json.
+  const hostingSite = cfg.hostingSite || projectId
+  const rc = {
+    projects: { default: projectId },
+    targets: { [projectId]: { hosting: { main: [hostingSite] } } }
+  }
   writeFileSync(resolve(ROOT, '.firebaserc'), JSON.stringify(rc, null, 2) + '\n')
-  console.log(`[waseela] ✓ .firebaserc → project default = ${projectId}`)
+  console.log(`[waseela] ✓ .firebaserc → project ${projectId}, hosting:main → ${hostingSite}`)
 } else {
   console.warn('[waseela] ⚠ firebaseConfig.projectId kosong — .firebaserc TIDAK digenerate (isi dulu sebelum deploy).')
 }

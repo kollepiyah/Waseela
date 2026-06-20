@@ -20,6 +20,7 @@ export default {
   appId: 'id.waseela.demo',
   appName: 'Waseela Demo',
   themeColor: '#0F766E',
+  hostingSite: 'waseela', // project waseela-id punya 2 site → demo ke 'waseela' (waseela.web.app)
 
   // === Paket baseline (premium = semua modul nyala; pelanggan toggle turun via panel) ===
   plan: 'premium',
