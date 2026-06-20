@@ -29,29 +29,15 @@ const bgStyle = computed(() => {
   return `background: url('${bg}') center/cover no-repeat;`
 })
 
-// v.21.115.0528: URL download app native (Android/iOS/Desktop)
-// Bisa di-override dari Pengaturan Web (settings.downloadAndroid, downloadIos, downloadDesktop)
-// Default ke GitHub Releases latest — admin tinggal ganti owner/repo
-const downloadAndroidUrl = computed(
-  () =>
-    settings.settings?.downloadAndroid ||
-    'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline.apk'
-)
-const downloadIosUrl = computed(
-  () =>
-    settings.settings?.downloadIos ||
-    'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline.ipa'
-)
-const downloadDesktopUrl = computed(
-  () =>
-    settings.settings?.downloadDesktop ||
-    'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline-Setup.exe'
-)
-// v.95.0626: installer khusus Windows 7 (Electron 22)
-const downloadDesktopWin7Url = computed(
-  () =>
-    settings.settings?.downloadDesktopWin7 ||
-    'https://github.com/kollepiyah/ammu/releases/latest/download/AmmuOnline-Setup-Win7.exe'
+// WASEELA white-label: URL download app native diisi admin via Pengaturan (per lembaga).
+//   TANPA fallback (dulu hardcode ke rilis Ammu). Kosong → section unduh disembunyikan.
+const downloadAndroidUrl = computed(() => settings.settings?.downloadAndroid || '')
+const downloadIosUrl = computed(() => settings.settings?.downloadIos || '')
+const downloadDesktopUrl = computed(() => settings.settings?.downloadDesktop || '')
+const downloadDesktopWin7Url = computed(() => settings.settings?.downloadDesktopWin7 || '')
+// Tampilkan section "Unduh Aplikasi" HANYA bila tenant punya minimal 1 URL download.
+const hasDownloads = computed(
+  () => !!(downloadAndroidUrl.value || downloadDesktopUrl.value || downloadDesktopWin7Url.value)
 )
 const showDesktopMenu = ref(false)
 
@@ -388,7 +374,7 @@ function bukaWaAdmin() {
 
     <!-- v.86.0526: Download section — Android + Desktop only (iOS pakai PWA Add-to-Home).
          Hide di Capacitor (Android native) + Electron (Desktop) karena sudah di-app native. -->
-    <div v-if="isWebOnly" class="relative z-10 mt-4 max-w-[280px] w-full">
+    <div v-if="isWebOnly && hasDownloads" class="relative z-10 mt-4 max-w-[280px] w-full">
       <div class="bg-white/8 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/15">
         <p
           class="text-[9px] text-white/80 font-bold uppercase tracking-[0.15em] text-center mb-1.5"
@@ -397,6 +383,7 @@ function bukaWaAdmin() {
         </p>
         <div class="grid grid-cols-2 gap-2">
           <a
+            v-if="downloadAndroidUrl"
             :href="downloadAndroidUrl"
             target="_blank"
             rel="noopener"
@@ -407,7 +394,7 @@ function bukaWaAdmin() {
             <span class="text-[10px] text-white font-bold tracking-wide">Android</span>
           </a>
           <!-- v.95.0626: Desktop -> dropdown pilih versi (Win10/11 modern vs Win7) -->
-          <div class="relative">
+          <div v-if="downloadDesktopUrl || downloadDesktopWin7Url" class="relative">
             <button
               type="button"
               @click="showDesktopMenu = !showDesktopMenu"
