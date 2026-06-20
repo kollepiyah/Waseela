@@ -30,6 +30,11 @@ google-services.json
 *.keystore
 keystore.properties
 
+# === Service account Firebase (Admin SDK seed) — RAHASIA, JANGAN commit ===
+scripts/sa-*.json
+serviceAccount*.json
+*-firebase-adminsdk-*.json
+
 # === Backup / cruft ===
 *.bak
 *.broken*

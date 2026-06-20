@@ -12,7 +12,7 @@ import {
   signInWithPopup,
   signInWithCredential
 } from 'firebase/auth'
-import { auth, getSecondaryAuth } from './firebase'
+import { auth, getSecondaryAuth, FUNCTIONS_BASE } from './firebase'
 import {
   doc,
   getDoc,
@@ -66,7 +66,6 @@ export function toAuthPassword(pass) {
 //   `adminPassword` tak perlu lagi public-read di settings. Return boolean.
 //   Gagal/down → false (caller perlakukan sebagai sandi salah; aman karena
 //   hanya dipakai saat provisioning admin pertama, jalur normal pakai sign-in).
-const FUNCTIONS_BASE = 'https://us-central1-portal-mambaul-ulum.cloudfunctions.net'
 export async function verifyAdminPassword(password) {
   try {
     const resp = await fetch(FUNCTIONS_BASE + '/verifyAdminPassword', {
@@ -126,8 +125,7 @@ export async function findUserByLoginInput(input) {
   let _functionResponded = false
   try {
     const _resp = await fetch(
-      'https://us-central1-portal-mambaul-ulum.cloudfunctions.net/findUserByLogin?input=' +
-        encodeURIComponent(u)
+      FUNCTIONS_BASE + '/findUserByLogin?input=' + encodeURIComponent(u)
     )
     if (_resp.ok) {
       const _j = await _resp.json()

@@ -16,7 +16,7 @@ lapisan config per-lembaga. Tiap lembaga ganti nama/logo/fitur tanpa ubah kode.
 
 - **Backend:** Firebase (TETAP) — akun + project BARU per lembaga.
 - **Frontend:** Vue 3 (sama persis Ammu).
-- **Status:** Fase 0-2 (scaffold/config/flags) + **Fase A (backend Firebase port)** + **Fase B (test+hardcode)** **SELESAI & build hijau**. Sisa: native Android (Fase C) + provisioning go-live lembaga #1 (Fase D). Sudah `git init`.
+- **Status:** Fase 0-2 (scaffold/config/flags) + **Fase A (backend Firebase port)** + **Fase B (test+hardcode)** + **Paket (Basic/Pro/Premium) & Demo interaktif** **SELESAI & build hijau (17 test PASS)**. Fase D (go-live lembaga #1) **DITAHAN** (fokus produk+demo dulu). Sisa: native Android (Fase C), seed+deploy demo (jalankan sendiri — lihat `DEMO.md`), lalu Fase D.
 - **Folder ini TERPISAH dari Ammu** (`D:\Aplikasi Project\Portal MU`). Jangan campur.
 
 ---
@@ -43,10 +43,13 @@ Waseela/
 ├── app/                          # SATU kode (dari vue-app Ammu). JANGAN edit utk branding.
 │   └── src/
 │       ├── tenant.config.js      # ACTIVE config — DIGENERATE (gitignored), jangan edit langsung
-│       ├── composables/useFeatures.js   # feature-flags (isOn, featureForPath)
-│       ├── composables/__tests__/useFeatures.test.js  # Fase B: 10 unit-test (vitest)
-│       ├── services/firebase.js  # baca firebaseConfig dari tenant.config
-│       └── stores/settings.js    # branding default dari tenant.config.branding (+ motto seed)
+│       ├── config/plans.js       # Paket Basic/Pro/Premium + resolveFeatures (plan+overrides)
+│       ├── composables/useFeatures.js   # feature-flags (isOn, featureForPath) + override demo
+│       ├── composables/useDemo.js       # mode demo (panel toggle fitur, reload-based)
+│       ├── components/demo/DemoFeaturePanel.vue  # panel demo (muncul bila tenant.demo=true)
+│       ├── config/__tests__ + composables/__tests__   # 17 unit-test (vitest)
+│       ├── services/firebase.js  # firebaseConfig + FUNCTIONS_BASE (derive projectId) dari tenant.config
+│       └── stores/settings.js    # branding default dari tenant.config.branding (+ motto/psbPublicUrl seed)
 ├── functions/                    # Fase A: Cloud Functions (port Ammu, 19 trigger, project-agnostic)
 │   ├── index.js                  #   _BQ_PROJECT=process.env.GCLOUD_PROJECT (auto per-tenant)
 │   └── package.json              #   Node 24; deps firebase-admin + bigquery + cheerio
@@ -57,8 +60,12 @@ Waseela/
 ├── .firebaserc                   # DIGENERATE build-tenant dari firebaseConfig.projectId (gitignored)
 ├── tenants/
 │   ├── _template/tenant.config.js   # cetakan lembaga baru (salin ini)
-│   └── mambaul-ulum/tenant.config.js # tenant referensi #1 (= Ammu, nilai asli)
-├── scripts/build-tenant.mjs      # set config aktif + patch capacitor + gen .firebaserc + (opsional) build
+│   ├── mambaul-ulum/tenant.config.js # tenant referensi #1 (= Ammu, nilai asli)
+│   └── demo/tenant.config.js     # tenant DEMO (demo:true, plan:premium) — showcase jualan
+├── scripts/
+│   ├── build-tenant.mjs          # set config aktif + patch capacitor + gen .firebaserc + (opsional) build
+│   └── seed-demo.mjs             # isi project sandbox demo (admin + data dummy) via Admin SDK
+├── DEMO.md                       # runbook setup & deploy demo (tanpa functions, Spark gratis)
 ├── README.md                     # ringkas cara pakai
 └── HANDOVER.md                   # dokumen ini
 ```
@@ -74,6 +81,21 @@ Waseela/
 > Branding di app sebagian besar **sudah data-driven** (baca `settings` store). Hardcode
 > "Mambaul Ulum"/"Ammu" mayoritas cuma **fallback**. Skema akademik (rapor/kenaikan/jenjang)
 > = data-driven via UI MasterData/FieldSchema — lembaga mirip Mambaul Ulum tak perlu kode baru.
+
+### Paket (plan) & pemilihan fitur
+
+- **`app/src/config/plans.js`**: preset **Basic / Pro / Premium** (`PLANS`) + `resolveFeatures(cfg)`.
+  Tenant cukup set `plan: 'pro'` di config + boleh kustom à la carte via `featureOverrides`.
+  Tanpa `plan` → pakai `features` lama (backward-compat). Matriks paket → ubah di file ini.
+- **Demo interaktif** (`tenant.config.demo: true`): panel melayang (pojok kanan-bawah) untuk
+  nyala/matikan modul → app refresh menampilkan paket berbeda. Lihat **`DEMO.md`** (setup+deploy,
+  tanpa functions/Spark gratis) + `scripts/seed-demo.mjs` (data dummy). Panel & override demo
+  TIDAK aktif di build tenant asli (gated `IS_DEMO`).
+
+> ⚠️ **Fix white-label penting (P0):** `services/auth.js` & `services/analytics.js` dulu
+> meng-hardcode URL Cloud Functions project **Ammu** (`portal-mambaul-ulum`) → login guru/santri
+> & analitik SEMUA tenant nyasar ke Ammu. Kini `FUNCTIONS_BASE` di `services/firebase.js`
+> derive dari `firebaseConfig.projectId`. Link PSB `ammuonline-psb.web.app` → `settings.psbPublicUrl`.
 
 ### Feature-flags (cara kerja)
 

@@ -102,6 +102,15 @@ export const db = _isCapNativeFS
 export const auth = getAuth(firebaseApp)
 export const storage = getStorage(firebaseApp)
 
+// WASEELA white-label: base URL Cloud Functions HTTP (onRequest) = PROJECT TENANT INI.
+//   Region us-central1 (lihat region onRequest di functions/index.js — sama semua tenant).
+//   Dulu di-hardcode ke project Ammu → login guru/santri & analitik nyasar ke Ammu. Kini
+//   derive dari firebaseConfig.projectId. Kosong bila projectId belum diisi (mis. demo draft)
+//   → fetch jadi relatif & gagal anggun (caller fallback / abaikan).
+export const FUNCTIONS_BASE = firebaseConfig?.projectId
+  ? `https://us-central1-${firebaseConfig.projectId}.cloudfunctions.net`
+  : ''
+
 // v.53.0526: Secondary Firebase app untuk provisioning Auth user baru tanpa swap session admin.
 // Port dari legacy _getSecondaryAuth() — saat lazy-create Auth user untuk guru/santri legacy,
 // createUserWithEmailAndPassword auto-signIn user baru di app utama → kebuang session admin.

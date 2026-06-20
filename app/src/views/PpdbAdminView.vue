@@ -312,6 +312,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { subscribeColl, updateOne, deleteOne, subscribeDoc, mergeOne } from '@/services/firestore'
 import { useAuthStore } from '@/stores/auth'
+import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan canonical dropdown lembaga
@@ -333,6 +334,7 @@ function fmtDate(v) {
 }
 
 const auth = useAuthStore()
+const settings = useSettingsStore()
 const toast = useToast()
 const confirmDlg = useConfirm()
 const route = useRoute()
@@ -367,7 +369,9 @@ const filterLembaga = ref('')
 const filterTahun = ref('')
 let _unsubPpdb = null
 
-const publicFormUrl = computed(() => 'https://ammuonline-psb.web.app')
+// WASEELA: URL form PSB publik (situs PSB standalone) — diisi admin via Pengaturan bila dipakai.
+//   Default kosong (situs PSB standalone opsional/ditunda); tak lagi hardcode ke Ammu.
+const publicFormUrl = computed(() => settings.settings?.psbPublicUrl || '')
 
 function copyLink() {
   try {

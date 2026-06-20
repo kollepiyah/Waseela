@@ -7,6 +7,8 @@
   <PrinterSettingsModal />
   <!-- v.90.0626: ToastStack di-mount GLOBAL (sebelumnya tak pernah dipasang -> toast tak muncul) -->
   <ToastStack />
+  <!-- WASEELA: panel demo (calon pelanggan pilih fitur) — hanya muncul di build demo -->
+  <DemoFeaturePanel v-if="IS_DEMO" />
 </template>
 
 <script setup>
@@ -17,6 +19,9 @@ import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import PrinterSettingsModal from '@/components/PrinterSettingsModal.vue'
 import ToastStack from '@/components/ui/ToastStack.vue'
+// WASEELA: panel demo (gated IS_DEMO — no-op di build tenant asli)
+import DemoFeaturePanel from '@/components/demo/DemoFeaturePanel.vue'
+import { IS_DEMO } from '@/composables/useDemo'
 // v.95.0626: FCM push — daftarkan saat user login (native saja)
 import { useAuthStore } from '@/stores/auth'
 import { usePushNotifications } from '@/composables/usePushNotifications'

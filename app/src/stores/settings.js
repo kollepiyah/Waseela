@@ -34,6 +34,7 @@ const DEFAULT_SETTINGS = {
   fiturKritikSaran: true,
   fiturNotifikasi: true,
   namaChannel: _b.namaChannel || 'Channel',
+  psbPublicUrl: _b.psbPublicUrl || '', // URL situs PSB standalone (opsional; kosong = fitur link off)
   // v.21.10.0526: Ma'had tagihan template + sub-kategori (kyai spec final)
   mahad_tagihan_template: [],  // [{ kategori: 'makan', nominal_default: 0 }]
   mahad_sub_kategori: [],       // ['makan', 'listrik', 'air', dst]

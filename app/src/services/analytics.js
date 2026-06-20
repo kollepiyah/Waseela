@@ -1,8 +1,7 @@
 // v.102 A3: client analitik — panggil Cloud Function analyticsQuery (jembatan BigQuery).
 //   App TAK akses BigQuery langsung. Token Firebase Auth dikirim; server cek role admin/super.
 import { getAuth } from 'firebase/auth'
-
-const FUNCTIONS_BASE = 'https://us-central1-portal-mambaul-ulum.cloudfunctions.net'
+import { FUNCTIONS_BASE } from './firebase'
 
 /**
  * Ambil hasil laporan analitik dari BigQuery (via Cloud Function).

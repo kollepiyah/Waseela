@@ -3,8 +3,23 @@
 //   Modul on/off per lembaga (white-label). Lihat tenants/<slug>/tenant.config.js.
 // ============================================================================
 import tenantConfig from '@/tenant.config.js'
+import { resolveFeatures } from '@/config/plans.js'
 
-const FEATURES = { ...(tenantConfig.features || {}) }
+// Demo: override fitur via localStorage (panel toggle). AKTIF HANYA bila tenant.config.demo === true.
+//   Pendekatan reload-based — panel simpan pilihan ke localStorage lalu app refresh → FEATURES
+//   dihitung ulang di sini saat module load. Di build non-demo, blok ini no-op.
+const IS_DEMO = tenantConfig.demo === true
+function readDemoOverrides() {
+  if (!IS_DEMO || typeof localStorage === 'undefined') return {}
+  try {
+    return JSON.parse(localStorage.getItem('waseela_demo_features') || '{}')
+  } catch {
+    return {}
+  }
+}
+
+// resolveFeatures: plan (Basic/Pro/Premium) + featureOverrides, atau `features` legacy bila tanpa plan.
+const FEATURES = { ...resolveFeatures(tenantConfig), ...readDemoOverrides() }
 
 // Sub-flag mewarisi parent: bila parent OFF, anak ikut OFF (walau flag anak true).
 const PARENT = {
