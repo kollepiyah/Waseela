@@ -46,6 +46,18 @@ if (cfg.appName) cap.appName = cfg.appName
 writeFileSync(capPath, JSON.stringify(cap, null, 2) + '\n')
 console.log(`[waseela] ✓ capacitor.config: appId=${cfg.appId}  appName=${cfg.appName}`)
 
+// 3b. Generate .firebaserc di ROOT (per-tenant, gitignored) dari firebaseConfig.projectId.
+//     Dipakai `firebase deploy` agar otomatis menarget project lembaga aktif. Tiap tenant =
+//     1 project = 1 site default → cukup projects.default (tanpa hosting target mapping).
+const projectId = cfg.firebaseConfig?.projectId
+if (projectId) {
+  const rc = { projects: { default: projectId } }
+  writeFileSync(resolve(ROOT, '.firebaserc'), JSON.stringify(rc, null, 2) + '\n')
+  console.log(`[waseela] ✓ .firebaserc → project default = ${projectId}`)
+} else {
+  console.warn('[waseela] ⚠ firebaseConfig.projectId kosong — .firebaserc TIDAK digenerate (isi dulu sebelum deploy).')
+}
+
 // 4. Salin aset branding (logo) bila tersedia di folder tenant
 const logo = resolve(tenantDir, 'logo.png')
 if (existsSync(logo)) {

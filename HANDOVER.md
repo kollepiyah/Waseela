@@ -4,7 +4,7 @@
 > mandiri untuk proyek **Waseela** (tak bergantung pada memory Ammu). Update bagian
 > **Status** tiap ada kemajuan.
 >
-> Terakhir diperbarui: **20 Jun 2026** (sesi awal scaffold Fase 0-2).
+> Terakhir diperbarui: **20 Jun 2026** (Fase 0-2 scaffold + **Fase A backend port** + **Fase B test/hardcode**).
 
 ---
 
@@ -16,7 +16,7 @@ lapisan config per-lembaga. Tiap lembaga ganti nama/logo/fitur tanpa ubah kode.
 
 - **Backend:** Firebase (TETAP) — akun + project BARU per lembaga.
 - **Frontend:** Vue 3 (sama persis Ammu).
-- **Status:** Fase 0 (scaffold) + Fase 1 (ekstraksi config) + Fase 2 (feature-flags) **SELESAI & build verified**. Sudah `git init`.
+- **Status:** Fase 0-2 (scaffold/config/flags) + **Fase A (backend Firebase port)** + **Fase B (test+hardcode)** **SELESAI & build hijau**. Sisa: native Android (Fase C) + provisioning go-live lembaga #1 (Fase D). Sudah `git init`.
 - **Folder ini TERPISAH dari Ammu** (`D:\Aplikasi Project\Portal MU`). Jangan campur.
 
 ---
@@ -44,12 +44,21 @@ Waseela/
 │   └── src/
 │       ├── tenant.config.js      # ACTIVE config — DIGENERATE (gitignored), jangan edit langsung
 │       ├── composables/useFeatures.js   # feature-flags (isOn, featureForPath)
+│       ├── composables/__tests__/useFeatures.test.js  # Fase B: 10 unit-test (vitest)
 │       ├── services/firebase.js  # baca firebaseConfig dari tenant.config
-│       └── stores/settings.js    # branding default dari tenant.config.branding
+│       └── stores/settings.js    # branding default dari tenant.config.branding (+ motto seed)
+├── functions/                    # Fase A: Cloud Functions (port Ammu, 19 trigger, project-agnostic)
+│   ├── index.js                  #   _BQ_PROJECT=process.env.GCLOUD_PROJECT (auto per-tenant)
+│   └── package.json              #   Node 24; deps firebase-admin + bigquery + cheerio
+├── firebase.json                 # Fase A: 1 hosting site → app/dist + firestore/storage/functions
+├── firestore.rules               # Fase A: RBAC custom-claim (project-agnostic, port Ammu)
+├── firestore.indexes.json        # Fase A: kosong (composite index dibuat via link Console saat query)
+├── storage.rules                 # Fase A: rules Storage (port Ammu)
+├── .firebaserc                   # DIGENERATE build-tenant dari firebaseConfig.projectId (gitignored)
 ├── tenants/
 │   ├── _template/tenant.config.js   # cetakan lembaga baru (salin ini)
 │   └── mambaul-ulum/tenant.config.js # tenant referensi #1 (= Ammu, nilai asli)
-├── scripts/build-tenant.mjs      # set config aktif + patch capacitor + (opsional) build
+├── scripts/build-tenant.mjs      # set config aktif + patch capacitor + gen .firebaserc + (opsional) build
 ├── README.md                     # ringkas cara pakai
 └── HANDOVER.md                   # dokumen ini
 ```
@@ -86,14 +95,49 @@ Waseela/
 |------|-----|--------|
 | **0. Scaffold** | folder + salin source Ammu ke `app/` (tanpa node_modules/native/secret) | ✅ |
 | **1. Ekstraksi config** | tenant.config.js (template+mambaul-ulum) + wire firebase.js/settings.js + 7 hardcode branding ke settings + build-tenant.mjs | ✅ **build verified** |
-| **2. Feature-flags** | useFeatures + gate menu/router/beranda | ✅ **build + unit-test 7/7 PASS** |
-| **Git** | `git init` (repo sendiri, terpisah Ammu), commit `6861f28`, branch master, 235 file bersih | ✅ |
+| **2. Feature-flags** | useFeatures + gate menu/router/beranda | ✅ **build verified** |
+| **A. Backend Firebase** | port rules/indexes/storage + firebase.json ramping (1 site→app/dist) + functions (19 trigger, digenerickan: `_BQ_PROJECT`=runtime, notif/UA generik) + .firebaserc per-tenant via build-tenant | ✅ **build hijau, deploy = Fase D** |
+| **B. Test + hardcode** | Vitest + **10/10 unit-test PASS** (useFeatures) + footer "Portal MU"→generik + motto→tenant.config.branding | ✅ **build + test hijau** |
+| **Git** | `git init` (repo sendiri, terpisah Ammu), commit `6861f28`, branch master | ✅ |
+
+> ⚠️ **Koreksi klaim lama:** sebelum Fase B, HANDOVER menyebut "unit-test 7/7 PASS" padahal
+> tak ada test framework/file di repo. Fase B memperbaikinya: Vitest terpasang, 10 test nyata
+> (`app/src/composables/__tests__/useFeatures.test.js`), `npm run test` hijau.
 
 ### ⏳ SISA (belum dikerjakan)
-1. **Native Android scaffold:** `npx cap add android` + `npx cap sync` (appId otomatis dari `capacitor.config.json` yang dipatch build-tenant). Lalu rakit AAB per lembaga (butuh keystore + project Firebase + `google-services.json` lembaga itu).
-2. **Aset per-tenant:** logo/icon/splash (script sudah salin `tenants/<slug>/logo.png` bila ada).
-3. **Hardcode kecil sisa:** tagline `motto` (LoginView) + footer "Portal MU" belum digenerickan.
-4. **(Skala besar nanti) Naik ke C1 multi-tenant:** tenantId di semua koleksi + rules isolasi (security-critical, wajib rules unit-test) + signup mandiri + billing (Midtrans/Stripe).
+1. **Fase C — Native Android scaffold:** `cd app && npx cap add android && npx cap sync` (appId/appName otomatis dari `capacitor.config.json` yang dipatch build-tenant). Lalu aset per-tenant (icon/splash via `@capacitor/assets`) + keystore + `google-services.json` lembaga → `./gradlew bundleRelease` (AAB).
+2. **Fase D — Provisioning & go-live lembaga #1:** isi `tenants/<slug>` (firebaseConfig lengkap), aktifkan Auth/Firestore(asia-southeast2)/Storage + **upgrade Blaze**, `firebase deploy` (rules+indexes+storage+functions), set secret, seed admin+import data, deploy hosting, smoke-test. **Lihat runbook backend di bawah.**
+3. **(Skala besar nanti) Naik ke C1 multi-tenant:** tenantId di semua koleksi + rules isolasi (security-critical, wajib rules unit-test) + signup mandiri + billing (Midtrans/Stripe).
+
+### 🚀 RUNBOOK BACKEND (Fase D — deploy ke project lembaga)
+```bash
+# 0. Prasyarat: Firebase CLI login, project lembaga sudah dibuat + Blaze aktif.
+node scripts/build-tenant.mjs <slug> --no-build   # set config aktif + generate .firebaserc
+firebase use <projectId>                          # atau biarkan .firebaserc (default) yang menarget
+
+# 1. Deploy rules + indexes + storage (aman, tak butuh Blaze)
+firebase deploy --only firestore:rules,firestore:indexes,storage
+
+# 2. Cloud Functions (BUTUH Blaze). Install dep dulu:
+cd functions && npm ci && cd ..
+firebase deploy --only functions
+
+# 3. Secret per-project (hanya bila fitur dipakai):
+firebase functions:secrets:set IFRAMELY_KEY        # link-preview di posts/Ammu Channel
+firebase functions:secrets:set BMT_WEBHOOK_SECRET  # hanya bila integrasi BMT
+firebase functions:secrets:set BMT_DISBURSE_SECRET
+
+# 4. (Opsional) BigQuery extensions — HANYA bila features.analitik=true (mahal, lambat):
+#    pasang 8 extension firestore-bigquery-export + storage-extract-image-text via:
+firebase ext:install firebase/firestore-bigquery-export   # ulang per dataset (santri/guru/keuangan/…)
+
+# 5. Build & deploy web
+node scripts/build-tenant.mjs <slug>               # build app/dist
+firebase deploy --only hosting
+```
+> **Catatan:** `firestore.indexes.json` kosong — bila ada query composite, Firestore akan
+> melempar error berisi link "create index". Klik saat smoke-test, atau export indeks Ammu live.
+> `_BQ_PROJECT` otomatis = project tenant (runtime), jadi analitik menarget BigQuery sendiri.
 
 ---
 

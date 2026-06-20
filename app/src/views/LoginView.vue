@@ -165,7 +165,7 @@ function bukaWaAdmin() {
           {{ settings.settings?.namaLembaga || 'Portal' }}
         </h2>
         <p class="text-[10px] text-teal-700 mt-0.5 font-bold uppercase tracking-widest">
-          {{ settings.settings?.motto || 'Generasi Qurani Pewaris Negeri' }}
+          {{ settings.settings?.motto || 'Portal Pesantren' }}
         </p>
       </div>
 

@@ -1,6 +1,7 @@
 # === Dependencies & build ===
 node_modules/
 app/node_modules/
+functions/node_modules/
 app/dist/
 dist/
 
@@ -13,11 +14,21 @@ app/.env.local
 # === Config tenant AKTIF (digenerate build-tenant dari tenants/<slug>/tenant.config.js) ===
 # Sumber kebenaran = tenants/<slug>/tenant.config.js (di-track). Yang ini artefak build.
 app/src/tenant.config.js
+# .firebaserc digenerate build-tenant dari firebaseConfig.projectId tenant aktif (artefak build).
+.firebaserc
 
 # === Native build outputs (bila nanti cap add android) ===
 app/android/
 app/ios/
 app/electron/
+
+# === Secret native per-tenant (JANGAN commit) ===
+# google-services.json + keystore Android = rahasia per lembaga.
+google-services.json
+**/google-services.json
+*.jks
+*.keystore
+keystore.properties
 
 # === Backup / cruft ===
 *.bak

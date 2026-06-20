@@ -37,6 +37,7 @@ export default {
     txtAppName: '', // mis. 'Portal Al-Falah'
     txtHeaderBar: '',
     appTitle: '',
+    motto: '', // mis. 'Generasi Qurani Pewaris Negeri' — tagline halaman login
     kopLine1: '', // baris kop cetak rapor/PDF
     kopLine2: '',
     namaChannel: '', // mis. 'Al-Falah Channel'

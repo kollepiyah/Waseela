@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS = {
   txtAppName: _b.txtAppName || 'Waseela',
   txtHeaderBar: _b.txtHeaderBar || 'Waseela',
   appTitle: _b.appTitle || 'Waseela',
+  motto: _b.motto || '', // tagline di halaman login (seed tenant.config.branding.motto)
   kopLine1: _b.kopLine1 || '',
   kopLine2: _b.kopLine2 || '',
   kopLine3: '',

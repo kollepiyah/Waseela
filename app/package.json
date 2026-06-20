@@ -9,6 +9,8 @@
     "build": "vite build",
     "build:electron": "vite build --base=./",
     "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "eslint src/ --ext .vue,.js"
   },
   "dependencies": {
@@ -45,6 +47,7 @@
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.15",
-    "vite": "^6.0.7"
+    "vite": "^6.0.7",
+    "vitest": "^4.1.9"
   }
 }

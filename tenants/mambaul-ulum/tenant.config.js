@@ -37,6 +37,7 @@ export default {
     txtAppName: 'Ammu Online',
     txtHeaderBar: 'Ammu Online',
     appTitle: 'Ammu Online — Pondok Pesantren Mambaul Ulum',
+    motto: 'Generasi Qurani Pewaris Negeri', // tagline halaman login
     kopLine1: 'PONDOK PESANTREN MAMBAUL ULUM',
     kopLine2: 'PORTAL PRESTASI QIRAATI',
     namaChannel: 'Al Manshur Channel',

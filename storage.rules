@@ -1,0 +1,170 @@
+// Firebase Storage Security Rules
+// Path: storage.rules (deploy: firebase deploy --only storage)
+//
+// v.108.53 -- B2.5 Tightening (2026-05-14): Storage rules harden
+// CHANGELOG:
+// - v.108.53 (2026-05-14): Tambah `request.auth != null` ke semua
+//   `allow write` (sebelumnya hanya size + content-type check) dan
+//   `allow delete` (sebelumnya `if true` -- anonymous bisa delete file
+//   apapun di Storage). Konsisten dengan B2 Firestore Rules tightening
+//   pasca-B1 Firebase Auth migration.
+// - READ tetap public (untuk display image di app, cetak rapor, dll).
+//
+// CARA BYPASS YANG SAH (untuk Admin SDK / Cloud Function):
+//   - Cloud Function via Admin SDK bypass rules secara native.
+//   - Backend service account bypass rules juga.
+
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Path-path public: postingan beranda, logo rapor, logo aplikasi
+    // (Boleh write oleh user yang authenticated. App ini pakai custom auth + Firebase Auth Anonymous)
+    
+    // v.21.115.0528: dukung path 'beranda_posts' (plural, legacy) DAN 'beranda_post' (singular, current PostsView upload).
+    // Sebelum fix: upload masuk ke 'beranda_post/' yang tidak match rule → default deny → 403.
+    match /beranda_posts/{file=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 16 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
+    }
+    match /beranda_post/{file=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 16 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
+    }
+    // v.21.115.0528: posts collection (Ammu Channel) — aligned dengan firestore.rules
+    match /posts/{file=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 16 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
+    }
+    
+    match /rapor_logos/{file=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 4 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
+    }
+    
+    match /app_logos/{file=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 4 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
+    }
+    
+    match /santri_foto/{file=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 4 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
+    }
+    
+    match /guru_foto/{file=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 4 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
+    }
+
+    // v.100f (2026-06-14): Foto profil SEMUA role (admin/guru/santri) via Personal >
+    //   Profil Saya > Ganti Foto. ProfilPengaturanSaya.vue upload ke `profil_foto/`
+    //   (santri_foto/guru_foto di atas legacy, tak dipakai Vue lagi). Tanpa rule ini
+    //   path jatuh ke default-deny → storage/unauthorized (write) + 403 (read/display).
+    match /profil_foto/{file=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 4 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
+    }
+
+    // v.100f (2026-06-14): Tanda tangan digital via Personal > Profil Saya.
+    //   Kode upload ke `tanda_tangan/` (bukan `ttd_guru/` yg cuma "disiapkan").
+    //   Fix mismatch nama path → fitur TTD digital sebelumnya diam-diam default-deny.
+    match /tanda_tangan/{file=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 2 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
+    }
+
+    // BG Rapor (TPQ + Diniyah) — watermark transparan di belakang konten rapor
+    match /bg_rapor/{file=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 4 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
+    }
+
+    // TTD digital per guru (Opsi B nanti — disiapkan)
+    match /ttd_guru/{file=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 2 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
+    }
+
+    // BG aplikasi & assets umum (Opsi B nanti — disiapkan)
+    match /app_bg/{file=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 8 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
+    }
+
+    match /lembaga_logos/{file=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 4 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null;
+    }
+
+    // v.20.70.0526: Lembaga documents (Info Pembayaran + Syarat Ketentuan PDF)
+    match /lembaga/{lembagaId}/{file=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType == 'application/pdf';
+      allow delete: if request.auth != null;
+    }
+
+    // v.20.70.0526: PSB documents upload (akta, KK calon santri)
+    match /psb/{file=**} {
+      allow read: if true;
+      allow create: if request.resource.size < 5 * 1024 * 1024
+                   && (request.resource.contentType == 'application/pdf' || request.resource.contentType.matches('image/.*'));
+      allow update, delete: if request.auth != null;
+    }
+
+    // v.86.0526: Bukti transfer pembayaran (wali upload). Lebih privat dari foto —
+    //   READ butuh auth (bukan public), supaya bukti transfer tidak bisa diintip anonim.
+    match /pembayaran_transfer/{file=**} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.size < 5 * 1024 * 1024
+                    && (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
+      allow update, delete: if request.auth != null;
+    }
+
+    // Default deny untuk path lain
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

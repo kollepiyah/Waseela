@@ -1,6 +1,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useSettingsStore } from '@/stores/settings'
 import { computed } from 'vue'
 import DashboardGreeting from '@/components/dashboard/DashboardGreeting.vue'
 import DashboardJamHijri from '@/components/dashboard/DashboardJamHijri.vue'
@@ -13,7 +14,14 @@ import { isOn } from '@/composables/useFeatures'
 
 const router = useRouter()
 const auth = useAuthStore()
+const settings = useSettingsStore()
 const postsOn = isOn('posts')
+
+// WASEELA: footer generik — nama & versi dari settings (seed tenant.config.branding).
+const footerName = computed(
+  () => settings.settings?.txtAppName || settings.settings?.namaLembaga || 'Portal'
+)
+const footerVersion = computed(() => settings.settings?.appVersion || 'v.108.0626')
 
 function goKalenderFull() {
   router.push('/kalender')
@@ -59,7 +67,7 @@ const isAdmin = computed(() => auth.isAdmin || auth.sesiAktif?.role === 'admin')
     <DasborPendidikan v-else />
 
     <p class="text-center text-[10px] text-slate-400 dark:text-[var(--text-secondary)] pt-2">
-      <i class="fas fa-circle-info mr-1"></i>Portal MU · Vue 3 SPA · v.108.0626
+      <i class="fas fa-circle-info mr-1"></i>{{ footerName }} · Vue 3 SPA · {{ footerVersion }}
     </p>
   </div>
 </template>
