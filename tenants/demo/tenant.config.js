@@ -18,7 +18,7 @@ export default {
 
   // === Identitas app ===
   appId: 'id.waseela.demo',
-  appName: 'Waseela Demo',
+  appName: 'Waseela',
   themeColor: '#0F766E',
   hostingSite: 'waseela', // project waseela-id punya 2 site → demo ke 'waseela' (waseela.web.app)
 
@@ -39,15 +39,15 @@ export default {
 
   // === Branding demo (SEED; bisa diubah admin via UI Pengaturan) ===
   branding: {
-    namaLembaga: 'Pondok Pesantren Demo Waseela',
-    namaPondokSingkat: 'Demo Waseela',
-    txtAppName: 'Waseela Demo',
-    txtHeaderBar: 'Waseela Demo',
-    appTitle: 'Waseela — Demo Portal Pesantren',
-    motto: 'Coba semua fitur, pilih yang Anda butuhkan',
-    kopLine1: 'PONDOK PESANTREN DEMO',
-    kopLine2: 'PORTAL WASEELA',
-    namaChannel: 'Demo Channel',
+    namaLembaga: 'Pondok Pesantren Waseela',
+    namaPondokSingkat: 'Waseela',
+    txtAppName: 'Waseela',
+    txtHeaderBar: 'Waseela',
+    appTitle: 'Waseela — Portal Pesantren',
+    motto: 'Satu aplikasi untuk seluruh pesantren',
+    kopLine1: 'PONDOK PESANTREN WASEELA',
+    kopLine2: 'PORTAL MANAJEMEN PESANTREN',
+    namaChannel: 'Waseela Channel',
     copyrightName: 'Waseela'
   }
 }

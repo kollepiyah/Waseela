@@ -18,7 +18,7 @@
 //   ~18 santri, tagihan/pembayaran, prestasi, absensi bulanan, 2 postingan, branding.
 // ============================================================================
 import { readFileSync } from 'fs'
-import { initializeApp, cert } from 'firebase-admin/app'
+import { initializeApp, cert, applicationDefault } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
 import { getFirestore } from 'firebase-admin/firestore'
 
@@ -29,28 +29,38 @@ function arg(name, def) {
   return i >= 0 && argv[i + 1] ? argv[i + 1] : def
 }
 const keyPath = arg('key', process.env.GOOGLE_APPLICATION_CREDENTIALS)
+const projectArg = arg('project', null)
 const ADMIN_PASS = arg('password', 'demo1234')
 const ADMIN_USER = 'adminmu'
 
-if (!keyPath) {
-  console.error('✗ Service account belum diberikan. Pakai: --key scripts/sa-demo.json')
-  console.error('  (atau set env GOOGLE_APPLICATION_CREDENTIALS)')
-  process.exit(1)
+// ---- init admin: dua mode ----
+//   A) --key <sa.json>  → service account (kalau org policy mengizinkan key)
+//   B) ADC (default)    → tanpa key. Jalankan dulu: gcloud auth application-default login
+//                          lalu: node scripts/seed-demo.mjs --project <projectId>
+let projectId
+if (keyPath) {
+  let serviceAccount
+  try {
+    serviceAccount = JSON.parse(readFileSync(keyPath, 'utf8'))
+  } catch (e) {
+    console.error(`✗ Gagal baca service account: ${keyPath}\n  ${e.message}`)
+    process.exit(1)
+  }
+  initializeApp({ credential: cert(serviceAccount) })
+  projectId = serviceAccount.project_id
+} else {
+  projectId = projectArg
+  if (!projectId) {
+    console.error('✗ Tanpa --key, WAJIB --project <projectId> (mode ADC).')
+    console.error('  Setup sekali: gcloud auth application-default login')
+    console.error('               gcloud auth application-default set-quota-project <projectId>')
+    process.exit(1)
+  }
+  initializeApp({ credential: applicationDefault(), projectId })
 }
-
-// ---- init admin ----
-let serviceAccount
-try {
-  serviceAccount = JSON.parse(readFileSync(keyPath, 'utf8'))
-} catch (e) {
-  console.error(`✗ Gagal baca service account: ${keyPath}\n  ${e.message}`)
-  process.exit(1)
-}
-initializeApp({ credential: cert(serviceAccount) })
 const auth = getAuth()
 const db = getFirestore()
-const projectId = serviceAccount.project_id
-console.log(`[seed] project: ${projectId}`)
+console.log(`[seed] project: ${projectId}  (mode: ${keyPath ? 'service-account' : 'ADC'})`)
 
 // Password yang DISIMPAN di Auth = padded ('mu_auth_' + sandi) — cocok dgn yang app kirim.
 const toAuthPassword = (p) => 'mu_auth_' + String(p || '')
@@ -90,15 +100,15 @@ async function setupAdmin() {
 
 async function seedSettings() {
   const branding = {
-    namaLembaga: 'Pondok Pesantren Demo Waseela',
-    namaPondokSingkat: 'Demo Waseela',
-    txtAppName: 'Waseela Demo',
-    txtHeaderBar: 'Waseela Demo',
-    appTitle: 'Waseela — Demo Portal Pesantren',
-    motto: 'Coba semua fitur, pilih yang Anda butuhkan',
-    kopLine1: 'PONDOK PESANTREN DEMO',
-    kopLine2: 'PORTAL WASEELA',
-    namaChannel: 'Demo Channel',
+    namaLembaga: 'Pondok Pesantren Waseela',
+    namaPondokSingkat: 'Waseela',
+    txtAppName: 'Waseela',
+    txtHeaderBar: 'Waseela',
+    appTitle: 'Waseela — Portal Pesantren',
+    motto: 'Satu aplikasi untuk seluruh pesantren',
+    kopLine1: 'PONDOK PESANTREN WASEELA',
+    kopLine2: 'PORTAL MANAJEMEN PESANTREN',
+    namaChannel: 'Waseela Channel',
     adminUsername: ADMIN_USER
   }
   // settings/web (lookup admin + branding) + settings/general (source of truth app)

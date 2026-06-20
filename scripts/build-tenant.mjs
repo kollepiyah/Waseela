@@ -64,13 +64,25 @@ if (projectId) {
   console.warn('[waseela] ⚠ firebaseConfig.projectId kosong — .firebaserc TIDAK digenerate (isi dulu sebelum deploy).')
 }
 
-// 4. Salin aset branding (logo) bila tersedia di folder tenant
+// 4. Salin logo tenant → SEMUA ikon (logo utama + PWA + apple-touch) bila tersedia.
 const logo = resolve(tenantDir, 'logo.png')
 if (existsSync(logo)) {
-  copyFileSync(logo, resolve(APP, 'public/logo.png'))
-  console.log('[waseela] ✓ logo.png → app/public/logo.png')
+  for (const dst of ['public/logo.png', 'public/pwa-192.png', 'public/pwa-512.png', 'public/apple-touch-icon.png']) {
+    copyFileSync(logo, resolve(APP, dst))
+  }
+  console.log('[waseela] ✓ logo tenant → logo.png + pwa-192/512 + apple-touch-icon')
 } else {
-  console.log('[waseela] · logo.png tenant tak ada — pakai default app/public/logo.png')
+  console.log('[waseela] · logo.png tenant tak ada — pakai default app/public (Waseela generik)')
+}
+
+// 4b. Patch nama PWA di manifest.webmanifest dari branding/appName.
+const manifestPath = resolve(APP, 'public/manifest.webmanifest')
+if (existsSync(manifestPath)) {
+  const man = JSON.parse(readFileSync(manifestPath, 'utf8'))
+  man.short_name = cfg.branding?.txtAppName || cfg.appName || man.short_name
+  man.name = cfg.branding?.appTitle || cfg.appName || man.name
+  writeFileSync(manifestPath, JSON.stringify(man, null, 2) + '\n')
+  console.log(`[waseela] ✓ manifest PWA → "${man.short_name}"`)
 }
 
 // 5. Build (opsional)

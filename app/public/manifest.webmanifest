@@ -1,7 +1,7 @@
 {
-  "name": "Ammu Online — Pondok Pesantren Mambaul Ulum",
-  "short_name": "Ammu Online",
-  "description": "Sistem manajemen Pondok Pesantren Mambaul Ulum (santri, guru, keuangan, rapor, kegiatan).",
+  "name": "Waseela — Portal Pesantren",
+  "short_name": "Waseela",
+  "description": "Portal manajemen pondok pesantren: santri, guru, keuangan, rapor, absensi & kegiatan.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
@@ -12,8 +12,23 @@
   "background_color": "#F2FEF9",
   "theme_color": "#0F766E",
   "icons": [
-    { "src": "/pwa-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/pwa-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/pwa-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }

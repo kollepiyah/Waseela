@@ -40,6 +40,9 @@ serviceAccount*.json
 *.broken*
 *~
 
+# === Firebase deploy cache ===
+.firebase/
+
 # === Misc ===
 *.log
 npm-debug.log*

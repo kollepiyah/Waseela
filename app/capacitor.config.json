@@ -1,6 +1,6 @@
 {
-  "appId": "app.ammu.id",
-  "appName": "Ammu Online",
+  "appId": "id.waseela.demo",
+  "appName": "Waseela",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "android": {
