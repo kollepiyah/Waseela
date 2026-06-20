@@ -10,8 +10,12 @@
 export const ALL_FEATURES = [
   'absensi',
   'fingerprint',
+  'absensiSekolah',
   'prestasi',
+  'kenaikan',
+  'rapor',
   'kalender',
+  'kegiatanPesantren',
   'kritikSaran',
   'psb',
   'posts',
@@ -26,10 +30,14 @@ export const ALL_FEATURES = [
 
 // Label Indonesia untuk panel demo / UI pemilihan paket.
 export const FEATURE_LABELS = {
-  absensi: 'Absensi santri & guru',
+  absensi: 'Absensi santri & guru (ngaji/Qiraati)',
   fingerprint: 'Integrasi Fingerprint',
+  absensiSekolah: 'Absensi sekolah (SD/SMP/SMA)',
   prestasi: 'Prestasi & capaian',
+  kenaikan: 'Kenaikan & Tes Kenaikan',
+  rapor: 'Rapor Semester (lembaga sekolah)',
   kalender: 'Kalender pendidikan',
+  kegiatanPesantren: 'Kegiatan Pesantren',
   kritikSaran: 'Kritik & saran',
   psb: 'PSB (Pendaftaran santri baru)',
   posts: 'Channel / Postingan',
@@ -45,15 +53,17 @@ export const FEATURE_LABELS = {
 // Bundel saran (BERTINGKAT: basic ⊂ pro ⊂ premium). value = daftar modul ON (sisanya OFF).
 // Boleh ditimpa per-lembaga via `featureOverrides` (à la carte). Ubah isi paket di sini.
 //
-//  BASIC   = operasional dasar (ganti buku absen + rapor + pengumuman ke wali)
-//  PRO     = Basic + KEUANGAN penuh (tagihan/pembayaran/tabungan/POS/bisyaroh/hutang)
-//  PREMIUM = Pro + lanjutan (supervisi, analitik BigQuery, fingerprint)
-const _BASIC = ['absensi', 'prestasi', 'kalender', 'kritikSaran', 'psb', 'posts']
+//  BASIC   = lembaga QIRAATI/Diniyah (absen NGAJI + kenaikan/tes-kenaikan + prestasi + pengumuman).
+//            TANPA Rapor Semester & TANPA absensi sekolah (fitur lembaga sekolah → Pro).
+//  PRO     = Basic + RAPOR + ABSENSI SEKOLAH (lembaga sekolah) + KEUANGAN penuh.
+//  PREMIUM = Pro + lanjutan (Kegiatan Pesantren, supervisi, analitik BigQuery, fingerprint)
+const _BASIC = ['absensi', 'prestasi', 'kenaikan', 'kalender', 'kritikSaran', 'psb', 'posts']
+const _SEKOLAH = ['rapor', 'absensiSekolah'] // fitur lembaga sekolah formal
 const _KEUANGAN = ['keuangan', 'pos', 'tabungan', 'bisyaroh', 'hutangPiutang']
 export const PLANS = {
-  basic: [..._BASIC],
-  pro: [..._BASIC, ..._KEUANGAN],
-  premium: [...ALL_FEATURES] // = pro + fingerprint, supervisi, analitik
+  basic: [..._BASIC], // Qiraati saja — tanpa rapor & absensi sekolah
+  pro: [..._BASIC, ..._SEKOLAH, ..._KEUANGAN],
+  premium: [...ALL_FEATURES] // = pro + kegiatanPesantren, fingerprint, supervisi, analitik
 }
 
 // Urutan + metadata tampilan paket (untuk panel/landing/penawaran).

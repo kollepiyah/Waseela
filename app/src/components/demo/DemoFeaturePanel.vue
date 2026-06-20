@@ -18,7 +18,7 @@ const open = ref(isPanelOpen())
 const feats = currentFeatures()
 
 // Modul anak (mengikuti parent — info untuk pelanggan; gating sebenarnya di isOn).
-const CHILD_OF = { pos: 'keuangan', tabungan: 'keuangan', bisyaroh: 'keuangan', hutangPiutang: 'keuangan', fingerprint: 'absensi' }
+const CHILD_OF = { pos: 'keuangan', tabungan: 'keuangan', bisyaroh: 'keuangan', hutangPiutang: 'keuangan', fingerprint: 'absensi', absensiSekolah: 'absensi' }
 
 function toggle() {
   open.value = !open.value

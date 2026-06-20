@@ -16,7 +16,7 @@
           <h3 class="text-base md:text-lg font-black leading-tight drop-shadow-sm !text-white">Absen Ngaji</h3>
           <p class="text-[11px] text-white/85 font-medium mt-0.5">TPQ Pagi/Sore · Pra PTPT · PTPT · PPPH</p>
         </button>
-        <button @click="pilihKategori('sekolah')" class="group relative overflow-hidden bg-gradient-to-br from-cyan-500 to-cyan-700 hover:from-cyan-600 hover:to-cyan-800 rounded-2xl p-5 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+        <button v-if="sekolahOn" @click="pilihKategori('sekolah')" class="group relative overflow-hidden bg-gradient-to-br from-cyan-500 to-cyan-700 hover:from-cyan-600 hover:to-cyan-800 rounded-2xl p-5 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
           <i class="fas fa-school text-2xl drop-shadow mb-2"></i>
           <h3 class="text-base md:text-lg font-black leading-tight drop-shadow-sm !text-white">Absen Sekolah</h3>
           <p class="text-[11px] text-white/85 font-medium mt-0.5">SDI · SMP · SMA (PKBM)</p>
@@ -170,6 +170,7 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/services/firebase'
 import { useToast } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/auth'
+import { isOn } from '@/composables/useFeatures'
 import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
 import { lembagaScopeMatches } from '@/composables/useLembaga'
 import { sortSantri } from '@/utils/santriSort'
@@ -213,9 +214,12 @@ function matchNgajiLembaga(s, lmb) {
   if (L === 'ppph') return sl === 'ppph' || sl === 'p3h'
   return sl === L
 }
+// WASEELA white-label: mode absensi SEKOLAH = fitur lembaga sekolah (paket Pro+).
+//   Basic (Qiraati) → flag off → hanya absensi ngaji. Parent: bila `absensi` off, ini ikut off.
+const sekolahOn = isOn('absensiSekolah')
 // Apakah guru punya santri ngaji / sekolah
 const hasNgaji = computed(() => isGuru.value && santriRaw.value.some((s) => s.aktif !== false && ownNgaji(s)))
-const hasSekolah = computed(() => isGuru.value && santriRaw.value.some((s) => s.aktif !== false && ownSekolah(s)))
+const hasSekolah = computed(() => sekolahOn && isGuru.value && santriRaw.value.some((s) => s.aktif !== false && ownSekolah(s)))
 const showBackBtn = computed(() => !isGuru.value || (hasNgaji.value && hasSekolah.value))
 
 const BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
@@ -241,6 +245,7 @@ const COLL = computed(() => (kategori.value === 'ngaji' ? 'absensi_santri_ngaji_
 const periode = computed(() => `${selectedYear.value}-${String(selectedMonth.value).padStart(2, '0')}`)
 
 function pilihKategori(k) {
+  if (k === 'sekolah' && !sekolahOn) return // mode sekolah dikunci di paket Basic
   kategori.value = k
   // Guru langsung ke input (santri yang diampu, tanpa pilih lembaga). Admin pilih lembaga dulu.
   if (isGuru.value) {

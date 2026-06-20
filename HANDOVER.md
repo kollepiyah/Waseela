@@ -106,8 +106,16 @@ Waseela/
   - `composables/useMenus.js` → sembunyikan menu modul yang off.
   - `router/index.js` beforeEach → blok deep-link modul off → redirect /dashboard.
   - `views/DashboardView.vue` → `posts` off ⇒ beranda tampil `DasborPendidikan` (KPI), bukan feed Ammu Channel.
-- Flag terwire: posts, keuangan(+sub), absensi, psb, prestasi, supervisi, analitik, kritikSaran.
-  (kalender & tesKenaikan sengaja tetap di flag runtime lama `fiturKalender`/`fiturTesKenaikan`.)
+- Flag terwire: posts, keuangan(+sub pos/tabungan/bisyaroh/hutangPiutang), absensi
+  (+anak fingerprint, **absensiSekolah**), psb, prestasi, **kenaikan**, **rapor**,
+  **kegiatanPesantren**, supervisi, analitik, kritikSaran.
+  (kalender tetap di flag runtime lama `fiturKalender`; `fiturTesKenaikan` runtime tetap berlaku
+  BERSAMA flag build-time `kenaikan` — keduanya komposit di menu.)
+- **rapor** gate `/rapor` (menu Rapor Semester + deep-link). **absensiSekolah** gate mode "Absen
+  Sekolah" di `AbsensiSantriView` (komponen — Basic Qiraati hanya Absen Ngaji). Keduanya = fitur
+  lembaga sekolah → paket Pro+. **kenaikan** gate `/naik-kelas`+`/kenaikan`+`/tes-kenaikan` (Basic+).
+  **kegiatanPesantren** gate `/kegiatan-pesantren` (Premium-only). Backward-compat: config
+  `features` lama (Ammu) tanpa key → default ON.
 
 ---
 

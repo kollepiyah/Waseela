@@ -37,6 +37,33 @@ describe('resolveFeatures — preset paket', () => {
   })
 })
 
+describe('isi paket (intent bisnis)', () => {
+  it('fitur lembaga sekolah (rapor + absensiSekolah): Pro & Premium, TIDAK Basic', () => {
+    for (const f of ['rapor', 'absensiSekolah']) {
+      expect(PLANS.basic.includes(f)).toBe(false)
+      expect(PLANS.pro.includes(f)).toBe(true)
+      expect(PLANS.premium.includes(f)).toBe(true)
+    }
+  })
+
+  it('Basic punya prestasi + kenaikan/tes-kenaikan, tapi bukan keuangan', () => {
+    expect(PLANS.basic.includes('prestasi')).toBe(true)
+    expect(PLANS.basic.includes('kenaikan')).toBe(true)
+    expect(PLANS.basic.includes('keuangan')).toBe(false)
+  })
+
+  it('kegiatanPesantren: HANYA Premium (bukan Basic/Pro)', () => {
+    expect(PLANS.basic.includes('kegiatanPesantren')).toBe(false)
+    expect(PLANS.pro.includes('kegiatanPesantren')).toBe(false)
+    expect(PLANS.premium.includes('kegiatanPesantren')).toBe(true)
+  })
+
+  it('paket bertingkat: basic ⊂ pro ⊂ premium', () => {
+    expect(PLANS.basic.every((k) => PLANS.pro.includes(k))).toBe(true)
+    expect(PLANS.pro.every((k) => PLANS.premium.includes(k))).toBe(true)
+  })
+})
+
 describe('resolveFeatures — à la carte (featureOverrides)', () => {
   it('override menyalakan modul di luar preset', () => {
     const f = resolveFeatures({ plan: 'basic', featureOverrides: { analitik: true } })

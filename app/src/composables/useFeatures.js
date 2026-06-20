@@ -27,7 +27,8 @@ const PARENT = {
   tabungan: 'keuangan',
   bisyaroh: 'keuangan',
   hutangPiutang: 'keuangan',
-  fingerprint: 'absensi'
+  fingerprint: 'absensi',
+  absensiSekolah: 'absensi'
 }
 
 // Flag default ON kecuali di-set `false` eksplisit — aman untuk modul yang belum
@@ -54,6 +55,11 @@ const PATH_FEATURE = {
   '/absensi-santri': 'absensi',
   '/rekap-prestasi': 'prestasi',
   '/capaian-prestasi': 'prestasi',
+  '/naik-kelas': 'kenaikan',
+  '/kenaikan': 'kenaikan',
+  '/tes-kenaikan': 'kenaikan',
+  '/rapor': 'rapor',
+  '/kegiatan-pesantren': 'kegiatanPesantren',
   '/posts': 'posts',
   '/keuangan': 'keuangan',
   '/keuangan-desktop': 'keuangan',
