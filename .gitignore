@@ -1,0 +1,33 @@
+# === Dependencies & build ===
+node_modules/
+app/node_modules/
+app/dist/
+dist/
+
+# === Secrets / env ===
+.env
+.env.*
+!.env.example
+app/.env.local
+
+# === Config tenant AKTIF (digenerate build-tenant dari tenants/<slug>/tenant.config.js) ===
+# Sumber kebenaran = tenants/<slug>/tenant.config.js (di-track). Yang ini artefak build.
+app/src/tenant.config.js
+
+# === Native build outputs (bila nanti cap add android) ===
+app/android/
+app/ios/
+app/electron/
+
+# === Backup / cruft ===
+*.bak
+*.broken*
+*~
+
+# === Misc ===
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
