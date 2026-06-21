@@ -4,7 +4,7 @@
 > mandiri untuk proyek **Waseela** (tak bergantung pada memory Ammu). Update bagian
 > **Status** tiap ada kemajuan.
 >
-> Terakhir diperbarui: **20 Jun 2026** (Fase 0-2 scaffold + **Fase A backend port** + **Fase B test/hardcode**).
+> Terakhir diperbarui: **22 Jun 2026** — tambah **ROADMAP DB (migrasi Supabase saat ada pembeli)**. (20 Jun: Fase 0-2 scaffold + Fase A backend port + Fase B test/hardcode.)
 
 ---
 
@@ -31,8 +31,37 @@ lapisan config per-lembaga. Tiap lembaga ganti nama/logo/fitur tanpa ubah kode.
 | **Target lembaga pertama** | **Mirip Mambaul Ulum** (pesantren Qiraati/Diniyah) | Skema akademik (rapor/kenaikan) PAKAI ULANG, nol kode baru |
 | **Skala awal** | 1-2 lembaga | Pemicu naik ke C1: tagihan Firestore membengkak (read) ATAU mentok query relasional |
 
-> **Kapan pertimbangkan Postgres/Supabase?** Hanya bila skala besar + butuh SQL relasional
-> berat + ada tim. Sekarang TIDAK — Firebase termurah di skala kecil & velocity solo-dev.
+> **Kapan pertimbangkan Postgres/Supabase?** Sekarang (belum ada pembeli) TETAP Firebase —
+> termurah di skala kecil & velocity solo-dev. **Saat sudah ada pembeli bayar → migrasi ke
+> Supabase** (rencana baku di bawah: **ROADMAP DB**).
+
+---
+
+## 🔮 ROADMAP DB — Migrasi Waseela ke Supabase  ⟵ TASK (saat sudah ada pembeli)
+
+> **Status: BELUM dimulai — Firebase TETAP sampai ada pembeli bayar.** Catatan hasil diskусi
+> **22 Jun 2026**; jadi rencana baku saat Waseela pindah dari Firebase → Postgres demi
+> **reporting relasional + multi-tenant murah + biaya terprediksi**.
+> **Kerjakan SETELAH** migrasi Ammu→Supabase (Ammu = pathfinder; Waseela pakai ulang polanya
+> + TAMBAH lapisan multi-tenant). Pola dasar ada di repo Ammu (`D:\Aplikasi Project\Portal MU`).
+
+**Keputusan baku (multi-tenant — BEDA dari Ammu yang single-tenant):**
+
+| Topik | Keputusan |
+|------|-----------|
+| **DB** | Supabase Postgres, **region Singapore (ap-southeast-1)** |
+| **Multi-tenant** | **SATU project + kolom `tenant_id` + RLS** — BUKAN project-per-lembaga. Tambah pembeli = **tambah BARIS tenant**, bukan project. (Ammu: single-tenant, tanpa tenant_id.) |
+| **Auth** | Supabase Auth + RLS untuk **peran** (admin/guru/santri/wali) DAN **scoping per-tenant** |
+| **Akun/Org** | 1 akun Supabase; Waseela di **organization TERPISAH** dari Ammu (billing/kuota sendiri) |
+| **Tier** | Mulai **Free** (dev/pilot) + DIY backup → **naik Pro ($25/bln) di PEMBELI BAYAR PERTAMA** (BUKAN nunggu "banyak tenant"). Upgrade in-place: 1 klik, project sama, tanpa migrasi |
+| **Backup** | GitHub Actions + `pg_dump` (**session pooler :5432**) + rclone → Google Drive, retensi 14 hari |
+| **Push** | tetap **FCM** (Firebase diciutkan jadi pipa notifikasi) |
+| **Performa non-realtime** | `@tanstack/vue-query` (cache) + pagination + index → terasa instan (~100ms) |
+
+- **Definition-of-ready go-Pro:** ada pelanggan bayar + ada data produksi + backup jalan + region Singapore.
+- **Kuota aman:** data per-lembaga kecil (~300–400 MB / lembaga / 5 thn) → 1 project Pro (8 GB included)
+  muat puluhan tenant; lebih dari itu bayar storage murah. Nambah pembeli **tidak** bikin kehabisan kuota —
+  yang naik cuma sedikit compute/storage di SATU project.
 
 ---
 
