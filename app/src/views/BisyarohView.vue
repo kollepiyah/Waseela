@@ -1078,7 +1078,7 @@ async function kirimBmtGsheet() {
       title: `Laporan Pencairan BMT ${per}`,
       sheetName: 'Pencairan BMT',
       kop: [
-        ss.kopLine1 || 'PONDOK PESANTREN MAMBAUL ULUM',
+        ss.kopLine1 || '',
         `Laporan Pencairan Bisyaroh via BMT — ${per}`
       ].filter(Boolean),
       subtitle: `${target.length} guru/pegawai`,

@@ -24,7 +24,7 @@
       <img
         :src="logoUrl"
         class="w-24 h-24 object-contain drop-shadow-md hover:scale-105 transition-transform"
-        alt="Logo Mambaul Ulum"
+        alt="Logo Lembaga"
         @error="onLogoError"
       />
       <div class="text-center w-full mt-1">
@@ -155,7 +155,7 @@ const namaFull = computed(() => {
   const raw =
     settings.settings?.txtSidebarTitle ||
     settings.settings?.kopLine1 ||
-    'PONDOK PESANTREN MAMBAUL ULUM'
+    'Waseela'
   return toTitleCase(raw)
 })
 const namaLine1 = computed(() => {

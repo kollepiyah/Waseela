@@ -251,7 +251,7 @@ export function getKopKartuLembaga(lembaga, settings) {
   const kkKop = settings?.kartuKenaikanKop?.[lembaga] || {}
   return {
     judul: kkKop.judul || 'KONTROL KENAIKAN ' + (lembaga === 'TPQ' ? 'JILID' : 'KELAS'),
-    subjudul: kkKop.subjudul || settings?.kopLine1 || 'PONDOK PESANTREN MAMBAUL ULUM',
+    subjudul: kkKop.subjudul || settings?.kopLine1 || '',
     alamat: kkKop.alamat || settings?.alamat || ''
   }
 }

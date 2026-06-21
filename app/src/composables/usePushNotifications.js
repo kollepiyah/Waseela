@@ -83,7 +83,7 @@ export function usePushNotifications() {
         try {
           // eslint-disable-next-line no-new
           // v.95.0626c: icon-192 ADA (manifest/SW); badge diperbaiki dari /icon-72.png (tidak ter-serve) ke /icon-192.png
-          new Notification(n.title || 'Mambaul Ulum', { body: n.body || '', icon: '/icon-192.png', badge: '/icon-192.png' })
+          new Notification(n.title || 'Waseela', { body: n.body || '', icon: '/icon-192.png', badge: '/icon-192.png' })
         } catch (e) {
           /* ignore */
         }
@@ -112,7 +112,7 @@ export function usePushNotifications() {
       try {
         await p.createChannel?.({
           id: CHANNEL_ID,
-          name: 'Notifikasi Ammu',
+          name: 'Notifikasi',
           description: 'Pengumuman & event penting',
           importance: 5,
           visibility: 1
@@ -136,7 +136,7 @@ export function usePushNotifications() {
               notifications: [
                 {
                   id: Date.now() % 2147483000,
-                  title: notif?.title || 'Mambaul Ulum',
+                  title: notif?.title || 'Waseela',
                   body: notif?.body || '',
                   channelId: CHANNEL_ID,
                   // v.100: ikon kecil status bar = silhouette putih Ammu (bukan kotak putih default)

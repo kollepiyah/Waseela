@@ -240,7 +240,7 @@ async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null, isDi
   const namaLembaga = (
     (lembagaOverride && lembagaOverride.kop_line2) ||
     settings.kopLine2 ||
-    'MAMBAUL ULUM'
+    ''
   ).trim()
   // v.21.54: skip prefix lembagaLabel kalau namaLembaga sudah include nya (hindari "TPQ TPQ MAMBAUL ULUM")
   const namaUpper = namaLembaga.toUpperCase()
@@ -409,7 +409,7 @@ async function drawSignBlocks(doc, y, santri, settings, lembaga, dbGuru = [], le
   // TPQ + Pra PTPT → Kepala TPQ (Pra PTPT inherit TPQ); PTPT/PPPH → PJ; Diniyah → per sekolah.
   // v.100b: label DISPLAY di-suffix nama pondok (kyai: "Kepala TPQ Mambaul Ulum"); searchTitle
   //   (lookup guru by jabatan) TIDAK ikut suffix.
-  const nmPondok = settings.namaPondokSingkat || 'Mambaul Ulum'
+  const nmPondok = settings.namaPondokSingkat || 'Waseela'
   let labelKepala = 'Kepala TPQ'
   let searchTitle = 'KEPALA TPQ'
   if (lembaga === 'PTPT') {

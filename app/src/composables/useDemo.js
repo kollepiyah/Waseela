@@ -9,6 +9,7 @@ import { resolveFeatures, ALL_FEATURES, PLANS } from '@/config/plans.js'
 
 const KEY = 'waseela_demo_features'
 const PANEL_KEY = 'waseela_demo_panel_open'
+const WELCOME_KEY = 'waseela_demo_welcome' // sessionStorage: status modal sambutan pra-login
 
 export const IS_DEMO = tenantConfig.demo === true
 
@@ -51,7 +52,7 @@ export function applyPreset(plan) {
   reload()
 }
 
-// Hapus override → kembali ke baseline config demo, lalu reload.
+// Hapus override -> kembali ke baseline config demo, lalu reload.
 export function resetDemo() {
   try {
     localStorage.removeItem(KEY)
@@ -69,6 +70,26 @@ export function isPanelOpen() {
 export function setPanelOpen(open) {
   try {
     localStorage.setItem(PANEL_KEY, open ? '1' : '0')
+  } catch {
+    /* ignore */
+  }
+}
+
+// Modal sambutan pra-login (auto-muncul sekali per kunjungan). Pakai sessionStorage
+// supaya tiap pengunjung baru lihat lagi, TAPI tetap stabil melewati reload akibat
+// toggle/preset dalam satu sesi. Nilai: null=fresh (belum dilihat) -> buka,
+// '1'=sedang terbuka (pertahankan saat reload), '0'=sudah ditutup pengunjung.
+export function welcomeState() {
+  if (typeof sessionStorage === 'undefined') return '0'
+  try {
+    return sessionStorage.getItem(WELCOME_KEY)
+  } catch {
+    return '0'
+  }
+}
+export function setWelcomeOpen(open) {
+  try {
+    sessionStorage.setItem(WELCOME_KEY, open ? '1' : '0')
   } catch {
     /* ignore */
   }

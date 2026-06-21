@@ -74,9 +74,9 @@ async function saveNative(blob, filename) {
   const { Filesystem, Directory } = await import('@capacitor/filesystem')
   const base64 = await blobToBase64(blob)
 
-  // v.103b: simpan ke subfolder "AmmuOnline" di folder publik supaya rapi & mudah ditemukan.
+  // v.103b: simpan ke subfolder "Waseela" di folder publik supaya rapi & mudah ditemukan.
   // Multi-tier fallback krn scoped storage (Android 13+): Documents → Penyimpanan App → Cache.
-  const SUBFOLDER = 'AmmuOnline'
+  const SUBFOLDER = 'Waseela'
   const path = `${SUBFOLDER}/${safeFilename}`
   const directories = [
     { dir: Directory.Documents, label: 'Documents' },

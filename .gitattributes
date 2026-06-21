@@ -1,0 +1,19 @@
+# Normalisasi line-ending: simpan LF di repo, checkout LF di semua OS.
+# Mencegah seluruh tree tampak "modified" gara-gara editor Windows menulis CRLF.
+* text=auto eol=lf
+
+# Aset biner — jangan disentuh normalisasi EOL.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.webp binary
+*.svg  text
+*.woff  binary
+*.woff2 binary
+*.ttf  binary
+*.eot  binary
+*.pdf  binary
+*.keystore binary
+*.jks binary

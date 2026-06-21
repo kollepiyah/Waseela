@@ -17,7 +17,7 @@ export default {
   // === Identitas app (native/build — TAK bisa diubah runtime) ===
   appId: 'app.ammu.id', // package Android / bundle id
   appName: 'Ammu Online', // nama launcher + judul window
-  themeColor: '#0F766E', // warna brand (status bar, splash)
+  themeColor: '#065F46', // warna brand (status bar, splash) — Waseela emerald
 
   // === Firebase (TIAP lembaga = PROJECT FIREBASE TERPISAH) ===
   firebaseConfig: {

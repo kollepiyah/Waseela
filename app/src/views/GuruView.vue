@@ -888,7 +888,7 @@ async function exportGuruExcel() {
       sheetName: 'Data Guru',
       kop: [
         ss.kopLine1 || '',
-        ss.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM',
+        ss.kopLine2 || '',
         ss.kopLine3 || '',
         ss.kopLine4 || ''
       ],
@@ -921,7 +921,7 @@ async function kirimGuruGsheet() {
       sheetName: 'Data Guru',
       kop: [
         ss.kopLine1 || '',
-        ss.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM',
+        ss.kopLine2 || '',
         ss.kopLine3 || '',
         ss.kopLine4 || ''
       ].filter(Boolean),
@@ -1143,7 +1143,7 @@ async function bulkExportSelected() {
       sheetName: 'Data Guru Pilihan',
       kop: [
         ss.kopLine1 || '',
-        ss.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM',
+        ss.kopLine2 || '',
         ss.kopLine3 || '',
         ss.kopLine4 || ''
       ],

@@ -5,7 +5,7 @@
         <i class="fas fa-circle-question text-[var(--color-primary)]"></i> Pusat Bantuan
       </h1>
       <p class="text-sm text-[var(--text-secondary)] mt-1">
-        Panduan, informasi, dan kontak Ammu Online.
+        Panduan, informasi, dan kontak {{ appName }}.
       </p>
     </div>
 
@@ -240,7 +240,7 @@
           />
           <div>
             <div class="text-lg font-black text-[var(--text-primary)]">
-              Ammu Online — {{ platformName }}
+              {{ appName }} — {{ platformName }}
             </div>
             <div class="text-sm text-[var(--text-secondary)]">
               Sistem Manajemen {{ lembagaName }}
@@ -493,6 +493,8 @@ const isAndroid = (() => {
   }
 })()
 const platformName = computed(() => (isElectron.value ? 'Desktop' : isAndroid ? 'Android' : 'Web'))
+// WASEELA white-label: nama produk dari settings (seed tenant.config), bukan hardcode "Ammu Online".
+const appName = computed(() => settings.settings?.txtAppName || settings.settings?.appTitle || 'Waseela')
 const platformDetail = computed(() =>
   isElectron.value ? 'Windows (Electron)' : isAndroid ? 'Android (aplikasi)' : 'Web (Browser / PWA)'
 )
@@ -505,7 +507,7 @@ const introText = computed(() =>
 )
 
 const lembagaName = computed(
-  () => settings.settings?.namaLembaga || 'Pondok Pesantren Mambaul Ulum'
+  () => settings.settings?.namaLembaga || 'Waseela'
 )
 const version = computed(() => settings.settings?.appVersion || 'v.108.0626')
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')

@@ -1699,7 +1699,7 @@ const kop = computed(() => {
   }
   return {
     line1: lmbObj.kop_line1 || s.kopLine1 || '',
-    line2: lmbObj.kop_line2 || s.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM',
+    line2: lmbObj.kop_line2 || s.kopLine2 || '',
     line3: lmbObj.kop_line3 || s.kopLine3 || '',
     line4: lmbObj.kop_line4 || s.kopLine4 || '',
     pengasuh: s.namaPengasuh || ''
@@ -2784,7 +2784,7 @@ const jabatanKepala = computed(() => {
   const s = santriAktif.value
   if (!s) return 'Kepala'
   // v.100b: suffix nama pondok (kyai: "Kepala TPQ Mambaul Ulum"), selaras raporPdf drawSignBlocks
-  const nmPondok = settingsStore.settings?.namaPondokSingkat || 'Mambaul Ulum'
+  const nmPondok = settingsStore.settings?.namaPondokSingkat || 'Waseela'
   const lnorm = String(kategori.value === 'diniyah' ? s.lembaga_sekolah || '' : s.lembaga || '')
     .toLowerCase()
     .trim()

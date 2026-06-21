@@ -43,7 +43,7 @@ export async function showLocal(opts) {
     await plugin.schedule({
       notifications: [{
         id,
-        title: String(opts.title || 'Ammu Online'),
+        title: String(opts.title || 'Waseela'),
         body: String(opts.body || ''),
         smallIcon: 'ic_stat_icon',
         largeIcon: 'ic_launcher',
@@ -92,7 +92,7 @@ export async function pushFromItems(items) {
     _seenIds.add(`${it.id}-${it.jenis}`)
     await showLocal({
       id: Math.abs(hashCode(it.id + it.jenis)) % 1e6,
-      title: it.judul || 'Ammu Online',
+      title: it.judul || 'Waseela',
       body: it.body || '',
       link: it.link || ''
     })

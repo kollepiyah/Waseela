@@ -224,7 +224,7 @@ const router = useRouter()
 
 // v.20.58.0526: prioritas txtHeaderBar (admin set "Teks Header Bar") > txtAppName > default
 const appName = computed(
-  () => settings.settings?.txtHeaderBar || settings.settings?.txtAppName || 'Ammu Online'
+  () => settings.settings?.txtHeaderBar || settings.settings?.txtAppName || 'Waseela'
 )
 
 const dropdownOpen = ref(false)
@@ -299,7 +299,7 @@ const PAGE_TITLES = {
   '/pengaturan-web': 'Pengaturan Sistem',
   '/login': 'Masuk'
 }
-const pageTitle = computed(() => PAGE_TITLES[route.path] || 'Ammu Online')
+const pageTitle = computed(() => PAGE_TITLES[route.path] || settings.settings?.txtAppName || 'Waseela')
 
 function goProfil() {
   dropdownOpen.value = false

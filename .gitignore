@@ -50,3 +50,6 @@ npm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# === Claude Code local settings (per-user; jangan commit) ===
+.claude/settings.local.json

@@ -38,7 +38,7 @@
             style="width: 72px; height: 72px; border-radius: 16px; background: #fff; padding: 6px"
           />
           <div>
-            <div style="font-size: 22px; font-weight: 700; color: var(--rb-text)">Ammu Online</div>
+            <div style="font-size: 22px; font-weight: 700; color: var(--rb-text)">{{ settings.settings?.txtAppName || 'Waseela' }}</div>
             <div style="color: var(--rb-text-dim)">Sistem Manajemen {{ lembagaName }}</div>
           </div>
         </div>
@@ -310,13 +310,13 @@ const rail = computed(() => [
 
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
 const lembagaName = computed(
-  () => settings.settings?.namaLembaga || 'Pondok Pesantren Mambaul Ulum'
+  () => settings.settings?.namaLembaga || 'Waseela'
 )
 const version = computed(() => settings.settings?.appVersion || 'v.108.0626')
 const userName = computed(() => auth.sesiAktif?.nama || auth.sesiAktif?.name || 'Pengguna')
 
 const infoRows = computed(() => [
-  ['Aplikasi', 'Ammu Online — Desktop'],
+  ['Aplikasi', (settings.settings?.txtAppName || 'Waseela') + ' — Desktop'],
   ['Lembaga', lembagaName.value],
   ['Pengguna', userName.value],
   ['Versi', version.value + ' (Electron)'],

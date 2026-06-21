@@ -2859,7 +2859,7 @@ async function exportRiwayatPdf() {
     const settingsObj = settingsStore.settings || {}
     const kop = {
       logoUrl: settingsObj.kop_logo || settingsObj.kopLogo || settingsObj.logoKop || '',
-      line1: settingsObj.kopLine1 || 'YAYASAN MAMBAUL ULUM',
+      line1: settingsObj.kopLine1 || '',
       line2: settingsObj.kopLine2 || '',
       line3: settingsObj.kopLine3 || '',
       line4: settingsObj.kopLine4 || '',
@@ -2968,7 +2968,7 @@ async function eksporKartuPdf() {
     const kopLine2 = (
       _kop.subjudul ||
       settingsObj.kopLine1 ||
-      'PONDOK PESANTREN MAMBAUL ULUM'
+      ''
     ).toUpperCase()
     doc.text(kopLine2, pageW / 2, startY + 12, { align: 'center' })
     doc.setFont('helvetica', 'normal')

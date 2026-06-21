@@ -134,6 +134,27 @@ Waseela/
 > tak ada test framework/file di repo. Fase B memperbaikinya: Vitest terpasang, 10 test nyata
 > (`app/src/composables/__tests__/useFeatures.test.js`), `npm run test` hijau.
 
+### 🎨 BRANDING — REBRAND EMERALD (21 Jun)
+Waseela dibedakan dari Ammu (teal) → **brand EMERALD hijau**, layout/UX TETAP sama (cuma warna+logo):
+- **Logo baru** `waseela.png` (icon وسيلة hijau) → `tenants/demo/logo.png` + `tenants/_template/logo.png`
+  (build-tenant sebar ke favicon/splash/PWA/header).
+- **Warna teal→emerald, terpusat:** `tailwind.config.js` remap palet `teal` → emerald (1 sumber, semua
+  165 class `teal-*` ikut) · `main.css` `:root`+`.dark` brand vars · `ribbon.css` `--accent`/`--rb-hover` ·
+  `index.html`+`manifest` `theme_color` → `#065F46`.
+- **`tenant.config.themeColor` kini FUNGSIONAL:** `main.js` inject ke CSS `--theme-color` (ribbon `--accent`)
+  + sinkron `<meta theme-color>`; `build-tenant.mjs` patch `manifest.theme_color`. Tiap tenant bisa beda
+  warna chrome. Semua tenant Waseela themeColor = `#065F46` (emerald). Primary CTA `#047857`.
+- **Verifikasi:** `build-tenant demo` build EXIT 0; dev server login page = emerald + logo baru, 0 error console.
+  Berlaku SELURUH Waseela (termasuk referensi mambaul-ulum); **Ammu repo Portal MU TAK tersentuh**.
+
+### 🚀 DEMO DEPLOYED (21 Jun) → https://waseela.web.app
+- `firebase deploy --only hosting` (akun hallo@bakafrawi.com, project waseela-id, site `waseela`) + `firebase deploy --only firestore:rules` (sukses). **Storage waseela-id BELUM di-setup** (langkah Console; demo tak butuh upload foto).
+- **Seed data dummy** via `node scripts/seed-demo.mjs --project waseela-id` (mode ADC, bukan service-account key). Login: **adminmu / demo1234** (claim super_admin). Verified: login end-to-end OK, 0 error console, theme emerald aktif.
+- **✅ White-label TEKS (SELESAI — 21 Jun, sesi lanjutan):** audit + generickan ke `settings`/"Waseela" tuntas. Kategori A (teks terlihat-user: BantuanView, LoginView pesan WA, AppSidebar, judul notif/Excel/download, PengaturanView default header + "Tes Koneksi" + judul section, ProfilAdmin) + Kategori B (fallback kop/letterhead PDF/struk/rapor di ~14 file → `''`/`'Waseela'`, jadi tenant baru tak pernah cetak "MAMBAUL ULUM"). Sisa "Ammu/Mambaul" HANYA di komentar kode + ID fungsional (CSS `.ammu-*`, `@ammu.local`, channel id `ammu_default`) yang SENGAJA tak diubah. Build vite EXIT 0, 21/21 unit-test PASS.
+- **✅ Demo: kartu sambutan pra-login (21 Jun):** `DemoFeaturePanel.vue` kini menampilkan modal sambutan terpusat (auto-muncul sekali per kunjungan di `/login`, sessionStorage) — pitch + preset paket + toggle modul; FAB 🎛️ tetap untuk utak-atik lagi. Gated `IS_DEMO`.
+- **✅ Login polish (21 Jun):** tagline (motto) → "Portal Digital Pendidikan" (demo config + seed-demo), nomor versi dihapus, background → warna solid `var(--theme-color)` (emerald) bila admin tak set gambar. **Catatan deploy:** motto live di Firestore demo (`settings/web`+`general`) masih lama — re-seed / `firebase deploy` untuk perbarui situs live.
+- **🧹 Repo hygiene (21 Jun):** tambah `.gitattributes` (`eol=lf`) + normalisasi ~20 file yang ke-flip CRLF → diff bersih (48 file, +409/-97). **Catatan:** ada sisa `.git/index.lock` (tak bisa dihapus dari sandbox) — hapus manual sebelum commit: `del .git\index.lock`.
+
 ### ⏳ SISA (belum dikerjakan)
 1. **Fase C — Native Android scaffold:** `cd app && npx cap add android && npx cap sync` (appId/appName otomatis dari `capacitor.config.json` yang dipatch build-tenant). Lalu aset per-tenant (icon/splash via `@capacitor/assets`) + keystore + `google-services.json` lembaga → `./gradlew bundleRelease` (AAB).
 2. **Fase D — Provisioning & go-live lembaga #1:** isi `tenants/<slug>` (firebaseConfig lengkap), aktifkan Auth/Firestore(asia-southeast2)/Storage + **upgrade Blaze**, `firebase deploy` (rules+indexes+storage+functions), set secret, seed admin+import data, deploy hosting, smoke-test. **Lihat runbook backend di bawah.**

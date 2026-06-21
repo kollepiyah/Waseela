@@ -98,7 +98,7 @@ const posts = ref([])
 const loading = ref(true)
 let unsubscribe = null
 
-const channelName = computed(() => settings.settings?.namaChannel || 'Ammu Channel')
+const channelName = computed(() => settings.settings?.namaChannel || 'Waseela Channel')
 
 function firstImage(p) {
   if (Array.isArray(p.gambar_urls) && p.gambar_urls.length > 0) {

@@ -23,8 +23,8 @@ import { muassisDataUrl, MUASSIS_RATIO } from './kopMuassis' // v.100: baris-1 K
 export function buildKopFromSettings(s = {}) {
   return {
     logoUrl: s.logoKop || s.kop_logo || s.kopLogo || s.logoUrl || '',
-    line1: s.kopLine1 || 'YAYASAN MAMBAUL ULUM',
-    line2: s.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM',
+    line1: s.kopLine1 || '',
+    line2: s.kopLine2 || '',
     line3: s.kopLine3 || '',
     line4: s.kopLine4 || '',
     line5: s.kopLine5 || ''

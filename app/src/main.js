@@ -11,6 +11,8 @@ import router from './router'
 import { useUiStore } from './stores/ui'
 // v.21.24.0526: STATIC import auth store — fix race condition dengan router guard.
 import { useAuthStore } from './stores/auth'
+// WASEELA: config tenant aktif (utk warna brand chrome per-tenant)
+import tenantConfig from './tenant.config'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -25,6 +27,18 @@ app.directive('haptic', vHaptic)
 // Init dark mode dari storage SEBELUM mount supaya tidak flash
 const ui = useUiStore(pinia)
 ui.initDarkFromStorage()
+
+// WASEELA: terapkan themeColor tenant → CSS var --theme-color (dipakai ribbon --accent =
+// header/strip/tab-aktif) + sinkron <meta theme-color> browser. Menjadikan field
+// tenant.config.themeColor FUNGSIONAL (tiap lembaga bisa beda warna chrome).
+try {
+  const tc = tenantConfig?.themeColor
+  if (tc) {
+    document.documentElement.style.setProperty('--theme-color', tc)
+    const m = document.querySelector('meta[name="theme-color"]')
+    if (m) m.setAttribute('content', tc)
+  }
+} catch {}
 
 // v.21.24.0526: Init auth SEBELUM mount supaya authReady promise tersedia di router guard
 const auth = useAuthStore(pinia)

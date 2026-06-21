@@ -28,7 +28,7 @@ const settings = useSettingsStore()
 const santriCount = computed(() => (santri.value || []).length)
 const guruCount = computed(() => (guru.value || []).length)
 const lembagaName = computed(
-  () => settings.settings?.namaLembaga || settings.settings?.appTitle || 'Mambaul Ulum'
+  () => settings.settings?.namaLembaga || settings.settings?.appTitle || 'Waseela'
 )
 // versi tampil: ambil dari settings bila ada supaya tak menambah titik bump baru di kode
 const version = computed(() => settings.settings?.appVersion || 'v.108.0626')

@@ -18,7 +18,7 @@ const TABS = [
     groups: [
       {
         label: 'Postingan',
-        items: [{ type: 'large', icon: 'broadcast', label: 'Ammu\nChannel', to: '/posts', accent: true }]
+        items: [{ type: 'large', icon: 'broadcast', label: 'Buka\nSaluran', to: '/posts', accent: true }]
       },
       { label: 'Waktu & Kalender', items: [{ type: 'clock' }] },
       {
@@ -172,7 +172,7 @@ const TABS = [
     defaultTo: '/posts',
     groups: [
       {
-        label: 'Ammu Channel',
+        label: 'Saluran',
         items: [
           { type: 'large', icon: 'broadcast', label: 'Buka\nChannel', to: '/posts', accent: true },
           { type: 'large', icon: 'edit', label: 'Buat\nPostingan', to: '/posts' }

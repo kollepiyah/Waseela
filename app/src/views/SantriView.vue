@@ -899,7 +899,7 @@ async function kirimGoogleSheet() {
       title: `Data Santri ${new Date().toISOString().slice(0, 10)}`,
       sheetName: 'Data Santri',
       kop: [
-        ss.kopLine1 || 'PONDOK PESANTREN MAMBAUL ULUM',
+        ss.kopLine1 || '',
         ss.kopLine2 || '',
         ss.kopLine3 || ''
       ].filter(Boolean),
@@ -992,7 +992,7 @@ async function exportSantriExcel() {
       sheetName: 'Data Santri',
       kop: [
         ss.kopLine1 || '',
-        ss.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM',
+        ss.kopLine2 || '',
         ss.kopLine3 || '',
         ss.kopLine4 || ''
       ],

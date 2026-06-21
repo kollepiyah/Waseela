@@ -778,7 +778,7 @@
          ============================================================ -->
     <UiCard
       v-show="section === 'postingan'"
-      title="Pengaturan Postingan / Ammu Channel"
+      title="Pengaturan Postingan / Channel"
       subtitle="Hak akses + limit upload"
       class="mb-4"
     >
@@ -1300,12 +1300,12 @@ function defaultForm() {
     txtAppName: '',
     txtAppDesc: '',
     txtSidebarTitle: '',
-    txtHeaderBar: 'Ammu Online',
+    txtHeaderBar: 'Waseela',
     txtPeriode: '',
     txtWelcome: 'Ahlan',
     alamat: '',
     noTelp: '',
-    namaChannel: 'Al Manshur Channel',
+    namaChannel: 'Channel',
     kopLine1: '',
     kopLine2: '',
     kopLine3: '',
@@ -1958,10 +1958,10 @@ async function tesGsheet() {
     dirty.value = false
     const { sendToSheet } = useGoogleSheet()
     const { url: sheetUrl } = await sendToSheet({
-      title: 'Tes Koneksi Ammu',
+      title: 'Tes Koneksi',
       sheetName: 'Tes',
       kop: [
-        settingsStore.settings?.kopLine1 || 'PONDOK PESANTREN MAMBAUL ULUM',
+        settingsStore.settings?.kopLine1 || '',
         'Tes Integrasi Google Sheet'
       ],
       subtitle: 'Dibuat ' + new Date().toLocaleString('id-ID'),

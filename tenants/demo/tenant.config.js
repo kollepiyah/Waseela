@@ -19,7 +19,7 @@ export default {
   // === Identitas app ===
   appId: 'id.waseela.demo',
   appName: 'Waseela',
-  themeColor: '#0F766E',
+  themeColor: '#065F46', // WASEELA emerald (chrome/header)
   hostingSite: 'waseela', // project waseela-id punya 2 site → demo ke 'waseela' (waseela.web.app)
 
   // === Paket baseline (premium = semua modul nyala; pelanggan toggle turun via panel) ===
@@ -44,7 +44,7 @@ export default {
     txtAppName: 'Waseela',
     txtHeaderBar: 'Waseela',
     appTitle: 'Waseela — Portal Manajemen',
-    motto: 'Satu aplikasi untuk seluruh lembaga',
+    motto: 'Portal Digital Pendidikan',
     kopLine1: 'WASEELA',
     kopLine2: 'PORTAL MANAJEMEN LEMBAGA',
     namaChannel: 'Waseela Channel',

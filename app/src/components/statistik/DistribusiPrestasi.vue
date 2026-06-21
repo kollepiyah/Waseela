@@ -282,7 +282,7 @@ async function exportDistribusi(fmt) {
       await exportStyled(rows, {
         filename: `top_santri_prestasi_${stamp}.xlsx`,
         sheetName: 'Top Santri',
-        kop: [ss.kopLine1 || '', ss.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM', ss.kopLine3 || '', ss.kopLine4 || ''],
+        kop: [ss.kopLine1 || '', ss.kopLine2 || '', ss.kopLine3 || '', ss.kopLine4 || ''],
         subtitle: `Top 5 Santri Prestasi PTPT & PPPH — ${rows.length} santri (${new Date().toLocaleDateString('id-ID')})`,
         columns: _TOP_COLS
       })

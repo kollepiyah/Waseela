@@ -81,8 +81,9 @@ if (existsSync(manifestPath)) {
   const man = JSON.parse(readFileSync(manifestPath, 'utf8'))
   man.short_name = cfg.branding?.txtAppName || cfg.appName || man.short_name
   man.name = cfg.branding?.appTitle || cfg.appName || man.name
+  if (cfg.themeColor) man.theme_color = cfg.themeColor // warna brand PWA per-tenant
   writeFileSync(manifestPath, JSON.stringify(man, null, 2) + '\n')
-  console.log(`[waseela] ✓ manifest PWA → "${man.short_name}"`)
+  console.log(`[waseela] ✓ manifest PWA → "${man.short_name}" (theme ${man.theme_color})`)
 }
 
 // 5. Build (opsional)

@@ -5,7 +5,6 @@ import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import * as authService from '@/services/auth'
-import loginBg from '@/assets/loginBg.js'
 
 // v.86.0526: full match legacy login — Google + Ingat Saya + Lupa Sandi + Copyright luar card
 const router = useRouter()
@@ -25,8 +24,10 @@ onMounted(() => {
 // v.21.114.0528: drop teal solid overlay → bg image full visible + backdrop-blur overlay separate
 const bgStyle = computed(() => {
   const s = settings.settings || {}
-  const bg = s.bgImage || s.bg_login || s.bg_img || s.bgUrl || loginBg
-  return `background: url('${bg}') center/cover no-repeat;`
+  const bg = s.bgImage || s.bg_login || s.bg_img || s.bgUrl
+  // WASEELA: gambar bg custom (admin) tetap dihormati; default -> warna solid selaras tema app.
+  if (bg) return `background: url('${bg}') center/cover no-repeat;`
+  return 'background: var(--theme-color, #065F46);'
 })
 
 // WASEELA white-label: URL download app native diisi admin via Pengaturan (per lembaga).
@@ -118,8 +119,9 @@ function bukaWaAdmin() {
     toast.warning('Nomor WA Admin belum di-setup di Pengaturan Web')
     return
   }
+  const namaLembaga = settings.settings?.namaLembaga || 'Waseela'
   const msg = encodeURIComponent(
-    "Assalamu'alaikum Admin Pondok, saya lupa sandi akun Portal Ammu Online. Mohon bantu reset sandi. Terima kasih."
+    `Assalamu'alaikum Admin Pondok, saya lupa sandi akun Portal ${namaLembaga}. Mohon bantu reset sandi. Terima kasih.`
   )
   window.open(`https://wa.me/${wa}?text=${msg}`, '_blank')
 }
@@ -443,7 +445,6 @@ function bukaWaAdmin() {
       <p class="text-[11px] text-white/90 font-bold uppercase tracking-wider drop-shadow">
         © {{ new Date().getFullYear() }} {{ settings.settings?.namaLembaga || 'Waseela' }}
       </p>
-      <p class="text-[11px] text-white/80 font-bold tracking-widest mt-1 drop-shadow">v.108.0626</p>
     </div>
   </div>
 </template>

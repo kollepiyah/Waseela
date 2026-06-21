@@ -39,8 +39,8 @@ export function buildKopFromSettings(s = {}) {
   // v.21.92.0527: prioritas logo selaras Pengaturan Web (logoKop = field utama)
   return {
     logoUrl: s.logoKop || s.kop_logo || s.kopLogo || s.logoUrl || '',
-    line1: s.kopLine1 || 'YAYASAN MAMBAUL ULUM',
-    line2: s.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM',
+    line1: s.kopLine1 || '',
+    line2: s.kopLine2 || '',
     line3: s.kopLine3 || '',
     line4: s.kopLine4 || '',
     line5: s.kopLine5 || ''
@@ -799,7 +799,7 @@ function buildStrukWide(trx, settings) {
   const s = settings || {}
   const out = []
   const kopL = [
-    String(s.kopLine1 || 'YAYASAN MAMBAUL ULUM').toUpperCase(),
+    String(s.kopLine1 || '').toUpperCase(),
     String(s.kopLine2 || ''),
     String(s.kopLine3 || ''),
     String(s.kopLine4 || ''),
@@ -867,7 +867,7 @@ function buildStrukWide(trx, settings) {
 function buildStrukNarrow(trx, settings, w) {
   const s = settings || {}
   const out = []
-  out.push(center(String(s.kopLine2 || s.kopLine1 || 'MAMBAUL ULUM').toUpperCase(), w))
+  out.push(center(String(s.kopLine2 || s.kopLine1 || '').toUpperCase(), w))
   if (s.kopLine3) out.push(center(String(s.kopLine3), w))
   if (s.kopLine4) out.push(center(String(s.kopLine4), w))
   out.push(repCh('=', w))
@@ -925,7 +925,7 @@ function _row(label, val) {
 }
 // v.95.0626: STRUK LEBAR (9.5") gaya struk lama — tabel + garis tipis + kotak BUKTI + font proporsional.
 export function buildStrukHtmlWide(trx, s = {}) {
-  const kop1 = String(s.kopLine1 || 'YAYASAN MAMBAUL ULUM')
+  const kop1 = String(s.kopLine1 || '')
   const kop2 = String(s.kopLine2 || '')
   const addr = [s.kopLine3, s.kopLine4, s.kopLine5].filter(Boolean)
   const tgl = formatTglDdMmYyyy(trx.tanggal)

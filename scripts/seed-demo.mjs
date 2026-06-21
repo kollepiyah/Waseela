@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ============================================================================
-// WASEELA — Seed DEMO (data dummy + akun admin) via Firebase Admin SDK.
+// WASEELA — Seed DEMO (data dummy + akun login) via Firebase Admin SDK.
 //   Mengisi project SANDBOX demo supaya app tak kosong saat dipamerkan.
 //   Admin SDK BYPASS rules — aman menulis tanpa login.
 //
@@ -13,9 +13,11 @@
 // PAKAI:
 //   node scripts/seed-demo.mjs --key scripts/sa-demo.json [--password demo1234]
 //   (atau set GOOGLE_APPLICATION_CREDENTIALS=path lalu tanpa --key)
+//   (atau mode ADC: gcloud auth application-default login → node scripts/seed-demo.mjs --project waseela-id)
 //
-// HASIL: akun admin (username "adminmu", sandi default "demo1234") + ~3 guru,
-//   ~18 santri, tagihan/pembayaran, prestasi, absensi bulanan, 2 postingan, branding.
+// HASIL: AKUN LOGIN → 1 admin (adminmu) + 3 guru (login pakai username) +
+//   4 santri (login pakai no. WA), semua sandi default "demo1234". Plus data
+//   dummy: ~18 santri, tagihan/pembayaran, prestasi, absensi bulanan, 2 postingan, branding.
 // ============================================================================
 import { readFileSync } from 'fs'
 import { initializeApp, cert, applicationDefault } from 'firebase-admin/app'
@@ -32,6 +34,8 @@ const keyPath = arg('key', process.env.GOOGLE_APPLICATION_CREDENTIALS)
 const projectArg = arg('project', null)
 const ADMIN_PASS = arg('password', 'demo1234')
 const ADMIN_USER = 'adminmu'
+// Sandi yang sama dipakai semua akun demo (admin/guru/santri) agar mudah dipamerkan.
+const DEMO_PASS = ADMIN_PASS
 
 // ---- init admin: dua mode ----
 //   A) --key <sa.json>  → service account (kalau org policy mengizinkan key)
@@ -78,6 +82,21 @@ function pick(arr, i) {
   return arr[i % arr.length]
 }
 
+// Buat / perbarui akun login internal ({localPart}@ammu.local) + set custom claim role.
+//   Mengembalikan uid agar bisa di-link ke dokumen guru/santri (linked_uid + firebase_uid).
+async function ensureAuthUser(localPart, displayName, role) {
+  const email = `${String(localPart).toLowerCase()}@ammu.local`
+  let user
+  try {
+    user = await auth.getUserByEmail(email)
+    await auth.updateUser(user.uid, { password: toAuthPassword(DEMO_PASS), displayName })
+  } catch {
+    user = await auth.createUser({ email, password: toAuthPassword(DEMO_PASS), displayName })
+  }
+  if (role) await auth.setCustomUserClaims(user.uid, { role })
+  return { uid: user.uid, email }
+}
+
 async function setupAdmin() {
   let user
   try {
@@ -105,7 +124,7 @@ async function seedSettings() {
     txtAppName: 'Waseela',
     txtHeaderBar: 'Waseela',
     appTitle: 'Waseela — Portal Manajemen',
-    motto: 'Satu aplikasi untuk seluruh lembaga',
+    motto: 'Portal Digital Pendidikan',
     kopLine1: 'WASEELA',
     kopLine2: 'PORTAL MANAJEMEN LEMBAGA',
     namaChannel: 'Waseela Channel',
@@ -123,15 +142,26 @@ async function seedGuru() {
     { id: 'G002', nama: 'Ustadzah Siti Aminah', role_sistem: 'guru_biasa', lembaga: 'Madin Awaliyah', jk: 'P', jabatan: 'Wali Kelas', username: 'aminah', status: 'Aktif' },
     { id: 'G003', nama: 'Ustadz Kepala Madin', role_sistem: 'admin', lembaga: 'Madin Wustho', jk: 'L', jabatan: 'Kepala Madin', username: 'kepala', status: 'Aktif' }
   ]
+  // Buat akun login tiap guru + link uid ke dokumen.
+  for (const g of guru) {
+    const role =
+      g.role_sistem === 'admin' ? 'admin'
+      : g.role_sistem === 'admin_keuangan' ? 'admin_keuangan'
+      : g.role_sistem === 'super_admin' ? 'super_admin'
+      : 'guru'
+    const { uid, email } = await ensureAuthUser(g.username, g.nama, role)
+    g.linked_uid = uid
+    g.firebase_uid = uid
+    g.linked_email = email
+  }
   const batch = db.batch()
   for (const g of guru) batch.set(db.doc(`guru/${g.id}`), g)
   await batch.commit()
-  console.log(`[seed] ✓ ${guru.length} guru`)
+  console.log(`[seed] ✓ ${guru.length} guru (+ akun login: ${guru.map((g) => g.username).join(', ')})`)
   return guru
 }
 
-async function seedSantri(n = 18) {
-  const batch = db.batch()
+async function seedSantri(n = 18, nLogin = 4) {
   const list = []
   for (let i = 0; i < n; i++) {
     const id = 'S' + String(1001 + i)
@@ -148,10 +178,19 @@ async function seedSantri(n = 18) {
       is_mukim: i % 3 === 0
     }
     list.push(s)
-    batch.set(db.doc(`santri/${id}`), s)
   }
+  // Beri akun login (via no. WA) untuk beberapa santri pertama + link uid.
+  for (let i = 0; i < Math.min(nLogin, list.length); i++) {
+    const s = list[i]
+    const { uid, email } = await ensureAuthUser(s.wa, s.nama, 'santri')
+    s.linked_uid = uid
+    s.firebase_uid = uid
+    s.linked_email = email
+  }
+  const batch = db.batch()
+  for (const s of list) batch.set(db.doc(`santri/${s.id}`), s)
   await batch.commit()
-  console.log(`[seed] ✓ ${n} santri`)
+  console.log(`[seed] ✓ ${n} santri (+ akun login utk ${Math.min(nLogin, list.length)} santri pertama, via no. WA)`)
   return list
 }
 
@@ -256,14 +295,20 @@ async function seedPosts() {
 async function main() {
   await setupAdmin()
   await seedSettings()
-  await seedGuru()
+  const guru = await seedGuru()
   const santri = await seedSantri()
   await seedKeuangan(santri)
   await seedPrestasi(santri)
   await seedAbsensi(santri)
   await seedPosts()
-  console.log('\n✅ SEED SELESAI.')
-  console.log(`   Login demo →  username: ${ADMIN_USER}   sandi: ${ADMIN_PASS}`)
+  console.log('\n✅ SEED SELESAI. Daftar akun login demo (semua sandi: ' + DEMO_PASS + '):')
+  console.log(`   ADMIN   →  ${ADMIN_USER}  (akses penuh / super_admin)`)
+  for (const g of guru) {
+    console.log(`   GURU    →  ${g.username}  (${g.jabatan} — ${g.lembaga})`)
+  }
+  santri.slice(0, 4).forEach((s) => {
+    console.log(`   SANTRI  →  ${s.wa}  (${s.nama} — ${s.lembaga}, login pakai no. WA)`)
+  })
   console.log('   (Panel "Mode Demo" muncul di pojok kanan-bawah untuk pilih fitur.)')
   process.exit(0)
 }

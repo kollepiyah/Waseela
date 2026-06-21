@@ -75,7 +75,7 @@ const ALL_MENUS = [
 
   // GROUP: KOMUNIKASI (semua role)
   // v.65.4: Mading tetap (kyai minta — supaya tambah postingan tidak langsung dari beranda)
-  { group: 'Komunikasi', name: 'Ammu Channel', path: '/posts', icon: 'fa-bullhorn', roles: ['admin', 'guru', 'santri'], available: true },
+  { group: 'Komunikasi', name: 'Saluran', path: '/posts', icon: 'fa-bullhorn', roles: ['admin', 'guru', 'santri'], available: true },
   { group: 'Komunikasi', name: 'Kritik & Saran', path: '/kritik-saran', icon: 'fa-comment-dots', roles: ['admin', 'guru', 'santri'], available: true, featureFlag: 'fiturKritikSaran' },
 
   // GROUP: SISTEM (admin only)

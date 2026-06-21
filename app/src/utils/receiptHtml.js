@@ -36,8 +36,8 @@ function fmtPeriode(p) {
 
 function kopHtml(s = {}) {
   const logo = s.logoKop || s.kop_logo || s.kopLogo || s.logoUrl || ''
-  const l1 = esc(s.kopLine1 || 'YAYASAN MAMBAUL ULUM')
-  const l2 = esc(s.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM')
+  const l1 = esc(s.kopLine1 || '')
+  const l2 = esc(s.kopLine2 || '')
   const addr = [s.kopLine3, s.kopLine4, s.kopLine5].filter(Boolean).map((a) => esc(a))
   // v.100: baris-1 = gambar muassis (view in-app → URL bundel cukup; dataURL bila sudah ter-cache)
   const muSrc = muassisDataUrlSync() || MUASSIS_URL

@@ -17,7 +17,7 @@ export default {
   // === Identitas app (native/build) ===
   appId: '', // mis. 'id.waseela.alfalah' — package Android UNIK per lembaga
   appName: '', // mis. 'Portal Al-Falah'
-  themeColor: '#0F766E', // warna brand
+  themeColor: '#065F46', // warna brand (default Waseela emerald)
 
   // === Firebase project BARU lembaga ini (Console → Project settings → Web app) ===
   firebaseConfig: {

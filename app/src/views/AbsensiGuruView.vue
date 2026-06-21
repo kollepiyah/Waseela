@@ -1020,7 +1020,7 @@ async function kirimAbsensiGsheet() {
       rows,
       title: `Rekap Absensi Guru ${selectedYear.value}-${String(selectedMonth.value).padStart(2, '0')}`,
       sheetName: 'Rekap Absensi',
-      kop: [ss.kopLine1 || 'PONDOK PESANTREN MAMBAUL ULUM', judul].filter(Boolean),
+      kop: [ss.kopLine1 || '', judul].filter(Boolean),
       subtitle: `${rows.length} guru`,
       columns
     })

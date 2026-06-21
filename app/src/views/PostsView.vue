@@ -180,7 +180,7 @@ const settings = useSettingsStore()
 const toast = useToast()
 const confirmDlg = useConfirm()
 
-const channelName = computed(() => settings.settings?.namaChannel || 'Ammu Channel')
+const channelName = computed(() => settings.settings?.namaChannel || 'Waseela Channel')
 
 const isAdmin = computed(() => {
   const s = auth.sesiAktif

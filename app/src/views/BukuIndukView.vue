@@ -911,7 +911,7 @@ async function exportBukuIndukExcel() {
       sheetName: 'Buku Induk',
       kop: [
         s.kopLine1 || '',
-        s.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM',
+        s.kopLine2 || '',
         s.kopLine3 || '',
         s.kopLine4 || ''
       ],
@@ -963,7 +963,7 @@ async function kirimBukuGsheet() {
       sheetName: 'Buku Induk',
       kop: [
         s.kopLine1 || '',
-        s.kopLine2 || 'PONDOK PESANTREN MAMBAUL ULUM',
+        s.kopLine2 || '',
         s.kopLine3 || '',
         s.kopLine4 || ''
       ].filter(Boolean),

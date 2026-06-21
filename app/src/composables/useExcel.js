@@ -32,7 +32,7 @@ export function useExcel() {
   async function exportSimple(rows, opts = {}) {
     const ExcelJS = await loadExcelJS()
     const wb = new ExcelJS.Workbook()
-    wb.creator = 'Ammu Online'
+    wb.creator = 'Waseela'
     wb.created = new Date()
     const ws = wb.addWorksheet(opts.sheetName || 'Data')
 
