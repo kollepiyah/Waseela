@@ -656,7 +656,7 @@ async function cetakLangsung() {
 // v.94.0626: buka modal Pengaturan Printer (PrinterSettingsModal global dengar event ini)
 function openPrinterSettings() {
   try {
-    window.dispatchEvent(new CustomEvent('ammu:open-printer-settings'))
+    window.dispatchEvent(new CustomEvent('waseela:open-printer-settings'))
   } catch (e) {
     /* ignore */
   }

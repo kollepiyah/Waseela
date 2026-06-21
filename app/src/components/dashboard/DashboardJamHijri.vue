@@ -1,5 +1,5 @@
 <template>
-  <div class="ammu-jam relative overflow-hidden rounded-[var(--radius-xl)] text-white p-4 md:p-5 shadow-[var(--shadow-md)]">
+  <div class="wsl-jam relative overflow-hidden rounded-[var(--radius-xl)] text-white p-4 md:p-5 shadow-[var(--shadow-md)]">
     <!-- Background pattern decoration (gold subtle) -->
     <svg class="pattern absolute inset-0 w-full h-full opacity-10" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
       <defs>
@@ -64,12 +64,12 @@ watch(hijri, syncHijriWidget)
 </script>
 
 <style scoped>
-.ammu-jam {
+.wsl-jam {
   /* v.21.80.0526: Olive deep gradient + subtle gold accent (Pesantren Modern) */
   background: linear-gradient(135deg, #0F766E 0%, #134E4A 100%);
 }
-:global(.dark) .ammu-jam,
-.dark-mode .ammu-jam {
+:global(.dark) .wsl-jam,
+.dark-mode .wsl-jam {
   background: linear-gradient(135deg, #0F172A 0%, #0F172A 100%);
 }
 .hijri-text {

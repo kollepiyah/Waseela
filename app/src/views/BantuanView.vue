@@ -493,7 +493,7 @@ const isAndroid = (() => {
   }
 })()
 const platformName = computed(() => (isElectron.value ? 'Desktop' : isAndroid ? 'Android' : 'Web'))
-// WASEELA white-label: nama produk dari settings (seed tenant.config), bukan hardcode "Ammu Online".
+// WASEELA white-label: nama produk dari settings (seed tenant.config), bukan hardcode nama produk.
 const appName = computed(() => settings.settings?.txtAppName || settings.settings?.appTitle || 'Waseela')
 const platformDetail = computed(() =>
   isElectron.value ? 'Windows (Electron)' : isAndroid ? 'Android (aplikasi)' : 'Web (Browser / PWA)'

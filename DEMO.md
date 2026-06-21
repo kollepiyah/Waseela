@@ -1,7 +1,8 @@
 # 🎬 DEMO Waseela — Setup & Deploy
 
-Demo 1-layar dengan **panel toggle fitur** (pojok kanan-bawah): calon pelanggan
-nyalakan/matikan modul & lihat app berubah → pilih paket/fitur yang diinginkan.
+Demo 1-layar dengan **gate pilihan demo**: tiap buka situs, sebelum form login muncul
+modal pilih paket / nyalakan-matikan modul → app berubah menyesuaikan. (Web saja —
+demo TIDAK menyertakan build Android.)
 
 - **Tanpa Cloud Functions** → cukup Firebase **Spark (gratis)**.
 - Pakai project **sandbox** (BUKAN produksi lembaga — data dummy akan diisi).
@@ -30,7 +31,7 @@ npm i firebase-admin            # sekali saja (di root repo)
 node scripts/seed-demo.mjs --key scripts/sa-demo.json
 # opsional ganti sandi:  --password rahasia123
 ```
-Mengisi: branding + admin (`adminmu` / `demo1234`) + ~3 guru, ~18 santri, tagihan/
+Mengisi: branding + lembaga (master/lembaga) + admin (`admin` / `demo1234`) + ~3 guru, ~18 santri, tagihan/
 pembayaran, prestasi, absensi, 2 postingan. Skrip BYPASS rules (Admin SDK) + set claim
 `role=super_admin` (jadi admin bisa menulis tanpa Cloud Function).
 
@@ -49,11 +50,12 @@ firebase deploy --only firestore:rules,storage,hosting
 
 ### 6. Buka & pamerkan
 - URL: `https://<projectId-sandbox>.web.app`
-- Login: **adminmu / demo1234**
-- Klik **🎛️ Mode Demo** (pojok kanan-bawah):
+- Tiap buka situs → muncul **gate pilihan demo** (sebelum form login):
   - Tombol **Basic / Pro / Premium** = terapkan preset paket.
   - Centang per-modul = kustom à la carte.
   - Tiap perubahan → app refresh ~1 detik menampilkan konfigurasi baru.
+  - Klik **Masuk ke aplikasi →** untuk lanjut ke form login.
+- Login: **admin / demo1234**.
 
 ---
 
@@ -61,6 +63,6 @@ firebase deploy --only firestore:rules,storage,hosting
 - **Hanya admin** yang bisa login di demo (guru/santri butuh function `findUserByLogin`).
 - **App Check** otomatis OFF (env `VITE_APPCHECK_RECAPTCHA_KEY` tak di-set) — tak memblok demo.
 - Mau reset demo? Jalankan ulang langkah 3 (idempotent — menimpa data dummy).
-- Setelah demo, kembalikan config dev: `node scripts/build-tenant.mjs mambaul-ulum --no-build`.
+- Config aktif default = `demo` (showcase). Untuk lembaga lain: `node scripts/build-tenant.mjs <slug>`.
 - Paket & pemetaan fitur didefinisikan di [`app/src/config/plans.js`](app/src/config/plans.js)
   (Basic/Pro/Premium). Edit di sana bila mau ubah isi paket.

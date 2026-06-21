@@ -15,7 +15,7 @@
 </template>
 
 <script setup>
-// Port ikon garis (Office-style) dari design_handoff app/ammu-icons.jsx.
+// Port ikon garis (Office-style) dari design_handoff app/wsl-icons.jsx.
 import { computed } from 'vue'
 
 const props = defineProps({

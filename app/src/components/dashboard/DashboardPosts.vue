@@ -27,7 +27,7 @@
       </p>
     </div>
 
-    <!-- Post list — preview only, click utk ke detail Ammu Channel -->
+    <!-- Post list — preview only, click utk ke detail Channel -->
     <ul v-else class="space-y-2.5">
       <li
         v-for="p in posts.slice(0, 5)"

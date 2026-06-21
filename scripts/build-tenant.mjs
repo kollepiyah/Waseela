@@ -2,7 +2,7 @@
 // ============================================================================
 // WASEELA — build-tenant: set config 1 lembaga lalu (opsional) build app.
 //   Pakai:  node scripts/build-tenant.mjs <slug> [--no-build]
-//   Contoh: node scripts/build-tenant.mjs mambaul-ulum
+//   Contoh: node scripts/build-tenant.mjs demo
 //           node scripts/build-tenant.mjs al-falah --no-build   (set config saja)
 // ============================================================================
 import { existsSync, copyFileSync, readFileSync, writeFileSync } from 'fs'
@@ -84,6 +84,67 @@ if (existsSync(manifestPath)) {
   if (cfg.themeColor) man.theme_color = cfg.themeColor // warna brand PWA per-tenant
   writeFileSync(manifestPath, JSON.stringify(man, null, 2) + '\n')
   console.log(`[waseela] ✓ manifest PWA → "${man.short_name}" (theme ${man.theme_color})`)
+}
+
+// 4c. Generate Firebase Messaging service worker (WEB PUSH) dari firebaseConfig tenant.
+//     SW jalan di konteks terpisah (tak bisa import tenant.config) → DIGENERATE per-tenant
+//     supaya push web menarget project lembaga, BUKAN hardcode. Wajib di /firebase-messaging-sw.js.
+const swPath = resolve(APP, 'public/firebase-messaging-sw.js')
+const fb = cfg.firebaseConfig
+if (fb?.projectId && fb?.apiKey) {
+  const notifTitle = cfg.branding?.txtAppName || cfg.appName || 'Waseela'
+  const swConfig = {
+    apiKey: fb.apiKey,
+    authDomain: fb.authDomain,
+    projectId: fb.projectId,
+    storageBucket: fb.storageBucket,
+    messagingSenderId: fb.messagingSenderId,
+    appId: fb.appId
+  }
+  const sw = `/* GENERATED oleh scripts/build-tenant.mjs — JANGAN edit langsung.
+   Firebase Cloud Messaging service worker — WEB PUSH (PWA/browser).
+   Notifikasi saat tab tertutup/background. Wajib di root: /firebase-messaging-sw.js */
+importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js')
+importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js')
+
+firebase.initializeApp(${JSON.stringify(swConfig, null, 2)})
+
+const messaging = firebase.messaging()
+
+// Notifikasi saat app/tab di background
+messaging.onBackgroundMessage((payload) => {
+  const n = (payload && payload.notification) || {}
+  const data = (payload && payload.data) || {}
+  self.registration.showNotification(n.title || ${JSON.stringify(notifTitle)}, {
+    body: n.body || '',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    data
+  })
+})
+
+// Klik notifikasi -> buka app ke link (router hash mode)
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const link = (event.notification.data && event.notification.data.link) || '/'
+  const url = '/#' + (String(link).startsWith('#') ? String(link).slice(1) : link)
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const c of list) {
+        if ('focus' in c) {
+          try { c.navigate(url) } catch (e) {}
+          return c.focus()
+        }
+      }
+      return self.clients.openWindow(url)
+    })
+  )
+})
+`
+  writeFileSync(swPath, sw)
+  console.log(`[waseela] ✓ firebase-messaging-sw.js → project ${fb.projectId}`)
+} else {
+  console.warn('[waseela] ⚠ firebaseConfig kosong — SW push web TIDAK digenerate.')
 }
 
 // 5. Build (opsional)

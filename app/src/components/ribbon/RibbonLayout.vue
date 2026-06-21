@@ -1,5 +1,5 @@
 <template>
-  <div class="ammu-ribbon-app" :data-theme="ui.isDark ? 'dark' : 'light'" :data-ribbon="density">
+  <div class="wsl-ribbon-app" :data-theme="ui.isDark ? 'dark' : 'light'" :data-ribbon="density">
     <RibbonTitleBar />
     <RibbonTabBar
       :tabs="tabs"

@@ -57,7 +57,7 @@
       #splash-screen {
         position: fixed; inset: 0; z-index: 99999;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        background-color: #F2FEF9;
+        background-color: #ECFDF5;
         opacity: 1;
         animation: splashFadeIn 0.4s ease-out both;
         padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
@@ -90,7 +90,8 @@
         display: block; width: 108px; max-width: 36vw; height: auto; object-fit: contain;
         -webkit-user-drag: none; user-select: none;
       }
-      body.dark-mode #splash-screen, html.dark #splash-screen { background-color: #0F172A; }
+      /* splash SELALU terang (emerald-tint) agar logo kaligrafi hijau selalu terlihat — termasuk dark-mode */
+      body.dark-mode #splash-screen, html.dark #splash-screen { background-color: #ECFDF5; }
       body.dark-mode #splash-screen .splash-brand-by, html.dark #splash-screen .splash-brand-by { color: #94A3B8; }
       body.dark-mode #splash-screen .splash-brand-img, html.dark #splash-screen .splash-brand-img { filter: brightness(1.12); }
       /* v.87.0526: fade-out pakai animation forwards supaya MENANG atas fill-mode 'both' splashFadeIn. */

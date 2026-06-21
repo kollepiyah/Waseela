@@ -28,7 +28,7 @@
     </button>
 
     <!-- Desktop: dropdown hasil. v.100 T17: Teleport ke body + posisi FIXED (anchor ke bar).
-         Root shell Electron (.ammu-ribbon-app) pakai overflow:hidden -> dropdown absolute ter-CLIP.
+         Root shell Electron (.wsl-ribbon-app) pakai overflow:hidden -> dropdown absolute ter-CLIP.
          Teleport+fixed bikin hasil search SELALU tampil (Electron & web). -->
     <Teleport to="body">
       <div

@@ -67,7 +67,7 @@ const formatted = computed(() => {
 </script>
 
 <template>
-  <article class="ammu-post">
+  <article class="wsl-post">
     <header class="post-hdr">
       <div class="hdr-l">
         <div class="ava"><img :src="'/logo.png'" alt="Logo" class="ava-img" /></div>
@@ -113,7 +113,7 @@ const formatted = computed(() => {
 </template>
 
 <style scoped>
-.ammu-post {
+.wsl-post {
   font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   background: #f0ffff;
   border: 1px solid #cbd5e1;
@@ -122,8 +122,8 @@ const formatted = computed(() => {
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
   color: #0f172a;
 }
-:global(.dark) .ammu-post,
-.dark-mode .ammu-post {
+:global(.dark) .wsl-post,
+.dark-mode .wsl-post {
   background: #1e293b;
   border-color: #334155;
   color: #fafafa;

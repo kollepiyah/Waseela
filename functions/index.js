@@ -1,5 +1,5 @@
 // ====================================================================
-// FIREBASE CLOUD FUNCTIONS — WASEELA (template white-label, di-port dari Ammu)
+// FIREBASE CLOUD FUNCTIONS — WASEELA (template white-label)
 // Project-agnostic: di-deploy ke project Firebase tiap tenant. BigQuery project
 // otomatis dari runtime (process.env.GCLOUD_PROJECT). Secret (IFRAMELY_KEY, BMT_*)
 // di-set per-project via `firebase functions:secrets:set`.
@@ -1144,11 +1144,11 @@ exports.syncUserClaims = onRequest(
 //   (sandi asli di Firebase Auth). Fungsi ini reset sandi Auth yang benar +
 //   bersihkan sisa field plaintext.
 //   GUARD: pemanggil WAJIB super_admin (verify ID token + claim role).
-//   Target di-resolve via firebase_uid (utama) / email authKey@ammu.local (fallback).
+//   Target di-resolve via firebase_uid (utama) / email authKey@waseela.local (fallback).
 //   DEPLOY: firebase deploy --only functions:resetUserPassword
 // ====================================================================
-const _RESET_AUTH_DOMAIN = '@ammu.local'
-const _RESET_LEGACY_DOMAINS = ['@portal-mu.local']
+const _RESET_AUTH_DOMAIN = '@waseela.local'
+const _RESET_LEGACY_DOMAINS = ['@ammu.local', '@portal-mu.local']
 const _RESET_DEFAULT_PASS = 'mu_auth_1234' // = toAuthPassword('1234') di client
 function _resetSanitizeLocalPart(input) {
   return String(input || '').toLowerCase().replace(/[^a-z0-9._-]/g, '')

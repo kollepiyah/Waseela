@@ -104,7 +104,7 @@ export const storage = getStorage(firebaseApp)
 
 // WASEELA white-label: base URL Cloud Functions HTTP (onRequest) = PROJECT TENANT INI.
 //   Region us-central1 (lihat region onRequest di functions/index.js — sama semua tenant).
-//   Dulu di-hardcode ke project Ammu → login guru/santri & analitik nyasar ke Ammu. Kini
+//   Dulu di-hardcode ke project asal → login guru/santri & analitik bisa nyasar. Kini
 //   derive dari firebaseConfig.projectId. Kosong bila projectId belum diisi (mis. demo draft)
 //   → fetch jadi relatif & gagal anggun (caller fallback / abaikan).
 export const FUNCTIONS_BASE = firebaseConfig?.projectId

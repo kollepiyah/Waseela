@@ -45,7 +45,7 @@ const isAdmin = computed(() => auth.isAdmin || auth.sesiAktif?.role === 'admin')
       <DashboardKalender @see-all="goKalenderFull" />
     </div>
 
-    <!-- WASEELA: mode posts (features.posts) — tombol + feed Ammu Channel -->
+    <!-- WASEELA: mode posts (features.posts) — tombol + feed Channel -->
     <template v-if="postsOn">
       <!-- v.72.7: Buat Postingan kecilin (admin only) -->
       <button
@@ -59,7 +59,7 @@ const isAdmin = computed(() => auth.isAdmin || auth.sesiAktif?.role === 'admin')
         <i class="fas fa-arrow-right text-sm text-white/80"></i>
       </button>
 
-      <!-- Ammu Channel: Postingan terbaru -->
+      <!-- Channel: Postingan terbaru -->
       <DashboardPosts />
     </template>
 

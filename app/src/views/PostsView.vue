@@ -1,5 +1,5 @@
 <template>
-  <!-- v.21.84.0527: Ammu Channel — Instagram-style pakai PostCard widget existing -->
+  <!-- v.21.84.0527: Channel — Instagram-style pakai PostCard widget existing -->
   <div class="p-3 md:p-5 space-y-4">
     <!-- Header — v.100: sembunyikan di Electron (aksi → pita) -->
     <div v-if="!isDesktop" class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm flex justify-between items-center gap-3">
@@ -55,7 +55,7 @@
       </div>
     </div>
 
-    <!-- Modal: Create / Edit Post (style: legacy ammu) -->
+    <!-- Modal: Create / Edit Post (style: legacy) -->
     <div
       v-if="modalOpen"
       class="fixed inset-0 z-50 bg-slate-900/70 flex items-center justify-center p-4 backdrop-blur-sm"

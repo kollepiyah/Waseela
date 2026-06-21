@@ -8,7 +8,7 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db, firebaseApp } from '@/services/firebase'
 import { useAuthStore } from '@/stores/auth'
 
-const CHANNEL_ID = 'ammu_default'
+const CHANNEL_ID = 'waseela_default'
 // v.95.0626: VAPID public key (Firebase Console > Cloud Messaging > Web Push certificates)
 // v.95.0626b: FIX — key lama tidak cocok dgn project -> 401 token-subscribe-failed. Diganti key asli Console.
 const VAPID_KEY = 'BOEAStvEGgdHCSKGONFbPY0olQ7OEUUvhbX3NofzqWyFBvaXG0tceRbvNE36Bw7qv35ZL6fXtOPEa6Wyp8VBWfY'
@@ -139,9 +139,9 @@ export function usePushNotifications() {
                   title: notif?.title || 'Waseela',
                   body: notif?.body || '',
                   channelId: CHANNEL_ID,
-                  // v.100: ikon kecil status bar = silhouette putih Ammu (bukan kotak putih default)
-                  smallIcon: 'ic_stat_ammu',
-                  iconColor: '#0F766E',
+                  // v.100: ikon kecil status bar = silhouette putih app (bukan kotak putih default)
+                  smallIcon: 'ic_stat_waseela',
+                  iconColor: '#065F46',
                   // teruskan link supaya tap notif foreground bisa navigasi (lihat actionPerformed)
                   extra: notif?.data || {}
                 }

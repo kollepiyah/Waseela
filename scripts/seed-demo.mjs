@@ -15,7 +15,7 @@
 //   (atau set GOOGLE_APPLICATION_CREDENTIALS=path lalu tanpa --key)
 //   (atau mode ADC: gcloud auth application-default login → node scripts/seed-demo.mjs --project waseela-id)
 //
-// HASIL: AKUN LOGIN → 1 admin (adminmu) + 3 guru (login pakai username) +
+// HASIL: AKUN LOGIN → 1 admin (admin) + 3 guru (login pakai username) +
 //   4 santri (login pakai no. WA), semua sandi default "demo1234". Plus data
 //   dummy: ~18 santri, tagihan/pembayaran, prestasi, absensi bulanan, 2 postingan, branding.
 // ============================================================================
@@ -33,7 +33,7 @@ function arg(name, def) {
 const keyPath = arg('key', process.env.GOOGLE_APPLICATION_CREDENTIALS)
 const projectArg = arg('project', null)
 const ADMIN_PASS = arg('password', 'demo1234')
-const ADMIN_USER = 'adminmu'
+const ADMIN_USER = 'admin'
 // Sandi yang sama dipakai semua akun demo (admin/guru/santri) agar mudah dipamerkan.
 const DEMO_PASS = ADMIN_PASS
 
@@ -68,11 +68,49 @@ console.log(`[seed] project: ${projectId}  (mode: ${keyPath ? 'service-account' 
 
 // Password yang DISIMPAN di Auth = padded ('mu_auth_' + sandi) — cocok dgn yang app kirim.
 const toAuthPassword = (p) => 'mu_auth_' + String(p || '')
-const ADMIN_EMAIL = `${ADMIN_USER}@ammu.local`
+const ADMIN_EMAIL = `${ADMIN_USER}@waseela.local`
 
 // ---- helper ----
-const LEMBAGA = ['TPQ', 'Madin Awaliyah', 'Madin Wustho']
-const KELAS = ['Jilid 1', 'Jilid 2', 'Jilid 3', 'Al-Quran', 'Ula 1', 'Ula 2']
+// Struktur lembaga + kelas SAMA PERSIS dengan Ammu (Portal MU): mirror DEFAULT_LEMBAGA_SEED
+//   di app/src/composables/useLembaga.js (di-inline karena script Node tak bisa import alias '@/…').
+//   `group` dibawa apa adanya (seperti Ammu); `tipe` diturunkan karena dibaca app (stats/filter).
+const TPQ_KELAS = [
+  'Jilid 1A', 'Jilid 1B', 'Jilid 1C',
+  'Jilid 2A', 'Jilid 2B', 'Jilid 3A', 'Jilid 3B',
+  'Jilid 4A', 'Jilid 4B', 'Jilid 5A', 'Jilid 5B',
+  'KPI', 'Persiapan Khotaman'
+]
+const GROUP_TO_TIPE = { qiraati: 'Qiraati', sekolah: 'Formal', mahad: 'Non Lembaga', 'non-lembaga': 'Non Lembaga' }
+const LEMBAGA_SEED = [
+  { lembaga: 'Yayasan', group: 'non-lembaga', kelas: [] },
+  { lembaga: 'Sarana Prasarana', group: 'non-lembaga', kelas: [] },
+  { lembaga: 'TPQ Pagi', group: 'qiraati', tpq_group: 'TPQ', shift: 'pagi', kelas: TPQ_KELAS },
+  { lembaga: 'TPQ Sore', group: 'qiraati', tpq_group: 'TPQ', shift: 'sore', kelas: TPQ_KELAS },
+  { lembaga: 'Pra PTPT', group: 'qiraati', tpq_group: 'TPQ', kelas: ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5'] },
+  { lembaga: 'PTPT', group: 'qiraati', kelas: ['Kelas 1', 'Kelas 2', 'Kelas 3', 'Kelas 4', 'Kelas 5', 'Kelas 6'] },
+  { lembaga: 'PPPH', group: 'qiraati', kelas: ['Level 1', 'Level 2', 'Level 3', 'Level 4'] },
+  { lembaga: "Ma'had", group: 'mahad', kelas: [] },
+  { lembaga: 'TK', group: 'sekolah', kelas: ['TK A', 'TK B'] },
+  { lembaga: 'SDI', group: 'sekolah', kelas: ['I', 'II', 'III', 'IV', 'V', 'VI'] },
+  { lembaga: 'PKBM', group: 'sekolah', kelas: ['VII', 'VIII', 'IX', 'X', 'XI', 'XII'] }
+]
+// Bentuk dokumen master/lembaga: tambah `tipe` (dibaca app) di atas struktur Ammu.
+const LEMBAGA_MASTER = LEMBAGA_SEED.map((l) => ({ ...l, tipe: GROUP_TO_TIPE[l.group] || 'Qiraati' }))
+// Pasangan (lembaga, kelas) VALID utk penempatan santri demo — selaras LEMBAGA_MASTER (label Ammu).
+const PLACEMENTS = [
+  { lembaga: 'TPQ Pagi', kelas: 'Jilid 1A' },
+  { lembaga: 'TPQ Pagi', kelas: 'Jilid 3A' },
+  { lembaga: 'TPQ Sore', kelas: 'Jilid 2B' },
+  { lembaga: 'TPQ Sore', kelas: 'Jilid 5B' },
+  { lembaga: 'Pra PTPT', kelas: 'Level 1' },
+  { lembaga: 'Pra PTPT', kelas: 'Level 3' },
+  { lembaga: 'Pra PTPT', kelas: 'Level 5' },
+  { lembaga: 'PTPT', kelas: 'Kelas 1' },
+  { lembaga: 'PTPT', kelas: 'Kelas 3' },
+  { lembaga: 'PTPT', kelas: 'Kelas 6' },
+  { lembaga: 'PPPH', kelas: 'Level 1' },
+  { lembaga: 'PPPH', kelas: 'Level 4' }
+]
 const NAMA_DEPAN = ['Ahmad', 'Muhammad', 'Abdullah', 'Fatimah', 'Aisyah', 'Zainab', 'Umar', 'Ali', 'Hasan', 'Husain', 'Khadijah', 'Maryam', 'Yusuf', 'Ibrahim', 'Ismail', 'Salman', 'Bilal', 'Hamzah']
 const NAMA_BELAKANG = ['Al-Faruq', 'Az-Zahra', 'Hidayat', 'Ramadhan', 'Maulana', 'Syafii', 'Anwar', 'Firdaus']
 function nama(i) {
@@ -82,10 +120,10 @@ function pick(arr, i) {
   return arr[i % arr.length]
 }
 
-// Buat / perbarui akun login internal ({localPart}@ammu.local) + set custom claim role.
+// Buat / perbarui akun login internal ({localPart}@waseela.local) + set custom claim role.
 //   Mengembalikan uid agar bisa di-link ke dokumen guru/santri (linked_uid + firebase_uid).
 async function ensureAuthUser(localPart, displayName, role) {
-  const email = `${String(localPart).toLowerCase()}@ammu.local`
+  const email = `${String(localPart).toLowerCase()}@waseela.local`
   let user
   try {
     user = await auth.getUserByEmail(email)
@@ -136,11 +174,16 @@ async function seedSettings() {
   console.log('[seed] ✓ settings/web + settings/general (branding)')
 }
 
+async function seedLembaga() {
+  await db.doc('master/lembaga').set({ list: LEMBAGA_MASTER }, { merge: true })
+  console.log(`[seed] ✓ master/lembaga (${LEMBAGA_MASTER.length} lembaga: Qiraati + Sekolah)`)
+}
+
 async function seedGuru() {
   const guru = [
-    { id: 'G001', nama: 'Ustadz Abdul Rohman', role_sistem: 'guru_biasa', lembaga: 'TPQ', jk: 'L', jabatan: 'Guru Qiraati', username: 'rohman', status: 'Aktif' },
-    { id: 'G002', nama: 'Ustadzah Siti Aminah', role_sistem: 'guru_biasa', lembaga: 'Madin Awaliyah', jk: 'P', jabatan: 'Wali Kelas', username: 'aminah', status: 'Aktif' },
-    { id: 'G003', nama: 'Ustadz Kepala Madin', role_sistem: 'admin', lembaga: 'Madin Wustho', jk: 'L', jabatan: 'Kepala Madin', username: 'kepala', status: 'Aktif' }
+    { id: 'G001', nama: 'Ustadz Abdul Rohman', role_sistem: 'guru_biasa', lembaga: 'TPQ Pagi', jk: 'L', jabatan: 'Kepala TPQ', username: 'rohman', status: 'Aktif' },
+    { id: 'G002', nama: 'Ustadzah Siti Aminah', role_sistem: 'guru_biasa', lembaga: 'PTPT', jk: 'P', jabatan: 'PJ PTPT', username: 'aminah', status: 'Aktif' },
+    { id: 'G003', nama: 'Ustadz Kepala PPPH', role_sistem: 'admin', lembaga: 'PPPH', jk: 'L', jabatan: 'PJ PPPH', username: 'kepala', status: 'Aktif' }
   ]
   // Buat akun login tiap guru + link uid ke dokumen.
   for (const g of guru) {
@@ -165,12 +208,13 @@ async function seedSantri(n = 18, nLogin = 4) {
   const list = []
   for (let i = 0; i < n; i++) {
     const id = 'S' + String(1001 + i)
+    const p = pick(PLACEMENTS, i)
     const s = {
       id,
       nama: nama(i),
       nis: String(2026000 + i),
-      lembaga: pick(LEMBAGA, i),
-      kelas: pick(KELAS, i),
+      lembaga: p.lembaga,
+      kelas: p.kelas,
       jk: i % 2 === 0 ? 'L' : 'P',
       wali: 'Bapak/Ibu ' + NAMA_BELAKANG[i % NAMA_BELAKANG.length],
       wa: '0812' + String(10000000 + i),
@@ -178,6 +222,23 @@ async function seedSantri(n = 18, nLogin = 4) {
       is_mukim: i % 3 === 0
     }
     list.push(s)
+  }
+  // Showcase "input tgl ceremonial naik kelas" (PTPT) — isi kartu_kenaikan 1 santri PTPT Kelas 1.
+  const ptptSantri = list.find((s) => s.lembaga === 'PTPT')
+  if (ptptSantri) {
+    ptptSantri.kelas = 'Kelas 1'
+    ptptSantri.kartu_kenaikan = {
+      PTPT: {
+        kelas_1: {
+          juz_1: '2026-01-10',
+          juz_2: '2026-02-10',
+          juz_3: '2026-03-10',
+          juz_4: '2026-04-10',
+          juz_5: '2026-05-10',
+          ceremonial: '2026-05-20'
+        }
+      }
+    }
   }
   // Beri akun login (via no. WA) untuk beberapa santri pertama + link uid.
   for (let i = 0; i < Math.min(nLogin, list.length); i++) {
@@ -295,6 +356,7 @@ async function seedPosts() {
 async function main() {
   await setupAdmin()
   await seedSettings()
+  await seedLembaga()
   const guru = await seedGuru()
   const santri = await seedSantri()
   await seedKeuangan(santri)

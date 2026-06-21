@@ -36,7 +36,7 @@
       "resizeOnFullScreen": true
     },
     "LocalNotifications": {
-      "smallIcon": "ic_stat_ammu",
+      "smallIcon": "ic_stat_waseela",
       "iconColor": "#0F766E"
     },
     "FirebaseAuthentication": {

@@ -774,7 +774,7 @@
     </UiCard>
 
     <!-- ============================================================
-         SECTION: Pengaturan Postingan / Ammu Channel
+         SECTION: Pengaturan Postingan / Channel
          ============================================================ -->
     <UiCard
       v-show="section === 'postingan'"
@@ -1334,7 +1334,7 @@ function defaultForm() {
     themeTextColor: '#1e293b',
     sidebarBgColor: '#0f172a',
     kalibrasiHijri: 0,
-    adminUsername: 'adminmu',
+    adminUsername: 'admin',
     // v.100g: adminPassword TIDAK lagi di form publik (dulu ikut ter-save ke
     //   settings/general+web yg read publik → sandi admin bocor). Ganti sandi admin
     //   kini lewat changeAdminPassword() → Firebase Auth + settings/admin (read:false).

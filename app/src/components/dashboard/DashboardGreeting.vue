@@ -3,7 +3,7 @@
   <div
     class="relative overflow-hidden bg-white dark:bg-slate-800 rounded-xl px-3 py-2.5 md:px-4 md:py-3 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-3"
   >
-    <!-- Dekorasi: logo app (Mambaul Ulum) di kanan, terpotong sebagian, opacity rendah -->
+    <!-- Dekorasi: logo app di kanan, terpotong sebagian, opacity rendah -->
     <img
       src="/logo.png"
       alt=""

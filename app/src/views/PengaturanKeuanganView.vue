@@ -1116,7 +1116,7 @@ const sectionMeta = computed(() => {
 // v.94.0626: buka modal Pengaturan Printer (deteksi printer Windows). PrinterSettingsModal global dengar event ini.
 function bukaPengaturanPrinter() {
   try {
-    window.dispatchEvent(new CustomEvent('ammu:open-printer-settings'))
+    window.dispatchEvent(new CustomEvent('waseela:open-printer-settings'))
   } catch (e) {
     /* ignore */
   }

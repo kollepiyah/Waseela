@@ -8,8 +8,7 @@ import tenantConfig from '@/tenant.config.js'
 import { resolveFeatures, ALL_FEATURES, PLANS } from '@/config/plans.js'
 
 const KEY = 'waseela_demo_features'
-const PANEL_KEY = 'waseela_demo_panel_open'
-const WELCOME_KEY = 'waseela_demo_welcome' // sessionStorage: status modal sambutan pra-login
+const WELCOME_KEY = 'waseela_demo_welcome' // sessionStorage: status gate sambutan pra-login
 
 export const IS_DEMO = tenantConfig.demo === true
 
@@ -62,20 +61,7 @@ export function resetDemo() {
   reload()
 }
 
-// Panel buka/tutup dipertahankan melewati reload (UX: tetap terbuka setelah toggle).
-export function isPanelOpen() {
-  if (typeof localStorage === 'undefined') return false
-  return localStorage.getItem(PANEL_KEY) === '1'
-}
-export function setPanelOpen(open) {
-  try {
-    localStorage.setItem(PANEL_KEY, open ? '1' : '0')
-  } catch {
-    /* ignore */
-  }
-}
-
-// Modal sambutan pra-login (auto-muncul sekali per kunjungan). Pakai sessionStorage
+// Gate sambutan pra-login (auto-muncul tiap kunjungan). Pakai sessionStorage
 // supaya tiap pengunjung baru lihat lagi, TAPI tetap stabil melewati reload akibat
 // toggle/preset dalam satu sesi. Nilai: null=fresh (belum dilihat) -> buka,
 // '1'=sedang terbuka (pertahankan saat reload), '0'=sudah ditutup pengunjung.

@@ -55,7 +55,7 @@ export default {
     fingerprint: false,
     psb: true,
     prestasi: true,
-    posts: false, // default Waseela: TANPA postingan → beranda tampil KPI dasbor (set true bila mau Ammu Channel)
+    posts: false, // default Waseela: TANPA postingan → beranda tampil KPI dasbor (set true bila mau Channel)
     kalender: true,
     kritikSaran: true,
     supervisi: true,

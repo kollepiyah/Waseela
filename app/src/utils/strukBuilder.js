@@ -615,7 +615,7 @@ function slipShellHtml({ settings = {}, boxLabel = '', infoLeft = [], infoRight 
   const kop = buildKopFromSettings(settings)
   const { top } = slipDims(settings)
   const kopRest = [kop.line3, kop.line4, kop.line5].filter(Boolean).map((l) => `<div class="ks">${escapeHtml(l)}</div>`).join('')
-  // v.96.0626: size:auto + width:100% → IKUTI ukuran kertas driver (form "Slip Ammu"), bukan paksa mm sendiri.
+  // v.96.0626: size:auto + width:100% → IKUTI ukuran kertas driver (form "Slip"), bukan paksa mm sendiri.
   //   Ini mencegah driver menengahkan konten (blank di atas). Konten mengalir dari atas kertas.
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Slip</title><style>'
     + '@page{size:auto;margin:0}'

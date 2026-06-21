@@ -9,8 +9,8 @@ import { auth as fbAuth, db } from '@/services/firebase'
 import * as authService from '@/services/auth'
 import { queryColl, setAuditSesi } from '@/services/firestore'
 
-// v.100f: domain Auth internal — baru '@ammu.local', legacy '@portal-mu.local' (backward-compat).
-const AUTH_EMAIL_DOMAINS = ['@ammu.local', '@portal-mu.local']
+// Domain Auth internal — aktif '@waseela.local', legacy '@ammu.local'/'@portal-mu.local' (backward-compat).
+const AUTH_EMAIL_DOMAINS = ['@waseela.local', '@ammu.local', '@portal-mu.local']
 const SESI_STORAGE_KEY = 'portalMu_sesiAdminBuiltIn'
 
 function _persistAdminSesi(sesi) {
@@ -295,7 +295,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
     }
 
-    // Step 3: fallback by WA dari email pattern (`{wa}@ammu.local` atau legacy `@portal-mu.local`)
+    // Step 3: fallback by WA dari email pattern (`{wa}@waseela.local` atau legacy `@ammu.local`/`@portal-mu.local`)
     const waDomain = AUTH_EMAIL_DOMAINS.find((d) => emailLower.endsWith(d))
     if (matchGuru.length === 0 && matchSantri.length === 0 && waDomain) {
       const wa = emailLower.slice(0, -waDomain.length)

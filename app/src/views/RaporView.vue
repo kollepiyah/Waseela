@@ -2783,7 +2783,7 @@ const namaKepala = computed(() => {
 const jabatanKepala = computed(() => {
   const s = santriAktif.value
   if (!s) return 'Kepala'
-  // v.100b: suffix nama pondok (kyai: "Kepala TPQ Mambaul Ulum"), selaras raporPdf drawSignBlocks
+  // v.100b: suffix nama pondok (mis. "Kepala TPQ <Nama Pondok>"), selaras raporPdf drawSignBlocks
   const nmPondok = settingsStore.settings?.namaPondokSingkat || 'Waseela'
   const lnorm = String(kategori.value === 'diniyah' ? s.lembaga_sekolah || '' : s.lembaga || '')
     .toLowerCase()

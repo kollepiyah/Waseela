@@ -3,7 +3,7 @@
 // Warna aksen ikut settings.themeColor (--theme-color), bukan disimpan di sini.
 import { ref, watch } from 'vue'
 
-const KEY = 'ammu_ribbon_density'
+const KEY = 'waseela_ribbon_density'
 
 function _initialDensity() {
   try {

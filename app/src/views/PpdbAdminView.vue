@@ -370,7 +370,7 @@ const filterTahun = ref('')
 let _unsubPpdb = null
 
 // WASEELA: URL form PSB publik (situs PSB standalone) — diisi admin via Pengaturan bila dipakai.
-//   Default kosong (situs PSB standalone opsional/ditunda); tak lagi hardcode ke Ammu.
+//   Default kosong (situs PSB standalone opsional/ditunda); tak lagi hardcode.
 const publicFormUrl = computed(() => settings.settings?.psbPublicUrl || '')
 
 function copyLink() {

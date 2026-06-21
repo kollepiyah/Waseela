@@ -84,12 +84,12 @@ export async function verifyAdminPassword(password) {
 // ============================================================================
 // BUILD AUTH EMAIL — port buildAuthEmail dari legacy
 // Sanitize username/WA/NIS → email Firebase Auth internal format
-// v.100f: domain baru '@ammu.local' utk provisioning baru. Domain lama
-//   '@portal-mu.local' tetap DICOBA saat sign-in (backward-compat) supaya akun
-//   lama tidak terkunci — lihat authEmailCandidates().
+// Domain Auth internal '@waseela.local' utk provisioning baru. Domain lama
+//   '@ammu.local' + '@portal-mu.local' tetap DICOBA saat sign-in (backward-compat)
+//   supaya akun lama tidak terkunci — lihat authEmailCandidates().
 // ============================================================================
-export const AUTH_EMAIL_DOMAIN = '@ammu.local'
-export const LEGACY_AUTH_EMAIL_DOMAINS = ['@portal-mu.local']
+export const AUTH_EMAIL_DOMAIN = '@waseela.local'
+export const LEGACY_AUTH_EMAIL_DOMAINS = ['@ammu.local', '@portal-mu.local']
 
 function sanitizeAuthLocalPart(input) {
   return String(input || '')
@@ -142,7 +142,7 @@ export async function findUserByLoginInput(input) {
   try {
     const settingsSnap = await getDoc(doc(db, 'settings', 'web'))
     const adminUser =
-      (settingsSnap.exists() ? settingsSnap.data().adminUsername : 'adminmu') || 'adminmu'
+      (settingsSnap.exists() ? settingsSnap.data().adminUsername : 'admin') || 'admin'
     if (uLower === 'adminmu' || uLower === adminUser.toLowerCase()) {
       return {
         source: 'admin',

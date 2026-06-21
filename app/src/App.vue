@@ -7,7 +7,7 @@
   <PrinterSettingsModal />
   <!-- v.90.0626: ToastStack di-mount GLOBAL (sebelumnya tak pernah dipasang -> toast tak muncul) -->
   <ToastStack />
-  <!-- WASEELA: panel demo (calon pelanggan pilih fitur) — hanya muncul di build demo -->
+  <!-- WASEELA: gate demo (calon pelanggan pilih fitur sebelum login) — hanya di build demo -->
   <DemoFeaturePanel v-if="IS_DEMO" />
 </template>
 

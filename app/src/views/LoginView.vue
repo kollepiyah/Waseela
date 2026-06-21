@@ -31,7 +31,7 @@ const bgStyle = computed(() => {
 })
 
 // WASEELA white-label: URL download app native diisi admin via Pengaturan (per lembaga).
-//   TANPA fallback (dulu hardcode ke rilis Ammu). Kosong → section unduh disembunyikan.
+//   TANPA fallback (dulu hardcode ke rilis lama). Kosong → section unduh disembunyikan.
 const downloadAndroidUrl = computed(() => settings.settings?.downloadAndroid || '')
 const downloadIosUrl = computed(() => settings.settings?.downloadIos || '')
 const downloadDesktopUrl = computed(() => settings.settings?.downloadDesktop || '')
@@ -147,7 +147,7 @@ function bukaWaAdmin() {
         <img
           src="/logo.png"
           :alt="settings.settings?.namaLembaga || 'Logo'"
-          class="w-20 h-20 mx-auto mb-2 object-contain drop-shadow-xl"
+          class="h-16 w-auto max-w-[200px] mx-auto mb-2 object-contain drop-shadow-md"
         />
         <h2 class="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
           {{ settings.settings?.namaLembaga || 'Portal' }}

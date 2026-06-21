@@ -3,7 +3,7 @@
   <header
     class="bg-white/95 dark:bg-slate-800 backdrop-blur-sm shadow-sm border-b-2 border-teal-600/30 dark:border-slate-700 px-4 md:px-8 py-3 flex justify-between items-center gap-2 md:gap-0 z-30 sticky top-0"
   >
-    <!-- v.72.2.0526: Header match legacy — hamburger (always) + leaf logo + "Ammu Online" branding -->
+    <!-- v.72.2.0526: Header match legacy — hamburger (always) + leaf logo + branding lembaga -->
     <div class="flex items-center gap-3">
       <!-- v.21.114.0528: tap target diperbesar w-10 h-10 = 40px (mobile-friendly) -->
       <button

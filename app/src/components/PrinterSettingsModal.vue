@@ -114,6 +114,6 @@ async function tesCetak() {
 // Buka dari menu Electron (Printer -> Pengaturan Printer) ATAU event in-app (tombol di modal POS / pengaturan)
 onOpenPrinterSettings(show)
 function onWinOpen() { show() }
-onMounted(() => window.addEventListener('ammu:open-printer-settings', onWinOpen))
-onBeforeUnmount(() => window.removeEventListener('ammu:open-printer-settings', onWinOpen))
+onMounted(() => window.addEventListener('waseela:open-printer-settings', onWinOpen))
+onBeforeUnmount(() => window.removeEventListener('waseela:open-printer-settings', onWinOpen))
 </script>

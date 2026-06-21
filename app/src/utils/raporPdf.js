@@ -229,7 +229,7 @@ async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null, isDi
   }
 
   // Line 2: "[LEMBAGA] [namaLembaga]" UPPERCASE
-  // namaLembaga dari settings.kopLine2 atau default "MAMBAUL ULUM"
+  // namaLembaga dari settings.kopLine2 (kosong bila lembaga belum di-setup)
   // TPQ Pagi/Sore + Pra PTPT → "TPQ" (Pra PTPT inherit TPQ)
   // v.21.60.0526: Diniyah → pakai NAMA lembaga_sekolah override (SDI/PKBM/dll), bukan label "Diniyah"
   doc.setFontSize(18)
@@ -242,7 +242,7 @@ async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null, isDi
     settings.kopLine2 ||
     ''
   ).trim()
-  // v.21.54: skip prefix lembagaLabel kalau namaLembaga sudah include nya (hindari "TPQ TPQ MAMBAUL ULUM")
+  // v.21.54: skip prefix lembagaLabel kalau namaLembaga sudah include nya (hindari "TPQ TPQ <NAMA>")
   const namaUpper = namaLembaga.toUpperCase()
   const labelUpper = String(lembagaLabel || '').toUpperCase()
   let line2
@@ -407,7 +407,7 @@ async function drawSignBlocks(doc, y, santri, settings, lembaga, dbGuru = [], le
 
   // Determine Kepala Label (kyai spec v.21.44 — image refs)
   // TPQ + Pra PTPT → Kepala TPQ (Pra PTPT inherit TPQ); PTPT/PPPH → PJ; Diniyah → per sekolah.
-  // v.100b: label DISPLAY di-suffix nama pondok (kyai: "Kepala TPQ Mambaul Ulum"); searchTitle
+  // v.100b: label DISPLAY di-suffix nama pondok (mis. "Kepala TPQ <Nama Pondok>"); searchTitle
   //   (lookup guru by jabatan) TIDAK ikut suffix.
   const nmPondok = settings.namaPondokSingkat || 'Waseela'
   let labelKepala = 'Kepala TPQ'

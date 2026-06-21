@@ -24,7 +24,7 @@
       </button>
     </div>
 
-    <!-- v.20.11.0526: Built-in admin only kalau id='admin' (ammuadmin). Guru promoted super_admin = render ProfilGuru -->
+    <!-- v.20.11.0526: Built-in admin only kalau id='admin'. Guru promoted super_admin = render ProfilGuru -->
     <ProfilAdmin v-else-if="isBuiltInAdmin && !guru && !santri" />
 
     <!-- Role: Guru (atau guru yang promoted super_admin / admin_keuangan) -->

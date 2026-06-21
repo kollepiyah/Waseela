@@ -322,7 +322,7 @@ function onBackdrop(e) {
 <template>
   <Teleport to="body">
     <Transition name="fade">
-      <div v-if="open" class="ammu-pos-backdrop" @click="onBackdrop">
+      <div v-if="open" class="wsl-pos-backdrop" @click="onBackdrop">
         <div class="modal">
           <div class="mhdr">
             <h2 class="mttl">
@@ -528,7 +528,7 @@ function onBackdrop(e) {
 </template>
 
 <style scoped>
-.ammu-pos-backdrop {
+.wsl-pos-backdrop {
   position: fixed;
   inset: 0;
   z-index: 9999;

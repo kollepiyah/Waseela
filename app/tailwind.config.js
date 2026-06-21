@@ -10,7 +10,7 @@ export default {
   ],
   theme: {
     extend: {
-      // WASEELA: brand = EMERALD (beda dari Ammu yang teal). Remap palet `teal`
+      // WASEELA: brand = EMERALD (menggantikan teal lama). Remap palet `teal`
       // bawaan Tailwind → emerald, supaya SEMUA class `teal-*` (165 pemakaian)
       // ikut hijau dari SATU sumber, tanpa edit per-file.
       colors: {

@@ -60,7 +60,6 @@ Waseela/
 ├── .firebaserc                   # DIGENERATE build-tenant dari firebaseConfig.projectId (gitignored)
 ├── tenants/
 │   ├── _template/tenant.config.js   # cetakan lembaga baru (salin ini)
-│   ├── mambaul-ulum/tenant.config.js # tenant referensi #1 (= Ammu, nilai asli)
 │   └── demo/tenant.config.js     # tenant DEMO (demo:true, plan:premium) — showcase jualan
 ├── scripts/
 │   ├── build-tenant.mjs          # set config aktif + patch capacitor + gen .firebaserc + (opsional) build
@@ -149,11 +148,20 @@ Waseela dibedakan dari Ammu (teal) → **brand EMERALD hijau**, layout/UX TETAP 
 
 ### 🚀 DEMO DEPLOYED (21 Jun) → https://waseela.web.app
 - `firebase deploy --only hosting` (akun hallo@bakafrawi.com, project waseela-id, site `waseela`) + `firebase deploy --only firestore:rules` (sukses). **Storage waseela-id BELUM di-setup** (langkah Console; demo tak butuh upload foto).
-- **Seed data dummy** via `node scripts/seed-demo.mjs --project waseela-id` (mode ADC, bukan service-account key). Login: **adminmu / demo1234** (claim super_admin). Verified: login end-to-end OK, 0 error console, theme emerald aktif.
+- **Seed data dummy** via `node scripts/seed-demo.mjs --project waseela-id` (mode ADC, bukan service-account key). Login: **admin / demo1234** (claim super_admin). Verified: login end-to-end OK, 0 error console, theme emerald aktif.
 - **✅ White-label TEKS (SELESAI — 21 Jun, sesi lanjutan):** audit + generickan ke `settings`/"Waseela" tuntas. Kategori A (teks terlihat-user: BantuanView, LoginView pesan WA, AppSidebar, judul notif/Excel/download, PengaturanView default header + "Tes Koneksi" + judul section, ProfilAdmin) + Kategori B (fallback kop/letterhead PDF/struk/rapor di ~14 file → `''`/`'Waseela'`, jadi tenant baru tak pernah cetak "MAMBAUL ULUM"). Sisa "Ammu/Mambaul" HANYA di komentar kode + ID fungsional (CSS `.ammu-*`, `@ammu.local`, channel id `ammu_default`) yang SENGAJA tak diubah. Build vite EXIT 0, 21/21 unit-test PASS.
-- **✅ Demo: kartu sambutan pra-login (21 Jun):** `DemoFeaturePanel.vue` kini menampilkan modal sambutan terpusat (auto-muncul sekali per kunjungan di `/login`, sessionStorage) — pitch + preset paket + toggle modul; FAB 🎛️ tetap untuk utak-atik lagi. Gated `IS_DEMO`.
+- **✅ Demo: GATE pilihan demo pra-login (21 Jun, direvisi):** `DemoFeaturePanel.vue` kini SATU permukaan = **gate** terpusat yang muncul tiap pengunjung membuka situs di `/login` (sebelum form login) — pitch + preset paket + toggle modul. **FAB 🎛️ + panel sudut DIHAPUS** (permintaan: jangan langsung ke login, pilih demo dulu). Picu via `watch(isLoginRoute)` (bukan onMounted) karena komponen di-mount di luar `<router-view>`. sessionStorage `waseela_demo_welcome`: '1'=terbuka (pertahankan saat reload toggle), '0'=ditutup ("Masuk ke aplikasi →") jadi form login bisa dipakai; sesi baru tampil lagi. Gated `IS_DEMO`. **Demo = WEB SAJA (tanpa build Android).**
 - **✅ Login polish (21 Jun):** tagline (motto) → "Portal Digital Pendidikan" (demo config + seed-demo), nomor versi dihapus, background → warna solid `var(--theme-color)` (emerald) bila admin tak set gambar. **Catatan deploy:** motto live di Firestore demo (`settings/web`+`general`) masih lama — re-seed / `firebase deploy` untuk perbarui situs live.
 - **🧹 Repo hygiene (21 Jun):** tambah `.gitattributes` (`eol=lf`) + normalisasi ~20 file yang ke-flip CRLF → diff bersih (48 file, +409/-97). **Catatan:** ada sisa `.git/index.lock` (tak bisa dihapus dari sandbox) — hapus manual sebelum commit: `del .git\index.lock`.
+
+### 🧼 DEEP-CLEAN AMMU + LOGO + GATE WAJIB (21 Jun, sesi lanjutan)
+- **Gate demo WAJIB pilih:** tombol ✕ + dismiss klik-backdrop DIHAPUS dari `DemoFeaturePanel.vue` → satu-satunya jalan lanjut = "Masuk ke aplikasi →".
+- **Logo Waseela (`waseela.png` → semua ikon):** background square DIHAPUS (transparan) + kaligrafi di-recolor **hijau emerald `#065F46`** (ekstraksi luminance via Pillow). **Splash bg** `#F2FEF9`→**`#ECFDF5`** (terang, kedua mode — logo hijau selalu terlihat). **Logo Bakafrawi** (`bakafrawi-logo.png` + `bakafrawi-footer.png`) hue-shift **teal→emerald**. Push `iconColor` teal `#0F766E`→`#065F46`.
+- **Bersih-tuntas Ammu di `app/src`:** CSS class `ammu-*`→`wsl-*` (194×, 8 file) · event `ammu:open-printer-settings`→`waseela:` · key `ammu_default_printer`/`ammu_ribbon_density`→`waseela_*` · channel `ammu_default`→`waseela_default` · native `ic_stat_ammu`→`ic_stat_waseela` (+ `capacitor.config.json`) · komentar "Ammu Online/Ammu Channel/Mambaul" digenerickan · hapus file mati `RaporView.vue.broken.bak`.
+- **Service worker push (`firebase-messaging-sw.js`):** dulu **hardcode config Ammu** (`portal-mambaul-ulum`) → kini **DIGENERATE per-tenant** oleh `build-tenant.mjs` (step 4c) dari `firebaseConfig`. Judul fallback dari branding/appName.
+- **Domain Auth `@ammu.local`→`@waseela.local`** (aktif) di app+functions+seed; `@ammu.local` jadi **legacy compat** (`authEmailCandidates` coba aktif lalu legacy) → login akun `@ammu.local` lama **tetap jalan tanpa re-seed**. Re-seed (`node scripts/seed-demo.mjs --project waseela-id`) hanya untuk kerapian (akun baru jadi `@waseela.local`).
+- **Tenant `mambaul-ulum/` DIHAPUS** dari repo Waseela (config Ammu asli aman di repo Portal MU). Default tenant = `demo`. Docs (README/DEMO/HANDOVER) disesuaikan.
+- **Verifikasi:** build EXIT 0, 21/21 test PASS, dev server 0 error console; gate + logo hijau + bakafrawi emerald tervalidasi di browser. **Belum commit/deploy.**
 
 ### ⏳ SISA (belum dikerjakan)
 1. **Fase C — Native Android scaffold:** `cd app && npx cap add android && npx cap sync` (appId/appName otomatis dari `capacitor.config.json` yang dipatch build-tenant). Lalu aset per-tenant (icon/splash via `@capacitor/assets`) + keystore + `google-services.json` lembaga → `./gradlew bundleRelease` (AAB).
@@ -195,7 +203,7 @@ firebase deploy --only hosting
 ## 🛠️ CARA KERJA
 
 ```bash
-# Pengembangan (pakai tenant aktif terakhir; default mambaul-ulum)
+# Pengembangan (pakai tenant aktif terakhir; default demo)
 cd app && npm install && npm run dev
 
 # Ganti tenant aktif TANPA build
@@ -206,7 +214,7 @@ node scripts/build-tenant.mjs <slug>     # hasil di app/dist
 ```
 
 > `app/src/tenant.config.js` GENERATED & gitignored. Fresh clone: jalankan
-> `node scripts/build-tenant.mjs mambaul-ulum --no-build` dulu agar `npm run dev` jalan.
+> `node scripts/build-tenant.mjs demo --no-build` dulu agar `npm run dev` jalan.
 
 ### Tambah lembaga baru
 1. `cp -r tenants/_template tenants/<slug>`

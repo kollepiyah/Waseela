@@ -12,7 +12,7 @@
 </template>
 <script setup>
 // v.21.32 — PSB public form di vue-app-psb (sub-app). Route /psb-form di sini = landing page.
-// WASEELA: URL form PSB dari settings (admin isi bila punya situs PSB standalone). Tak hardcode Ammu.
+// WASEELA: URL form PSB dari settings (admin isi bila punya situs PSB standalone). Tak hardcode.
 import { computed } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
 const settings = useSettingsStore()
