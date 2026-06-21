@@ -17,12 +17,6 @@ const auth = useAuthStore()
 const settings = useSettingsStore()
 const postsOn = isOn('posts')
 
-// WASEELA: footer generik — nama & versi dari settings (seed tenant.config.branding).
-const footerName = computed(
-  () => settings.settings?.txtAppName || settings.settings?.namaLembaga || 'Portal'
-)
-const footerVersion = computed(() => settings.settings?.appVersion || 'v.108.0626')
-
 function goKalenderFull() {
   router.push('/kalender')
 }
@@ -67,7 +61,7 @@ const isAdmin = computed(() => auth.isAdmin || auth.sesiAktif?.role === 'admin')
     <DasborPendidikan v-else />
 
     <p class="text-center text-[10px] text-slate-400 dark:text-[var(--text-secondary)] pt-2">
-      <i class="fas fa-circle-info mr-1"></i>{{ footerName }} · Vue 3 SPA · {{ footerVersion }}
+      © {{ new Date().getFullYear() }} BAKAFRAWI PROJECT · All Rights Reserved
     </p>
   </div>
 </template>

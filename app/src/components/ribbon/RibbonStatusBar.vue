@@ -7,7 +7,6 @@
       <span style="opacity: 0.85"
         >{{ santriCount.toLocaleString('id-ID') }} santri · {{ guruCount }} guru</span
       >
-      <span style="opacity: 0.7">{{ version }}</span>
       <span class="zoom"><RibbonIcon name="search" :size="13" /> 100%</span>
     </div>
   </div>
@@ -30,9 +29,6 @@ const guruCount = computed(() => (guru.value || []).length)
 const lembagaName = computed(
   () => settings.settings?.namaLembaga || settings.settings?.appTitle || 'Waseela'
 )
-// versi tampil: ambil dari settings bila ada supaya tak menambah titik bump baru di kode
-const version = computed(() => settings.settings?.appVersion || 'v.108.0626')
-
 const hijri = computed(() => {
   try {
     return new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', {

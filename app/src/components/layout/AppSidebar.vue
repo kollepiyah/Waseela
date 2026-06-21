@@ -100,11 +100,8 @@
       class="px-4 py-4 text-center bg-emerald-50/60 dark:bg-black/20 border-t border-emerald-100 dark:border-white/10"
       style="padding-bottom: calc(1rem + env(safe-area-inset-bottom))"
     >
-      <p class="text-[9px] text-slate-500 dark:text-slate-400 font-bold tracking-widest uppercase">
-        © {{ new Date().getFullYear() }} BAKAFRAWI PROJECT · All Rights Reserved
-      </p>
-      <p class="text-[9px] text-teal-600 dark:text-teal-400 font-bold tracking-widest mt-0.5">
-        v.108.0626
+      <p class="text-[10px] leading-relaxed text-slate-400 dark:text-slate-500 font-medium">
+        © {{ new Date().getFullYear() }} BAKAFRAWI PROJECT<br />All Rights Reserved
       </p>
     </div>
   </aside>
