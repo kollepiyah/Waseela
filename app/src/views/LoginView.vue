@@ -443,7 +443,7 @@ function bukaWaAdmin() {
     <!-- Copyright + versi DI LUAR CARD (match legacy) -->
     <div class="relative z-10 mt-3 text-center px-4">
       <p class="text-[11px] text-white/90 font-bold uppercase tracking-wider drop-shadow">
-        © {{ new Date().getFullYear() }} {{ settings.settings?.namaLembaga || 'Waseela' }}
+        © {{ new Date().getFullYear() }} BAKAFRAWI PROJECT · All Rights Reserved
       </p>
     </div>
   </div>

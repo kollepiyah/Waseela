@@ -101,7 +101,7 @@
       style="padding-bottom: calc(1rem + env(safe-area-inset-bottom))"
     >
       <p class="text-[9px] text-slate-500 dark:text-slate-400 font-bold tracking-widest uppercase">
-        © {{ new Date().getFullYear() }} {{ settings.settings?.namaPondokSingkat || settings.settings?.namaLembaga || 'Waseela' }}
+        © {{ new Date().getFullYear() }} BAKAFRAWI PROJECT · All Rights Reserved
       </p>
       <p class="text-[9px] text-teal-600 dark:text-teal-400 font-bold tracking-widest mt-0.5">
         v.108.0626

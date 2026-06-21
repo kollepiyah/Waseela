@@ -48,6 +48,6 @@ export default {
     kopLine1: 'WASEELA',
     kopLine2: 'PORTAL MANAJEMEN LEMBAGA',
     namaChannel: 'Waseela Channel',
-    copyrightName: 'Waseela'
+    copyrightName: 'BAKAFRAWI PROJECT'
   }
 }

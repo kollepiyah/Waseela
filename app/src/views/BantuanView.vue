@@ -263,7 +263,7 @@
           </div>
           <div class="flex justify-between border-b border-[var(--border-subtle)] py-2">
             <span class="text-[var(--text-secondary)]">Hak Cipta</span
-            ><span class="font-semibold">© 2026 {{ lembagaName }}</span>
+            ><span class="font-semibold">© {{ new Date().getFullYear() }} BAKAFRAWI PROJECT · All Rights Reserved</span>
           </div>
           <div class="flex justify-between border-b border-[var(--border-subtle)] py-2">
             <span class="text-[var(--text-secondary)]">Author</span

@@ -51,7 +51,7 @@
             <b>Versi</b><span>{{ version }}</span>
           </div>
           <div class="row">
-            <b>Hak Cipta</b><span>© 2026 {{ lembagaName }}</span>
+            <b>Hak Cipta</b><span>© {{ new Date().getFullYear() }} BAKAFRAWI PROJECT · All Rights Reserved</span>
           </div>
         </div>
       </template>
