@@ -17,7 +17,6 @@ import {
   setFeature,
   applyPreset,
   resetDemo,
-  welcomeState,
   setWelcomeOpen
 } from '@/composables/useDemo'
 
@@ -27,15 +26,14 @@ const feats = currentFeatures()
 
 const isLoginRoute = computed(() => route.path === '/login')
 
-// Gate: muncul tiap pengunjung berada di /login, KECUALI sudah ditutup di sesi ini
-// ('0'). Pakai watch (bukan onMounted) karena komponen di-mount di luar router-view,
-// jadi rute sering belum '/login' saat mount — watch immediate menangkapnya andal,
-// termasuk setelah reload akibat toggle/preset.
+// Gate: SELALU muncul tiap pengunjung berada di /login (termasuk reload / balik ke
+// login setelah ditutup). Pakai watch (bukan onMounted) karena komponen di-mount di
+// luar router-view, jadi rute sering belum '/login' saat mount — watch immediate
+// menangkapnya andal, termasuk setelah reload akibat toggle/preset.
 watch(
   isLoginRoute,
   (onLogin) => {
     if (onLogin) {
-      if (welcomeState() === '0') return
       welcome.value = true
       setWelcomeOpen(true)
     } else {
