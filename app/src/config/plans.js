@@ -10,21 +10,27 @@
 export const ALL_FEATURES = [
   'absensi',
   'fingerprint',
+  'mesinAbsensi',
   'absensiSekolah',
   'prestasi',
+  'glondongan',
   'kenaikan',
   'rapor',
   'kalender',
   'kegiatanPesantren',
+  'ceremonial',
+  'pengaduan',
   'kritikSaran',
   'psb',
   'posts',
   'keuangan',
   'pos',
+  'uangPos',
   'tabungan',
   'bisyaroh',
   'hutangPiutang',
   'supervisi',
+  'statistikHub',
   'analitik'
 ]
 
@@ -32,38 +38,45 @@ export const ALL_FEATURES = [
 export const FEATURE_LABELS = {
   absensi: 'Absensi santri & guru (ngaji/Qiraati)',
   fingerprint: 'Integrasi Fingerprint',
+  mesinAbsensi: 'Mesin Absensi (kelola perangkat fingerprint)',
   absensiSekolah: 'Absensi sekolah (SD/SMP/SMA)',
   prestasi: 'Prestasi & capaian',
+  glondongan: 'Tes Glondongan (muroja’ah kumulatif PTPT)',
   kenaikan: 'Kenaikan & Tes Kenaikan',
   rapor: 'Rapor Semester (lembaga sekolah)',
   kalender: 'Kalender pendidikan',
   kegiatanPesantren: 'Kegiatan Pesantren',
+  ceremonial: 'Ceremonial PTPT (upacara kelulusan/apel)',
+  pengaduan: 'Pengaduan (kanal aduan wali)',
   kritikSaran: 'Kritik & saran',
   psb: 'PSB (Pendaftaran santri baru)',
   posts: 'Channel / Postingan',
   keuangan: 'Keuangan (tagihan & pembayaran)',
   pos: 'POS kasir santri',
+  uangPos: 'Uang Pos santri',
   tabungan: 'Tabungan & uang saku',
   bisyaroh: 'Bisyaroh / gaji guru',
   hutangPiutang: 'Hutang–piutang',
   supervisi: 'Supervisi (Direktur)',
+  statistikHub: 'Statistik Hub (pusat statistik lembaga)',
   analitik: 'Analitik / laporan BigQuery'
 }
 
 // Bundel saran (BERTINGKAT: basic ⊂ pro ⊂ premium). value = daftar modul ON (sisanya OFF).
 // Boleh ditimpa per-lembaga via `featureOverrides` (à la carte). Ubah isi paket di sini.
 //
-//  BASIC   = lembaga QIRAATI/Diniyah (absen NGAJI + kenaikan/tes-kenaikan + prestasi + pengumuman).
-//            TANPA Rapor Semester & TANPA absensi sekolah (fitur lembaga sekolah → Pro).
-//  PRO     = Basic + RAPOR + ABSENSI SEKOLAH (lembaga sekolah) + KEUANGAN penuh.
-//  PREMIUM = Pro + lanjutan (Kegiatan Pesantren, supervisi, analitik BigQuery, fingerprint)
-const _BASIC = ['absensi', 'prestasi', 'kenaikan', 'kalender', 'kritikSaran', 'psb', 'posts']
+//  BASIC   = lembaga QIRAATI/Diniyah (absen NGAJI + kenaikan/tes-kenaikan + GLONDONGAN
+//            + prestasi + pengumuman). TANPA Rapor & absensi sekolah (→ Pro).
+//  PRO     = Basic + RAPOR + ABSENSI SEKOLAH + KEUANGAN penuh + CEREMONIAL + MESIN ABSENSI + PENGADUAN.
+//  PREMIUM = Pro + lanjutan (Kegiatan Pesantren, STATISTIK HUB, supervisi, analitik, fingerprint).
+const _BASIC = ['absensi', 'prestasi', 'glondongan', 'kenaikan', 'kalender', 'kritikSaran', 'psb', 'posts']
 const _SEKOLAH = ['rapor', 'absensiSekolah'] // fitur lembaga sekolah formal
-const _KEUANGAN = ['keuangan', 'pos', 'tabungan', 'bisyaroh', 'hutangPiutang']
+const _KEUANGAN = ['keuangan', 'pos', 'uangPos', 'tabungan', 'bisyaroh', 'hutangPiutang']
+const _PRO_EXTRA = ['ceremonial', 'mesinAbsensi', 'pengaduan'] // Pro+ (fitur PTPT & operasional)
 export const PLANS = {
   basic: [..._BASIC], // Qiraati saja — tanpa rapor & absensi sekolah
-  pro: [..._BASIC, ..._SEKOLAH, ..._KEUANGAN],
-  premium: [...ALL_FEATURES] // = pro + kegiatanPesantren, fingerprint, supervisi, analitik
+  pro: [..._BASIC, ..._SEKOLAH, ..._KEUANGAN, ..._PRO_EXTRA],
+  premium: [...ALL_FEATURES] // = pro + kegiatanPesantren, statistikHub, fingerprint, supervisi, analitik
 }
 
 // Urutan + metadata tampilan paket (untuk panel/landing/penawaran).

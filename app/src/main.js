@@ -20,6 +20,12 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 
+// WASEELA Fase 3 (cutover Supabase): pasang vue-query untuk cache/dedup data view yang
+// sudah cutover ke services/db.js. Aman dipasang walau belum ada konsumen (dormant).
+import { VueQueryPlugin } from '@tanstack/vue-query'
+import { queryClient } from './services/queryClient'
+app.use(VueQueryPlugin, { queryClient })
+
 // v.71.0526: register v-haptic directive globally untuk tombol native feel
 import { vHaptic } from './composables/useHaptic'
 app.directive('haptic', vHaptic)
