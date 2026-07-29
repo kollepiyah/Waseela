@@ -4,8 +4,9 @@
 // Tetap baca settings/web untuk Vue-only settings (Pengaturan PoC Vue), merge keduanya.
 // Subscribe ke 'general' real-time supaya kalibrasi Hijri / kop / logo update otomatis di Vue.
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { getOne, mergeOne, subscribeDoc } from '@/services/firestore'
+import { setKopImage } from '@/utils/kopMuassis'
 import tenantConfig from '@/tenant.config.js'
 
 const SETTINGS_DOC_ID_VUE = 'web' // Firestore: settings/web (Vue Pengaturan PoC)
@@ -27,6 +28,8 @@ const DEFAULT_SETTINGS = {
   logoUrl: '',
   logoKop: '',
   logoQiraati: '',
+  kopImageUrl: _b.kopImageUrl || '', // gambar baris-1 kop surat (kaligrafi/nama lembaga); kosong = pakai teks kopLine1
+
   alamat: '',
   noTelp: '',
   fiturBeranda: true,
@@ -57,6 +60,10 @@ export const useSettingsStore = defineStore('settings', () => {
     settings.value.kopLine3,
     settings.value.kopLine4
   ].filter(Boolean))
+
+  // White-label: sinkronkan gambar KOP (baris-1 kop surat) ke util kopMuassis
+  //   tiap kali setting berubah (load / subscribe / save). Kosong → renderer fallback teks.
+  watch(() => settings.value.kopImageUrl, (v) => setKopImage(v || ''), { immediate: true })
 
   // v.61.0526: Track 2 subscription handles (web + general docs)
   let unsubscribeGeneral = null

@@ -47,6 +47,7 @@ export default {
     motto: 'Portal Digital Pendidikan',
     kopLine1: 'WASEELA',
     kopLine2: 'PORTAL MANAJEMEN LEMBAGA',
+    kopImageUrl: '', // gambar baris-1 kop surat (kaligrafi/nama lembaga). Kosong = pakai teks kopLine1 (white-label; isi per-tenant).
     namaChannel: 'Waseela Channel',
     copyrightName: 'BAKAFRAWI PROJECT'
   }

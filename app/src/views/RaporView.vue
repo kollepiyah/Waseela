@@ -635,13 +635,20 @@
                 />
               </td>
               <td class="text-center align-middle px-2 py-0.5">
-                <!-- v.100: baris-1 KOP = gambar kaligrafi muassis (match PDF) -->
+                <!-- baris-1 KOP: gambar KOP tenant (white-label) bila di-set, else teks kopLine1 -->
                 <img
+                  v-if="MUASSIS_URL"
                   :src="MUASSIS_URL"
                   alt=""
                   class="mx-auto dark:invert print:invert-0"
                   style="height: 34px; object-fit: contain"
                 />
+                <div
+                  v-else-if="kop.line1"
+                  class="text-[15px] font-bold uppercase leading-tight text-teal-700"
+                >
+                  {{ kop.line1 }}
+                </div>
 
                 <div v-if="kop.line2" class="text-[22px] font-bold uppercase leading-tight">
                   {{ kop.line2 }}
