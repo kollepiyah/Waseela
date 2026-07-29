@@ -144,9 +144,11 @@ Sudah discaffold di `supabase/migrations/20260725000000_mt_foundation.sql`:
   ✅ REVOKE execute dari public/anon/authenticated utk `handle_new_user`+`sync_guru_profile_role` (fungsi
      TRIGGER) + `_resolve_authkey` (internal-definer) → keluar dari daftar 0028/0029. Diuji: `resolve_login('admin')`
      sebagai anon TETAP jalan; `_resolve_authkey` langsung oleh anon → permission denied.
-  ⏳ **SISA (sub-tugas terpisah, security-critical):** 17 helper peran/tenant (`auth_can_*`,`auth_is_*`,
-     `current_tenant_id`,`auth_role_sistem`) + `resolve_login` masih ter-expose (0028/0029). JANGAN sekadar
-     revoke dari authenticated — dipakai DI DALAM policy+default → query jadi permission denied. Solusi benar =
-     pindahkan ke schema privat (`private`) + tulis-ulang rujukan policy/default, LALU re-run test isolasi
-     (RLS 5/5, auth 9/9, pengaduan 4/4, PTPT 5/5). Risiko dibiarkan: NIHIL bocor data (fungsi hanya balikin
-     status peran/tenant si pemanggil sendiri). `resolve_login` memang sengaja publik (dipanggil anon saat login).
+  ✅ **RELOKASI SELESAI (`20260730000100_fase7_private_helpers.sql`):** 16 helper peran/tenant
+     (`auth_can_*`,`auth_is_*`,`auth_guru_*`,`current_tenant_id`,`auth_role_sistem`) DIPINDAH ke schema
+     `private` (via `SET SCHEMA` → policy/default/trigger ikut by-OID; body yg saling-panggil ditulis ulang
+     ke `private.`). `private` TAK di-expose PostgREST → hilang dari 0028/0029, TAPI grant usage+execute utk
+     anon/authenticated tetap → policy jalan. **Advisor keamanan: ~43 → 2** (sisa = `resolve_login` saja, SENGAJA
+     publik utk login anon). **Diuji:** login anon OK; isolasi antar-tenant OK (user tenant A tak lihat data B);
+     DEFAULT tenant_id + trigger provisioning OK. `_digits`/`_norm_key`/`set_updated_at`/`_resolve_authkey`/
+     `handle_new_user`/`sync_guru_profile_role` tetap di public (bukan definer / sudah di-revoke).
