@@ -139,6 +139,14 @@ Sudah discaffold di `supabase/migrations/20260725000000_mt_foundation.sql`:
   via MCP (versi apply-time), BUKAN via push. Kalau nanti file migration di-push ke branch yang
   diwatch Supabase, bisa bentrok "table already exists". Reconcile: treat MCP sbg source-of-truth
   baseline, atau tandai versi sudah-applied sebelum mengaktifkan auto-deploy GitHub.
-- **Hardening tersisa (Fase 7):** `set_updated_at` set search_path; pindahkan helper RLS ke schema privat
-  (mis. `app`/`private`) supaya tak ter-expose sbg RPC (advisor 0028/0029) — JANGAN sekadar revoke
-  execute dari authenticated (helper dipakai di dalam policy → query bakal permission denied).
+- **Hardening (Fase 7) — SEBAGIAN SELESAI (30 Jul, `20260730000000_fase7_hardening.sql`):**
+  ✅ `search_path=''` dikunci di `set_updated_at`/`_digits`/`_norm_key` (advisor 0011 = 0).
+  ✅ REVOKE execute dari public/anon/authenticated utk `handle_new_user`+`sync_guru_profile_role` (fungsi
+     TRIGGER) + `_resolve_authkey` (internal-definer) → keluar dari daftar 0028/0029. Diuji: `resolve_login('admin')`
+     sebagai anon TETAP jalan; `_resolve_authkey` langsung oleh anon → permission denied.
+  ⏳ **SISA (sub-tugas terpisah, security-critical):** 17 helper peran/tenant (`auth_can_*`,`auth_is_*`,
+     `current_tenant_id`,`auth_role_sistem`) + `resolve_login` masih ter-expose (0028/0029). JANGAN sekadar
+     revoke dari authenticated — dipakai DI DALAM policy+default → query jadi permission denied. Solusi benar =
+     pindahkan ke schema privat (`private`) + tulis-ulang rujukan policy/default, LALU re-run test isolasi
+     (RLS 5/5, auth 9/9, pengaduan 4/4, PTPT 5/5). Risiko dibiarkan: NIHIL bocor data (fungsi hanya balikin
+     status peran/tenant si pemanggil sendiri). `resolve_login` memang sengaja publik (dipanggil anon saat login).
