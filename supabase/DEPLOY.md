@@ -146,14 +146,32 @@ secret tersedia (fungsi tak berguna tanpa secret/integrasinya).
 
 ---
 
-## 7. Frontend (per-tenant build)
+## 7. Frontend (build + deploy Firebase Hosting)
 
-```bash
-cd app
-node ../scripts/build-tenant.mjs <slug>      # generate tenant.config + assets
-npm run build                                 # dist/
-# deploy dist/ ke hosting (Firebase Hosting / Vercel / static). Set .env per build:
-#   VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, VITE_SUPABASE_TENANT_SLUG=<slug>
-#   VITE_AUTH_BACKEND=supabase, VITE_DATA_BACKEND=supabase   (tenant produksi = full Supabase)
+Hosting: project `waseela-id`, target `main` → site `waseela` (waseela.web.app),
+`public: app/dist` (lihat firebase.json / .firebaserc).
+
+**Env di `app/.env.local` (di-baked saat build) — pilih sesuai target:**
 ```
-Konsol owner (`/konsol`): sama build, login `owner`. Demo showcase: `VITE_*_BACKEND=firebase`.
+VITE_SUPABASE_URL=https://vfbmaywcjurykxfetbia.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=<publishable/anon key>
+VITE_SUPABASE_TENANT_SLUG=<slug>
+# DEMO showcase (rich, Firebase):     VITE_AUTH_BACKEND=firebase  VITE_DATA_BACKEND=firebase
+# TENANT produksi (full Supabase):    VITE_AUTH_BACKEND=supabase  VITE_DATA_BACKEND=supabase
+```
+> Owner konsol (`/konsol`) SELALU jalan (login `owner`) apa pun backend — dual-mode.
+
+**Build + deploy:**
+```bash
+# 1. generate tenant.config + assets + build (dari ROOT repo)
+node scripts/build-tenant.mjs demo          # ganti 'demo' = slug tenant; --no-build utk config saja
+# (build-tenant sudah menjalankan vite build → app/dist)
+
+# 2. deploy ke Firebase Hosting
+npx firebase login                          # sekali
+npx firebase deploy --only hosting:main     # → https://waseela.web.app
+```
+
+**Tenant produksi baru (checklist):** buat tenant via `/konsol` → provision admin →
+set `.env.local` (backend=supabase + slug) → migrasi data (§5) → build-tenant + deploy
+(idealnya ke site hosting sendiri per-tenant).
