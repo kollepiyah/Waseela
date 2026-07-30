@@ -186,7 +186,6 @@ const routes = [
       { path: 'glondongan', name: 'glondongan', component: () => import('@/views/GlondonganView.vue') },
       { path: 'ceremonial', name: 'ceremonial', component: () => import('@/views/CeremonialView.vue') },
       { path: 'uang-pos', name: 'uang-pos', component: () => import('@/views/UangPosView.vue'), meta: { admin: true } },
-      { path: 'statistik-hub', name: 'statistik-hub', component: () => import('@/views/StatistikHubView.vue'), meta: { admin: true } },
       { path: 'pengaturan-web', name: 'pengaturan-web', component: PengaturanView, meta: { admin: true } },
       // v.70.0526: Pengaturan Keuangan full Vue
       // v.21.115.0528: keuangan meta gate

@@ -161,16 +161,18 @@ VITE_SUPABASE_TENANT_SLUG=<slug>
 ```
 > Owner konsol (`/konsol`) SELALU jalan (login `owner`) apa pun backend — dual-mode.
 
-**Build + deploy:**
+**Build + deploy (npm script di ROOT repo):**
 ```bash
-# 1. generate tenant.config + assets + build (dari ROOT repo)
-node scripts/build-tenant.mjs demo          # ganti 'demo' = slug tenant; --no-build utk config saja
-# (build-tenant sudah menjalankan vite build → app/dist)
-
-# 2. deploy ke Firebase Hosting
-npx firebase login                          # sekali
-npx firebase deploy --only hosting:main     # → https://waseela.web.app
+npx firebase login          # sekali
+npm install                 # sekali (root — firebase-admin/supabase-js utk skrip)
+npm run deploy              # = build-tenant demo (config+vite build) + firebase deploy → waseela.web.app
 ```
+Terpisah bila perlu:
+```bash
+npm run build              # build-tenant demo → app/dist
+npm run firebase:deploy    # deploy app/dist saja
+```
+> Tenant lain: `node scripts/build-tenant.mjs <slug>` lalu `npm run firebase:deploy`.
 
 **Tenant produksi baru (checklist):** buat tenant via `/konsol` → provision admin →
 set `.env.local` (backend=supabase + slug) → migrasi data (§5) → build-tenant + deploy

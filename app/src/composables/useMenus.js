@@ -81,7 +81,6 @@ const ALL_MENUS = [
   { group: 'Pendidikan', name: 'Glondongan PTPT', path: '/glondongan', icon: 'fa-people-arrows', roles: ['admin', 'guru'], available: true },
   { group: 'Pendidikan', name: 'Ceremonial PTPT', path: '/ceremonial', icon: 'fa-award', roles: ['admin', 'guru'], available: true },
   { group: 'Keuangan', name: 'Uang Pos', path: '/uang-pos', icon: 'fa-wallet', roles: ['admin'], perm: 'akses_keuangan', available: true },
-  { group: 'Laporan', name: 'Statistik Hub', path: '/statistik-hub', icon: 'fa-chart-pie', roles: ['admin'], roleSistem: ['super_admin', 'admin'], available: true },
 
   // GROUP: SISTEM (admin only)
   { group: 'Sistem', name: 'Pengaturan Sistem', path: '/pengaturan-web', icon: 'fa-cog', roles: ['admin'], available: true },
