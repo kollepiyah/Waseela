@@ -23,7 +23,9 @@
 // DEPENDENSI (sekali): npm i -D firebase-admin @supabase/supabase-js
 // ============================================================================
 import { readFileSync } from 'node:fs'
-import admin from 'firebase-admin'
+// firebase-admin v12+ (ESM): pakai modular API, BUKAN default namespace (admin.credential undefined di ESM).
+import { initializeApp, cert } from 'firebase-admin/app'
+import { getFirestore } from 'firebase-admin/firestore'
 import { createClient } from '@supabase/supabase-js'
 
 // ---- PETA SKEMA (cermin app/src/services/db.js) ---------------------------
@@ -130,8 +132,8 @@ async function main() {
   const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!saPath || !sbUrl || !sbKey) { console.error('ENV kurang: FIREBASE_SERVICE_ACCOUNT, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY'); process.exit(1) }
 
-  admin.initializeApp({ credential: admin.credential.cert(JSON.parse(readFileSync(saPath, 'utf8'))) })
-  const fs = admin.firestore()
+  initializeApp({ credential: cert(JSON.parse(readFileSync(saPath, 'utf8'))) })
+  const fs = getFirestore()
   const sb = createClient(sbUrl, sbKey, { auth: { persistSession: false } })
 
   // resolve tenant uuid

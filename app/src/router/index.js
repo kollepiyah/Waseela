@@ -182,6 +182,7 @@ const routes = [
       { path: 'psb', name: 'psb', component: PsbAdminView, meta: { admin: true } },
       { path: 'psb/:id', name: 'psb-detail', component: PsbDetailView, meta: { admin: true } },
       { path: 'kritik-saran', name: 'kritik-saran', component: KritikSaranView },
+      { path: 'pengaduan', name: 'pengaduan', component: () => import('@/views/PengaduanView.vue') },
       { path: 'pengaturan-web', name: 'pengaturan-web', component: PengaturanView, meta: { admin: true } },
       // v.70.0526: Pengaturan Keuangan full Vue
       // v.21.115.0528: keuangan meta gate

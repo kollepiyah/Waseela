@@ -77,6 +77,7 @@ const ALL_MENUS = [
   // v.65.4: Mading tetap (kyai minta — supaya tambah postingan tidak langsung dari beranda)
   { group: 'Komunikasi', name: 'Saluran', path: '/posts', icon: 'fa-bullhorn', roles: ['admin', 'guru', 'santri'], available: true },
   { group: 'Komunikasi', name: 'Kritik & Saran', path: '/kritik-saran', icon: 'fa-comment-dots', roles: ['admin', 'guru', 'santri'], available: true, featureFlag: 'fiturKritikSaran' },
+  { group: 'Komunikasi', name: 'Pengaduan', path: '/pengaduan', icon: 'fa-bullhorn', roles: ['admin', 'guru', 'santri'], available: true },
 
   // GROUP: SISTEM (admin only)
   { group: 'Sistem', name: 'Pengaturan Sistem', path: '/pengaturan-web', icon: 'fa-cog', roles: ['admin'], available: true },

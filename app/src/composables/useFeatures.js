@@ -76,7 +76,8 @@ const PATH_FEATURE = {
   '/tabungan': 'tabungan',
   '/uang-saku': 'tabungan',
   '/hutang-piutang': 'hutangPiutang',
-  '/kritik-saran': 'kritikSaran'
+  '/kritik-saran': 'kritikSaran',
+  '/pengaduan': 'pengaduan'
 }
 
 export function featureForPath(path) {
