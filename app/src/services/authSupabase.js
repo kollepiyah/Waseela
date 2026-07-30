@@ -30,6 +30,11 @@ export function toAuthPassword(pass) {
 export const PLATFORM_OWNER_EMAIL = 'owner@waseela.local'
 const PLATFORM_OWNER_KEYS = ['owner', 'superowner', 'platform', 'bakafrawi']
 
+/** True bila input login = key platform owner (selalu dirutekan ke Supabase, apa pun AUTH_BACKEND). */
+export function isPlatformOwnerKey(input) {
+  return PLATFORM_OWNER_KEYS.includes(String(input || '').trim().toLowerCase())
+}
+
 function sanitizeAuthLocalPart(input) {
   return String(input || '').toLowerCase().replace(/[^a-z0-9._-]/g, '')
 }

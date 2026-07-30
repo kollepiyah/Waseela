@@ -134,7 +134,8 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
     try {
       // === CUTOVER Fase 3: jalur Supabase (resolve_login RPC → signIn/signUp → buildSesi) ===
-      if (AUTH_BACKEND === 'supabase') {
+      // platform_owner SELALU lewat Supabase (konsol), walau backend tenant masih Firebase.
+      if (AUTH_BACKEND === 'supabase' || authSupabase.isPlatformOwnerKey(input)) {
         await authSupabase.loginUnified(input, password, null)
         const sesi = await authSupabase.buildSesi()
         if (!sesi) {
@@ -391,7 +392,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
-    if (AUTH_BACKEND === 'supabase') {
+    if (AUTH_BACKEND === 'supabase' || sesiAktif.value?.role_sistem === 'platform_owner') {
       try { await authSupabase.signOut() } catch (e) { /* ignore */ }
       sesiAktif.value = null
       fbUser.value = null
