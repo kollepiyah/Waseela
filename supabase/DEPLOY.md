@@ -43,8 +43,9 @@ Kredensial (JANGAN commit):
   Ambil: Dashboard → Settings → API.
 
 > **CATATAN env OS**: pastikan TIDAK ada `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`
-> basi di environment shell (project lama). Cek: `printenv | grep VITE_SUPABASE`.
-> Kalau ada yang salah → `unset` / hapus (restart terminal). Ini menang atas `.env.local`.
+> basi di environment shell (project lama). Ini menang atas `.env.local`.
+> Cek — PowerShell: `Get-ChildItem Env:VITE_SUPABASE*` · bash: `printenv | grep VITE_SUPABASE`.
+> Hapus — PowerShell: `Remove-Item Env:VITE_SUPABASE_URL` (sesi ini) atau restart terminal · bash: `unset ...`.
 
 ---
 
@@ -95,21 +96,34 @@ supabase functions deploy reset-user-password
 
 ## 5. Migrasi BULK data (Firestore → Supabase, per-tenant)
 
+Install deps sekali (di root repo, biar `node_modules` root ada utk skrip):
 ```bash
-cd "D:/Aplikasi Project/Waseela"
-npm i -D firebase-admin @supabase/supabase-js       # sekali
-
-# ENV (shell / .env — JANGAN commit service_role):
-export FIREBASE_SERVICE_ACCOUNT="/path/service-account.json"   # project Firebase SUMBER
-export SUPABASE_URL="https://vfbmaywcjurykxfetbia.supabase.co"
-export SUPABASE_SERVICE_ROLE_KEY="<service_role_key>"
-
-# tenant HARUS sudah ada di public.tenants (buat via konsol /konsol dulu)
-node scripts/migrate-firestore-to-supabase.mjs <tenant-slug> --dry     # cek dulu
-node scripts/migrate-firestore-to-supabase.mjs <tenant-slug>           # eksekusi
-node scripts/migrate-firestore-to-supabase.mjs <tenant-slug> --only=santri,guru   # sebagian
+npm i firebase-admin @supabase/supabase-js
 ```
-Idempoten (UPSERT on `tenant_id,pk`). Peta skema di skrip WAJIB sinkron dg `app/src/services/db.js`.
+
+Butuh **service account JSON** project Firebase SUMBER (Firebase Console → Project Settings →
+Service Accounts → Generate new private key). Ganti `<...>` dengan nilai asli — JANGAN ketik tanda `<>`.
+
+**PowerShell (Windows) — `$env:`, BUKAN `export`:**
+```powershell
+$env:FIREBASE_SERVICE_ACCOUNT = "D:\Aplikasi Project\Waseela\service-account.json"
+$env:SUPABASE_URL = "https://vfbmaywcjurykxfetbia.supabase.co"
+$env:SUPABASE_SERVICE_ROLE_KEY = "PASTE_SERVICE_ROLE_KEY"
+node scripts/migrate-firestore-to-supabase.mjs demo --dry      # ganti 'demo' = slug tenant asli
+node scripts/migrate-firestore-to-supabase.mjs demo            # eksekusi
+node scripts/migrate-firestore-to-supabase.mjs demo --only=santri,guru
+```
+
+**bash/macOS/Linux:**
+```bash
+export FIREBASE_SERVICE_ACCOUNT="/path/service-account.json"
+export SUPABASE_URL="https://vfbmaywcjurykxfetbia.supabase.co"
+export SUPABASE_SERVICE_ROLE_KEY="PASTE_SERVICE_ROLE_KEY"
+node scripts/migrate-firestore-to-supabase.mjs demo --dry
+```
+
+> tenant slug HARUS sudah ada di `public.tenants` (buat via konsol `/konsol` dulu).
+> Idempoten (UPSERT on `tenant_id,pk`). Peta skema skrip WAJIB sinkron dg `app/src/services/db.js`.
 
 ---
 
