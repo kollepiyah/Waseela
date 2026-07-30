@@ -1,0 +1,142 @@
+# 🚀 WASEELA — Runbook Deploy Supabase (DB, Edge Functions, Migrasi Data)
+
+> Target project: `vfbmaywcjurykxfetbia` (ap-southeast-1). Semua migrasi sejauh ini
+> diterapkan **via MCP** (bukan `db push`) — baca **§0 Rekonsiliasi** sebelum `db push`.
+
+---
+
+## 0. ⚠️ Rekonsiliasi (WAJIB baca sebelum `supabase db push`)
+
+Migrasi di `supabase/migrations/` **sudah diterapkan ke DB via MCP** (versi apply-time,
+nama cocok, nomor prefix bisa beda tipis). Kalau langsung `supabase db push`, Supabase
+akan mencoba menjalankan ulang → error "already exists".
+
+**Pilih satu:**
+- **A. Tandai sudah-applied** (disarankan, DB = source of truth):
+  ```bash
+  supabase migration list                 # bandingkan lokal vs remote
+  # untuk tiap migrasi yg sudah ada di DB tapi belum tercatat cocok:
+  supabase migration repair --status applied <version>
+  ```
+- **B. Baseline dump**: `supabase db pull` untuk menarik skema remote jadi 1 migrasi
+  baseline, hapus migrasi lama yang tumpang-tindih, lalu lanjut push untuk yg BARU saja.
+
+Setelah reconcile, migrasi **baru** cukup `supabase db push`.
+
+---
+
+## 1. Prasyarat (sekali)
+
+```bash
+npm i -g supabase                       # atau: npx supabase ...
+supabase login
+cd "D:/Aplikasi Project/Waseela"
+supabase link --project-ref vfbmaywcjurykxfetbia
+```
+
+Kredensial (JANGAN commit):
+- **Publishable key** (frontend) → `app/.env.local` `VITE_SUPABASE_PUBLISHABLE_KEY`.
+- **service_role key** (server/skrip) → hanya di env lokal / secret CI, TIDAK di repo.
+  Ambil: Dashboard → Settings → API.
+
+> **CATATAN env OS**: pastikan TIDAK ada `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`
+> basi di environment shell (project lama). Cek: `printenv | grep VITE_SUPABASE`.
+> Kalau ada yang salah → `unset` / hapus (restart terminal). Ini menang atas `.env.local`.
+
+---
+
+## 2. Manual dashboard (2 hal — HANYA bisa lewat dashboard)
+
+1. **Authentication → Providers**: Email **ON**, "Confirm email" **OFF** (domain `.local`
+   tak terkirim → butuh auto-confirm agar signUp langsung punya sesi).
+2. **Authentication → Hooks**: HAPUS "Custom Access Token" hook (`app.custom_access_token_hook`).
+   Arsitektur kita tak pakai JWT-claims. Ada no-op bridge (migrasi `20260730000200`) supaya
+   login jalan; setelah hook dihapus, boleh: `drop function app.custom_access_token_hook; drop schema app;`.
+3. **Settings → API → Exposed schemas**: pastikan hanya `public` (+`graphql_public`). JANGAN `app`/`private`.
+
+---
+
+## 3. DB migrations
+
+```bash
+# lihat status
+supabase migration list
+# terapkan migrasi BARU (setelah reconcile §0)
+supabase db push
+```
+Alternatif tanpa CLI: terapkan file `.sql` via SQL Editor / MCP `apply_migration`.
+
+Migrasi kini (urut): mt_foundation → core → keuangan → akademik → konten → auth_login →
+realtime_grants → pengaduan → ptpt_features → rls_ptpt_lock → **fase7_hardening** →
+**fase7_private_helpers** → **auth_hook_noop_bridge** → **platform_owner** → **platform_stats** →
+**admin_reset_rpc**.
+
+---
+
+## 4. Edge Functions
+
+```bash
+# set secret dulu (per fungsi yang butuh — lihat tabel §6)
+supabase secrets set FCM_SERVER_KEY=xxx BMT_WEBHOOK_SECRET=yyy
+# deploy semua, atau satu
+supabase functions deploy
+supabase functions deploy reset-user-password
+```
+> `SUPABASE_URL`/`SUPABASE_ANON_KEY`/`SUPABASE_SERVICE_ROLE_KEY` di-inject platform (jangan set manual).
+> Fungsi yang panggil dari browser: deploy dengan `--no-verify-jwt` bila menangani CORS+auth sendiri
+> (fungsi kita sudah begitu). Contoh: `supabase functions deploy reset-user-password --no-verify-jwt`.
+
+**Sudah ACTIVE di project:** `provision-tenant-admin`, `reset-user-password`.
+
+---
+
+## 5. Migrasi BULK data (Firestore → Supabase, per-tenant)
+
+```bash
+cd "D:/Aplikasi Project/Waseela"
+npm i -D firebase-admin @supabase/supabase-js       # sekali
+
+# ENV (shell / .env — JANGAN commit service_role):
+export FIREBASE_SERVICE_ACCOUNT="/path/service-account.json"   # project Firebase SUMBER
+export SUPABASE_URL="https://vfbmaywcjurykxfetbia.supabase.co"
+export SUPABASE_SERVICE_ROLE_KEY="<service_role_key>"
+
+# tenant HARUS sudah ada di public.tenants (buat via konsol /konsol dulu)
+node scripts/migrate-firestore-to-supabase.mjs <tenant-slug> --dry     # cek dulu
+node scripts/migrate-firestore-to-supabase.mjs <tenant-slug>           # eksekusi
+node scripts/migrate-firestore-to-supabase.mjs <tenant-slug> --only=santri,guru   # sebagian
+```
+Idempoten (UPSERT on `tenant_id,pk`). Peta skema di skrip WAJIB sinkron dg `app/src/services/db.js`.
+
+---
+
+## 6. Status Edge Functions (port dari Ammu → multi-tenant)
+
+| Fungsi | Status | Butuh sebelum produksi |
+|---|---|---|
+| `provision-tenant-admin` | ✅ **deployed** (baru, Waseela) | — |
+| `reset-user-password` | ✅ **deployed** (port + RPC `admin_target_auth_uid`) | — |
+| `auto-generate-tagihan` | ⏳ belum port | `pg_cron` schedule + tenant-loop; baca `keuangan_tagihan`+template |
+| `dispatch-push` | ⏳ belum port | **secret FCM** (`FCM_SERVER_KEY`), tabel `notif_queue`, token per-tenant |
+| `bmt-webhook` | ⏳ belum port | **secret BMT** + tabel `keuangan_va_intent` (belum dibuat), verifikasi signature |
+| `get-link-preview` | ⏳ belum port | tabel `link_preview_cache` (sudah ada); relatif ringan |
+| `hiview-absen` | ⏳ belum port | integrasi mesin Hiview/Fingerspot + kredensial; kompleks |
+
+**Pola port** (contoh `reset-user-password`): tiap fungsi Ammu yang single-tenant perlu
+(a) RPC pendukung di-scope tenant (`private.current_tenant_id()` + guard peran), (b) email/slug
+per-tenant, (c) header `x-tenant` diteruskan. Kerjakan per-fungsi saat fiturnya diaktifkan +
+secret tersedia (fungsi tak berguna tanpa secret/integrasinya).
+
+---
+
+## 7. Frontend (per-tenant build)
+
+```bash
+cd app
+node ../scripts/build-tenant.mjs <slug>      # generate tenant.config + assets
+npm run build                                 # dist/
+# deploy dist/ ke hosting (Firebase Hosting / Vercel / static). Set .env per build:
+#   VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, VITE_SUPABASE_TENANT_SLUG=<slug>
+#   VITE_AUTH_BACKEND=supabase, VITE_DATA_BACKEND=supabase   (tenant produksi = full Supabase)
+```
+Konsol owner (`/konsol`): sama build, login `owner`. Demo showcase: `VITE_*_BACKEND=firebase`.
