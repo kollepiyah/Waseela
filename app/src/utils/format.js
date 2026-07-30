@@ -152,4 +152,12 @@ export function parseMultipleWA(raw) {
   return result
 }
 
+// Tautan wa.me dari nomor lokal + pesan opsional (dipakai view kontak penyimak/guru).
+export function waLink(raw, pesan = '') {
+  const lokal = normalizeWA(raw) // selalu berawalan '0'
+  if (!lokal || lokal.length < 8) return ''
+  const intl = '62' + lokal.slice(1)
+  return `https://wa.me/${intl}${pesan ? `?text=${encodeURIComponent(pesan)}` : ''}`
+}
+
 export { BULAN_ID, BULAN_ID_SHORT }

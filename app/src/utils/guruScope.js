@@ -7,6 +7,10 @@
 
 function _lower(v) { return String(v || '').toLowerCase().trim() }
 
+// Guru berstatus aktif? (default 'Aktif' bila kosong). Dipakai Glondongan (filter penguji).
+export function isGuruAktif(g) { return _lower(g?.status || 'Aktif') === 'aktif' }
+export function guruAktifSaja(list) { return (list || []).filter(isGuruAktif) }
+
 // Santri ini diampu guru `nama` sebagai guru NGAJI (Qiraati)?
 export function ownsNgaji(s, nama) {
   const gn = _lower(nama)
