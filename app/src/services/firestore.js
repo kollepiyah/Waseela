@@ -14,24 +14,31 @@ import {
   orderBy,
   limit,
   onSnapshot,
-  serverTimestamp,
-  Timestamp
+  serverTimestamp as _fbServerTimestamp,
+  Timestamp as _fbTimestamp
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { backupSebelumHapus } from './firestoreSafe'
+import * as _sb from './db'
+
+// CUTOVER Fase 3: bila VITE_DATA_BACKEND=supabase, SEMUA CRUD delegasi ke db.js
+// (adapter Supabase, API-identik). Default 'firebase'. Reversibel via env (flag).
+const _USE_SB = import.meta.env.VITE_DATA_BACKEND === 'supabase'
 
 // v.91.0626: sesi aktif untuk atribusi audit_log saat hapus (di-set dari stores/auth.js via setAuditSesi).
 let _auditSesi = null
-export function setAuditSesi(s) { _auditSesi = s || null }
+export function setAuditSesi(s) { _auditSesi = s || null; try { _sb.setAuditSesi(s) } catch (e) { /* noop */ } }
 
 /** Get satu dokumen by ID. Return null kalau tidak ada. */
 export async function getOne(collectionName, id) {
+  if (_USE_SB) return _sb.getOne(collectionName, id)
   const snap = await getDoc(doc(db, collectionName, id))
   return snap.exists() ? { id: snap.id, ...snap.data() } : null
 }
 
 /** Get semua dokumen dari collection (tanpa filter). */
 export async function getAll(collectionName) {
+  if (_USE_SB) return _sb.getAll(collectionName)
   const snap = await getDocs(collection(db, collectionName))
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
 }
@@ -40,6 +47,7 @@ export async function getAll(collectionName) {
  *  Contoh: queryColl('santri', [['lembaga','==','PTPT']], [['nama','asc']], 50)
  */
 export async function queryColl(collectionName, filters = [], orders = [], limitN = 0) {
+  if (_USE_SB) return _sb.queryColl(collectionName, filters, orders, limitN)
   const constraints = []
   for (const [field, op, val] of filters) constraints.push(where(field, op, val))
   for (const [field, dir] of orders) constraints.push(orderBy(field, dir))
@@ -52,6 +60,7 @@ export async function queryColl(collectionName, filters = [], orders = [], limit
 /** Set (overwrite) dokumen. HATI-HATI: menimpa SELURUH dokumen. Untuk update
  *  sebagian field (mis. edit profil), pakai mergeOne — bukan ini. */
 export async function setOne(collectionName, id, data) {
+  if (_USE_SB) return _sb.setOne(collectionName, id, data)
   await setDoc(doc(db, collectionName, id), data)
 }
 
@@ -59,16 +68,19 @@ export async function setOne(collectionName, id, data) {
  *  Penting agar rule validasi tetap lolos (request.resource.data masih punya
  *  id/nama dari dokumen lama) dan tidak menghapus data. */
 export async function mergeOne(collectionName, id, data) {
+  if (_USE_SB) return _sb.mergeOne(collectionName, id, data)
   await setDoc(doc(db, collectionName, id), data, { merge: true })
 }
 
 /** Update partial fields. */
 export async function updateOne(collectionName, id, partial) {
+  if (_USE_SB) return _sb.updateOne(collectionName, id, partial)
   await updateDoc(doc(db, collectionName, String(id)), partial)
 }
 
 /** Add dokumen baru (auto-generated ID). Return ID baru. */
 export async function addOne(collectionName, data) {
+  if (_USE_SB) return _sb.addOne(collectionName, data)
   const ref = await addDoc(collection(db, collectionName), data)
   return ref.id
 }
@@ -77,6 +89,7 @@ export async function addOne(collectionName, data) {
  *  Backup best-effort (gagal TIDAK memblok hapus). Atribusi user via setAuditSesi()/opts.sesi.
  *  opts: { alasan?: string, sesi?: object, skipBackup?: boolean } */
 export async function deleteOne(collectionName, id, opts = {}) {
+  if (_USE_SB) return _sb.deleteOne(collectionName, id, opts)
   if (!opts.skipBackup) {
     try {
       const snap = await getDoc(doc(db, collectionName, String(id)))
@@ -96,6 +109,7 @@ export async function deleteOne(collectionName, id, opts = {}) {
  *    onUnmounted(() => unsub())
  */
 export function subscribeColl(collectionName, callback, filters = [], orders = []) {
+  if (_USE_SB) return _sb.subscribeColl(collectionName, callback, filters, orders)
   const constraints = []
   for (const [field, op, val] of filters) constraints.push(where(field, op, val))
   for (const [field, dir] of orders) constraints.push(orderBy(field, dir))
@@ -117,6 +131,7 @@ export function subscribeColl(collectionName, callback, filters = [], orders = [
 
 /** Subscribe satu dokumen. */
 export function subscribeDoc(collectionName, id, callback) {
+  if (_USE_SB) return _sb.subscribeDoc(collectionName, id, callback)
   return onSnapshot(
     doc(db, collectionName, id),
     (snap) => {
@@ -129,4 +144,6 @@ export function subscribeDoc(collectionName, id, callback) {
   )
 }
 
-export { serverTimestamp, Timestamp }
+// serverTimestamp/Timestamp ikut backend: Supabase pakai ISO string (db.js), else Firestore sentinel.
+export const serverTimestamp = _USE_SB ? _sb.serverTimestamp : _fbServerTimestamp
+export const Timestamp = _USE_SB ? _sb.Timestamp : _fbTimestamp
