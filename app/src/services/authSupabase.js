@@ -25,6 +25,11 @@ export function toAuthPassword(pass) {
   return 'wsl_auth_' + String(pass || '')
 }
 
+// Platform owner (vendor Bakafrawi) — akun LINTAS-tenant, email TETAP (bukan
+// namespaced per-tenant). Login pakai key ini di form username biasa.
+export const PLATFORM_OWNER_EMAIL = 'owner@waseela.local'
+const PLATFORM_OWNER_KEYS = ['owner', 'superowner', 'platform', 'bakafrawi']
+
 function sanitizeAuthLocalPart(input) {
   return String(input || '').toLowerCase().replace(/[^a-z0-9._-]/g, '')
 }
@@ -59,6 +64,22 @@ function _isInvalidCred(error) {
  */
 export async function loginUnified(input, password, source = null) {
   _ensure()
+
+  // Platform owner: bypass resolve_login (tak terikat tenant). Email tetap, signIn saja
+  // (akun di-provision, TIDAK lazy-signup — cegah pembuatan owner sembarangan).
+  if (PLATFORM_OWNER_KEYS.includes(String(input || '').trim().toLowerCase())) {
+    const si = await supabase.auth.signInWithPassword({
+      email: PLATFORM_OWNER_EMAIL, password: toAuthPassword(password)
+    })
+    if (si.error) {
+      const e = new Error(_isInvalidCred(si.error)
+        ? 'Sandi owner salah.' : 'Akun owner belum tersedia. Hubungi administrator sistem.')
+      e.code = _isInvalidCred(si.error) ? 'auth/wrong-password' : 'auth/not-found'
+      throw e
+    }
+    return { source: 'owner', user: si.data.user, session: si.data.session }
+  }
+
   const info = await resolveLogin(input, source)
   if (!info) {
     const e = new Error(
@@ -125,6 +146,25 @@ export async function buildSesi() {
   const { data: prof, error } = await supabase.from('profiles').select('*').eq('id', uid).maybeSingle()
   if (error) throw error
   if (!prof) return null
+
+  // Platform owner (vendor) — sesi lintas-tenant utk konsol; role UI 'admin' (akses penuh),
+  // role_sistem 'platform_owner' dipakai router utk gate /konsol.
+  if (prof.role_sistem === 'platform_owner') {
+    return {
+      id: 'owner',
+      role: 'admin',
+      role_sistem: 'platform_owner',
+      nama: 'Platform Owner',
+      guru: 'Platform Owner',
+      jk: 'L',
+      jabatan: 'Platform Owner',
+      lembaga: 'Semua Tenant',
+      akses: { ..._ADMIN_AKSES },
+      auth_method: 'supabase',
+      supabase_uid: uid,
+      supabase_email: email
+    }
+  }
 
   // Admin built-in (super_admin tanpa guru_id/santri_id).
   if (!prof.guru_id && !prof.santri_id && prof.role_sistem === 'super_admin') {

@@ -101,6 +101,8 @@ const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
   // PSB Public form — no auth, no layout (standalone)
   { path: '/psb-form', name: 'psb-form', component: PsbFormView, meta: { public: true } },
+  // Konsol PLATFORM OWNER (vendor) — full-screen, di luar AppShell tenant. Gate: platform_owner.
+  { path: '/konsol', name: 'konsol', component: () => import('@/views/KonsolView.vue'), meta: { roleSistem: 'platform_owner' } },
   // Routes dengan layout shell. v.98: AppShell = Ribbon (Electron) / AppLayout lama (web/HP).
   {
     path: '/',
@@ -231,6 +233,10 @@ router.beforeEach(async (to, from, next) => {
     try { await auth.authReady } catch (e) { /* ignore */ }
   }
   if (!auth.isLoggedIn) return next({ name: 'login', query: { redirect: to.fullPath } })
+  // platform_owner (vendor) hidup di /konsol — jauhkan dari app tenant (dashboard santri/guru).
+  if (auth.sesiAktif?.role_sistem === 'platform_owner' && to.name !== 'konsol') {
+    return next({ name: 'konsol' })
+  }
   // WASEELA white-label: blok deep-link ke modul yang dimatikan (tenant.config.features).
   const _feat = featureForPath(to.path)
   if (_feat && !isOn(_feat)) return next({ name: 'dashboard' })
