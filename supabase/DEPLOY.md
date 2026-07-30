@@ -5,23 +5,26 @@
 
 ---
 
-## 0. ⚠️ Rekonsiliasi (WAJIB baca sebelum `supabase db push`)
+## 0. ⚠️ Rekonsiliasi (SUDAH DIBERESKAN 30 Jul — konteks + cara)
 
-Migrasi di `supabase/migrations/` **sudah diterapkan ke DB via MCP** (versi apply-time,
-nama cocok, nomor prefix bisa beda tipis). Kalau langsung `supabase db push`, Supabase
-akan mencoba menjalankan ulang → error "already exists".
+Migrasi diterapkan via **MCP `apply_migration`**, yang menstempel versi **apply-time**
+(mis. `20260724225111`), BEDA dari nomor file lokal awal (`20260725000000`). Isi SAMA,
+nomor beda → `supabase db push` bilang *"Remote migration versions not found in local"*.
 
-**Pilih satu:**
-- **A. Tandai sudah-applied** (disarankan, DB = source of truth):
-  ```bash
-  supabase migration list                 # bandingkan lokal vs remote
-  # untuk tiap migrasi yg sudah ada di DB tapi belum tercatat cocok:
-  supabase migration repair --status applied <version>
-  ```
-- **B. Baseline dump**: `supabase db pull` untuk menarik skema remote jadi 1 migrasi
-  baseline, hapus migrasi lama yang tumpang-tindih, lalu lanjut push untuk yg BARU saja.
+**FIX yang dipakai (terbersih): rename file lokal agar cocok versi remote.** Sudah dilakukan —
+16 file di `supabase/migrations/` kini bernomor = versi remote (lihat `supabase migration list`
+harusnya sejajar Local=Remote). JANGAN pakai `migration repair --status reverted` lalu push
+(akan menjalankan ulang → "already exists"), dan JANGAN `db pull` (membuang riwayat per-migrasi).
 
-Setelah reconcile, migrasi **baru** cukup `supabase db push`.
+Verifikasi:
+```bash
+supabase migration list      # semua baris Local == Remote
+supabase db push             # → "Remote database is up to date"
+```
+
+**KE DEPAN (penting):** untuk migrasi BARU, pakai `supabase migration new <name>` + `supabase db push`
+(bukan MCP) supaya versi lokal = remote otomatis. Kalau tetap pakai MCP apply, rename filenya agar
+cocok versi remote seperti di atas.
 
 ---
 
