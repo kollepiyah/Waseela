@@ -4,11 +4,14 @@
 //
 // Isolasi tenant DITEGAKKAN DI SERVER (RLS + public.current_tenant_id()), BUKAN
 // di client — anon key publik aman; RLS yang menjaga & memisah data antar-lembaga.
-// Kredensial dari .env.local (per-build tenant): VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY.
+// Kredensial dari .env.local (per-build tenant): VITE_SUPABASE_URL +
+// VITE_SUPABASE_PUBLISHABLE_KEY (key format baru `sb_publishable_...`; alias lama
+// VITE_SUPABASE_ANON_KEY tetap didukung utk backward-compat).
 import { createClient } from '@supabase/supabase-js'
 
 const url = import.meta.env.VITE_SUPABASE_URL
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const anonKey =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY
 // Slug tenant build ini (di-set build-tenant.mjs). Dikirim sbg header `x-tenant`
 // supaya current_tenant_id() bisa resolusi tenant utk request ANON (pra-login:
 // branding/PSB/posts publik). User LOGIN tetap pakai profiles.tenant_id (header

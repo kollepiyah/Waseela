@@ -7,7 +7,12 @@ import { onAuthStateChanged, setPersistence, browserLocalPersistence, indexedDBL
 import { doc, setDoc } from 'firebase/firestore'
 import { auth as fbAuth, db } from '@/services/firebase'
 import * as authService from '@/services/auth'
+import * as authSupabase from '@/services/authSupabase'
 import { queryColl, setAuditSesi } from '@/services/firestore'
+
+// Backend auth aktif: 'firebase' (default) | 'supabase' (cutover Fase 3, per .env.local).
+// Firebase tetap jalur bawaan; 'supabase' merutekan login/logout/init ke authSupabase.
+const AUTH_BACKEND = import.meta.env.VITE_AUTH_BACKEND || 'firebase'
 
 // Domain Auth internal — aktif '@waseela.local', legacy '@ammu.local'/'@portal-mu.local' (backward-compat).
 const AUTH_EMAIL_DOMAINS = ['@waseela.local', '@ammu.local', '@portal-mu.local']
@@ -128,6 +133,21 @@ export const useAuthStore = defineStore('auth', () => {
     isLoading.value = true
     error.value = null
     try {
+      // === CUTOVER Fase 3: jalur Supabase (resolve_login RPC → signIn/signUp → buildSesi) ===
+      if (AUTH_BACKEND === 'supabase') {
+        await authSupabase.loginUnified(input, password, null)
+        const sesi = await authSupabase.buildSesi()
+        if (!sesi) {
+          const e = new Error('Akun terautentikasi tapi belum terdaftar (guru/santri/admin).')
+          e.code = 'auth/not-found'
+          throw e
+        }
+        sesiAktif.value = sesi
+        _persistAdminSesi(sesi.id === 'admin' ? sesi : null)
+        _persistFullSesi(sesi)
+        return
+      }
+
       // 1) Lookup user di Firestore data
       const userInfo = await authService.findUserByLoginInput(input)
       if (!userInfo) {
@@ -371,6 +391,14 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
+    if (AUTH_BACKEND === 'supabase') {
+      try { await authSupabase.signOut() } catch (e) { /* ignore */ }
+      sesiAktif.value = null
+      fbUser.value = null
+      _persistAdminSesi(null)
+      _persistFullSesi(null)
+      return
+    }
     // v.100 K1: hapus fcm_token user yang KELUAR sebelum sign-out — cegah notif anak/wali
     //   nyasar ke pengguna berikutnya di HP yang sama (token device basi menempel di doc lama).
     //   Best-effort; dijalankan selagi sesi Firebase masih ada (rules signedIn() lolos).
@@ -427,6 +455,31 @@ export const useAuthStore = defineStore('auth', () => {
    * first onAuthStateChanged fire supaya router guard tidak redirect ke /login saat refresh.
    */
   function initAuth() {
+    // === CUTOVER Fase 3: init jalur Supabase ===
+    if (AUTH_BACKEND === 'supabase') {
+      restoreAdminSesiFromStorage()
+      if (!sesiAktif.value) {
+        const stored = _loadFullSesi()
+        if (stored && stored.role) sesiAktif.value = stored
+      }
+      try { setAuditSesi(sesiAktif.value) } catch (e) {}
+      let resolvedS = false
+      const done = () => { if (!resolvedS && _authReadyResolve) { resolvedS = true; _authReadyResolve() } }
+      try {
+        authSupabase.onAuthChange(async (user) => {
+          if (user && !sesiAktif.value) {
+            try {
+              const s = await authSupabase.buildSesi()
+              if (s) { sesiAktif.value = s; _persistFullSesi(s) }
+            } catch (e) { /* ignore */ }
+          }
+          done()
+        })
+      } catch (e) { done() }
+      setTimeout(done, 3000)
+      return
+    }
+
     // Step 1: Admin built-in instant restore (sync localStorage)
     restoreAdminSesiFromStorage()
     // v.85.0526: Restore FULL sesi backup (guru/santri) — fix Android logout setiap close
