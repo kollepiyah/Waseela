@@ -80,7 +80,7 @@ realtime_grants → pengaduan → ptpt_features → rls_ptpt_lock → **fase7_ha
 
 ```bash
 # set secret dulu (per fungsi yang butuh — lihat tabel §6)
-supabase secrets set FCM_SERVER_KEY=xxx BMT_WEBHOOK_SECRET=yyy
+supabase secrets set FCM_SERVER_KEY=xxx
 # deploy semua, atau satu
 supabase functions deploy
 supabase functions deploy reset-user-password
@@ -121,7 +121,7 @@ Idempoten (UPSERT on `tenant_id,pk`). Peta skema di skrip WAJIB sinkron dg `app/
 | `reset-user-password` | ✅ **deployed** (port + RPC `admin_target_auth_uid`) | — |
 | `auto-generate-tagihan` | ⏳ belum port | `pg_cron` schedule + tenant-loop; baca `keuangan_tagihan`+template |
 | `dispatch-push` | ⏳ belum port | **secret FCM** (`FCM_SERVER_KEY`), tabel `notif_queue`, token per-tenant |
-| `bmt-webhook` | ⏳ belum port | **secret BMT** + tabel `keuangan_va_intent` (belum dibuat), verifikasi signature |
+| ~~`bmt-webhook`~~ | ❌ **TIDAK DIPAKAI Waseela** (dibuang) | — |
 | `get-link-preview` | ⏳ belum port | tabel `link_preview_cache` (sudah ada); relatif ringan |
 | `hiview-absen` | ⏳ belum port | integrasi mesin Hiview/Fingerspot + kredensial; kompleks |
 

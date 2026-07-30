@@ -22,8 +22,8 @@ function _ensure() {
 // ============================================================================
 // PETA SKEMA — kolom riil SKALAR per tabel (selain pk, ekor jsonb, created/updated_at).
 // Sumber kebenaran: supabase/migrations. Field di luar daftar -> ekor jsonb saat TULIS.
-// CATATAN: tabel fitur incremental (tes_glondongan, ceremonial_ptpt, keuangan_va_intent,
-//   pengaduan) DIPETAKAN maju — tabelnya menyusul di migration Fase 2b-sisa/4.
+// CATATAN: tabel fitur incremental (tes_glondongan, ceremonial_ptpt, pengaduan)
+//   DIPETAKAN maju — tabelnya menyusul di migration Fase 2b-sisa/4.
 // ============================================================================
 const COLS = {
   // -- core --
@@ -35,7 +35,6 @@ const COLS = {
   keuangan_buku_induk: ['tipe', 'sumber', 'nominal', 'tanggal', 'keterangan'],
   keuangan_tabungan_santri: ['santri_id', 'jenis', 'nominal', 'tanggal'],
   keuangan_uang_saku_santri: ['santri_id', 'jenis', 'nominal', 'tanggal'],
-  keuangan_va_intent: ['santri_id', 'va', 'total', 'status'], // Fase 4 (BMT VA)
   keuangan_gaji: ['guru_id','periode','bisyaroh_pokok','total_pemasukan','total_potongan','tunjangan_list','potongan_list'],
   keuangan_hutang_piutang: ['nominal'],
   keuangan_pembayaran: ['santri_id', 'nominal', 'tanggal'],
@@ -101,7 +100,7 @@ const REALTIME = new Set([
   'santri','guru','master','lembaga','settings',
   'izin_guru','rapor_semester','rekap_diniyah',
   'keuangan_gaji','keuangan_hutang_piutang','keuangan_tabungan_santri',
-  'keuangan_uang_saku_santri','keuangan_va_intent',
+  'keuangan_uang_saku_santri',
   'kegiatan','psb_pendaftaran',
   'absensi_santri_ngaji_bulanan','absensi_santri_sekolah_bulanan'
 ])
