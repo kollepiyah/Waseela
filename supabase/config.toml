@@ -1,9 +1,10 @@
 # Supabase config — Waseela (SINGLE-TENANT, satu lembaga per project).
-# Project ref: rzwefjilxzsqlokkwiyt — region ap-southeast-1 (Singapore).
+# Project ref: vfbmaywcjurykxfetbia — region ap-southeast-1 (Singapore).
+# ⚠ JANGAN diganti ke ref lain: `supabase db push` memakai nilai ini + supabase/.temp/project-ref.
 # Skema dikelola via supabase/migrations/*.sql → auto-apply lewat integrasi GitHub saat push.
 # TIDAK ada tenant_id (single-tenant); RLS hanya untuk PERAN
 # (super_admin / admin / admin_keuangan / guru / santri).
-project_id = "rzwefjilxzsqlokkwiyt"
+project_id = "vfbmaywcjurykxfetbia"
 
 [db]
 # Versi Postgres untuk `supabase start` lokal (opsional). Remote di-manage Supabase.
