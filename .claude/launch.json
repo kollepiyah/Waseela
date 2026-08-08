@@ -1,0 +1,20 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "waseela-app",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "app",
+      "port": 5174,
+      "env": {
+        "VITE_SUPABASE_URL": "https://vfbmaywcjurykxfetbia.supabase.co",
+        "VITE_SUPABASE_ANON_KEY": "",
+        "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_KtvCt2POoqXrhUcaERoC2w_Q3I6Wk-U",
+        "VITE_SUPABASE_TENANT_SLUG": "demo",
+        "VITE_AUTH_BACKEND": "firebase",
+        "VITE_DATA_BACKEND": "firebase"
+      }
+    }
+  ]
+}

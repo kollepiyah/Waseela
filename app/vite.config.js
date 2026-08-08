@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 
 // v.1.2.9: versi app tersedia di kode sebagai __APP_VERSION__ — dulu diketik ulang
 //   sebagai teks di LoginView, dan nama berkas installer di URL unduhan ikut
@@ -9,6 +9,44 @@ import { readFileSync } from 'node:fs'
 const pkg = JSON.parse(
   readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf8')
 )
+
+// ── .env.local WAJIB MENANG atas variabel lingkungan ────────────────────────
+// Perilaku BAWAAN Vite justru sebaliknya: "variabel yang sudah ada saat Vite
+// dijalankan berprioritas tertinggi dan TIDAK ditimpa berkas .env".
+//
+// 8 Agu 2026 itu memakan korban: VITE_SUPABASE_URL basi warisan proses induk
+// (menunjuk project lembaga LAIN) mengalahkan app/.env.local, sehingga bundel
+// Waseela memanggang URL + anon key milik lembaga itu. Kalau sampai ter-deploy:
+// aplikasi pembeli menyambung ke database orang lain, dan kunci anon lembaga itu
+// tersiar di bundel publik. Gejalanya pun tak kelihatan — build "sukses".
+//
+// Karena itu nilai dari berkas di-INJEKSI lewat `define` (penggantian teks
+// langsung) yang mengalahkan segalanya. Kalau berkasnya tak ada — misalnya build
+// di CI — perilaku bawaan Vite dibiarkan seperti semula.
+function envDariBerkas() {
+  const p = fileURLToPath(new URL('./.env.local', import.meta.url))
+  if (!existsSync(p)) return {}
+  const out = {}
+  for (const baris of readFileSync(p, 'utf8').split('\n')) {
+    const m = baris.match(/^\s*(?:export\s+)?(VITE_[A-Z0-9_]+)\s*=\s*(.*)$/)
+    if (m) out[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, '')
+  }
+  return out
+}
+const envBerkas = envDariBerkas()
+const defineEnv = Object.fromEntries(
+  Object.entries(envBerkas).map(([k, v]) => [`import.meta.env.${k}`, JSON.stringify(v)])
+)
+// Kunci yang TAK ada di berkas tapi ADA di lingkungan → dikosongkan, supaya nilai
+// basi tak menyelinap lewat celah itu (mis. .env.local memakai PUBLISHABLE_KEY
+// sedangkan lingkungan masih menyimpan ANON_KEY project lama).
+if (Object.keys(envBerkas).length) {
+  for (const k of Object.keys(process.env)) {
+    if (k.startsWith('VITE_SUPABASE') && !(k in envBerkas)) {
+      defineEnv[`import.meta.env.${k}`] = JSON.stringify('')
+    }
+  }
+}
 
 // Vue 3 SPA — Waseela
 // Dev: npm run dev  → http://localhost:5174
@@ -18,7 +56,8 @@ export default defineConfig({
   // waseela.web.app/ → app/dist/ → base path '/' (SPA at root)
   base: '/',
   define: {
-    __APP_VERSION__: JSON.stringify(pkg.version)
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    ...defineEnv // .env.local menang atas variabel lingkungan — lihat catatan di atas
   },
   plugins: [vue()],
   resolve: {

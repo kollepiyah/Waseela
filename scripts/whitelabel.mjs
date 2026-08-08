@@ -75,10 +75,30 @@ for (const a of AREA) {
 // atau dependensi yang di-inline saat bundling.
 const distDir = resolve(ROOT, 'app/dist')
 const sisaDist = []
+const refSalah = []
 if (existsSync(distDir)) {
+  // Ref project Supabase yang SAH = project_id di supabase/config.toml.
+  const cfg = existsSync(resolve(ROOT, 'supabase/config.toml'))
+    ? readFileSync(resolve(ROOT, 'supabase/config.toml'), 'utf8')
+    : ''
+  const refSah = (cfg.match(/project_id\s*=\s*"([a-z0-9]+)"/) || [])[1] || ''
+
   for (const p of walk(distDir, /\.(js|css|html|json|webmanifest|txt|xml)$/)) {
     const teks = readFileSync(p, 'utf8')
     if (POLA_JEJAK.test(teks)) sisaDist.push(relative(ROOT, p))
+
+    // Ref project ASING di bundel. Gerbang teks di atas TAK bisa menangkap ini:
+    // ref Supabase cuma deretan huruf acak, bukan kata "ammu"/"mambaul".
+    //
+    // Pernah terjadi (8 Agu 2026): variabel VITE_SUPABASE_URL basi warisan proses
+    // induk MENANG atas .env.local, sehingga bundel Waseela memanggang URL + anon
+    // key project lembaga LAIN. Kalau ter-deploy: aplikasi pembeli menyambung ke
+    // database lembaga lain, dan kunci anon lembaga itu ikut tersiar di bundel publik.
+    if (refSah) {
+      for (const m of teks.matchAll(/([a-z0-9]{20})\.supabase\.co/g)) {
+        if (m[1] !== refSah) refSalah.push(`${relative(ROOT, p)} → ${m[1]}`)
+      }
+    }
   }
 }
 
@@ -92,6 +112,20 @@ if (perluTangan.length) {
   console.log('  ⚠ PERLU TANGAN (tak ada blok import untuk menyisipkan BRAND):')
   perluTangan.forEach((f) => console.log('    ' + f))
   console.log('')
+}
+if (refSalah.length) {
+  const unik = [...new Set(refSalah.map((r) => r.split(' → ')[1]))]
+  console.log(`  ✗ GERBANG BACKEND GAGAL — bundel menunjuk project Supabase ASING:\n`)
+  unik.forEach((r) => console.log(`    ${r}.supabase.co`))
+  console.log(`\n    Terpanggang di ${refSalah.length} tempat, mis:`)
+  refSalah.slice(0, 5).forEach((l) => console.log('      ' + l))
+  console.log('\n  JANGAN DEPLOY. Aplikasi akan menyambung ke database lembaga lain, dan')
+  console.log('  kunci anon lembaga itu ikut tersiar di bundel publik.')
+  console.log('\n  Penyebab tersering: variabel VITE_SUPABASE_* basi di lingkungan proses')
+  console.log('  MENANG atas app/.env.local. Periksa & bangun ulang dengan nilai benar:')
+  console.log('    env | grep VITE_SUPABASE')
+  console.log('    cd app && set -a && . ./.env.local && set +a && VITE_SUPABASE_ANON_KEY="" npm run build\n')
+  process.exit(1)
 }
 if (sisa.length || sisaDist.length) {
   if (sisa.length) {
@@ -110,8 +144,11 @@ if (sisa.length || sisaDist.length) {
 console.log('  ✓ Gerbang SUMBER lulus — nol jejak di app/src, supabase/, tests/.')
 console.log(
   existsSync(distDir)
-    ? '  ✓ Gerbang HASIL BUILD lulus — nol jejak di app/dist.'
+    ? '  ✓ Gerbang HASIL BUILD lulus — nol jejak identitas di app/dist.'
     : '  · app/dist belum ada — jalankan `npm run build` lalu ulangi untuk memeriksa hasil build.'
 )
+if (existsSync(distDir)) {
+  console.log('  ✓ Gerbang BACKEND lulus — bundel hanya menunjuk project Supabase sendiri.')
+}
 console.log('\n  Ingat: gambar (logo/splash/ikon) tak tercakup grep → jalankan juga:')
 console.log('    node scripts/apply-brand.mjs\n')
