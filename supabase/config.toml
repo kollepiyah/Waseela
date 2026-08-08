@@ -9,3 +9,32 @@ project_id = "vfbmaywcjurykxfetbia"
 [db]
 # Versi Postgres untuk `supabase start` lokal (opsional). Remote di-manage Supabase.
 major_version = 15
+
+# ── Edge Functions ──────────────────────────────────────────────────────────
+# WAJIB dideklarasikan di sini, JANGAN cuma mengandalkan flag di baris perintah.
+# Sebabnya: `supabase functions deploy` pada fungsi yang SUDAH ADA mempertahankan
+# setelan verify_jwt lamanya. Deploy ulang tanpa deklarasi ini pernah menyisakan
+# reset-user-password tetap verify_jwt=false (peninggalan Juli) meski perintahnya
+# sudah benar — kelihatannya sukses, padahal endpointnya terbuka.
+#
+# verify_jwt = true  → pemanggil WAJIB membawa JWT sesi user.
+# verify_jwt = false → dipanggil pg_cron / anon / webhook mesin; keamanannya
+#                      ditegakkan di dalam fungsi (service-role, secret, atau RPC guard).
+
+[functions.reset-user-password]
+verify_jwt = true # memverifikasi JWT super_admin lewat RPC admin_target_auth_uid
+
+[functions.provision-akun]
+verify_jwt = true # dipanggil admin dari UI
+
+[functions.get-link-preview]
+verify_jwt = false # dipanggil anon saat menempel tautan di postingan
+
+[functions.dispatch-push]
+verify_jwt = false # dipanggil pg_cron tiap menit (service-role internal)
+
+[functions.auto-generate-tagihan]
+verify_jwt = false # dipanggil pg_cron harian (service-role internal)
+
+[functions.hiview-absen]
+verify_jwt = false # webhook mesin absensi; dijaga secret HIVIEW_PUSH_SECRET
