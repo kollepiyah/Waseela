@@ -96,6 +96,12 @@ const MILIK_WASEELA = [
   'app/src/utils/raporPdf.js',
   'app/src/utils/unduhan.js', // nama artefak rilis
 
+  // Jenjang Pra PTPT dinamai jumlah juz (keputusan Kyai, 8 Agu 2026) — hulu masih
+  // memakai 'Level 1'..'Level 5' di kelas penempatan. Dua berkas ini sepasang:
+  // nama jenjangnya di useLembaga, aturan urutannya (½=5, 1½=15) di santriSort.
+  'app/src/composables/useLembaga.js',
+  'app/src/utils/santriSort.js',
+
   // Tes yang diarahkan ulang ke penerus di app/src (hulu menunjuk helper legacy pra-Vue
   // `src/helpers.js` yang tak ikut ke Waseela) atau yang ekspektasinya khas Waseela.
   'tests/unit/_toAuthPassword.test.js',

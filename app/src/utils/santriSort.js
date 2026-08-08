@@ -61,9 +61,9 @@ const ROMAWI = {
 // Ekstrak rank kelas (natural) — DIPAKAI DI DALAM satu lembaga (lembagaRank sudah pisahkan grup).
 // Urutan yang dijamin per lembaga:
 //   TPQ      : Jilid 1..5 (10..50) → KPI (60) → PK/Khotaman (70)
-//   Pra PTPT : Level 1..5 (1..5)   — by NOMOR level (abaikan teks "½ Juz" dst)
+//   Pra PTPT : Level ½/1/1½/2/3 Juz (5/10/15/20/30) — jenjang DINAMAI oleh jumlah juz
 //   PTPT     : Kelas 1..6 (10..60) — Juz mengikuti kelas
-//   PPPH     : Level 1..4 (1..4)   — by NOMOR level (abaikan nama kitab)
+//   PPPH     : Level 1..4 (10..40) — by NOMOR level (abaikan nama kitab)
 //   TK       : TK A (1) → TK B (2)
 //   SDI      : I..VI (1..6)        PKBM: VII..XII (7..12)
 //   Lulus    : paling akhir (9000)
@@ -84,9 +84,22 @@ export function kelasRank(kelas) {
   if (raw === 'kpi' || raw.includes('imtas')) return 60
   if (raw === 'pk' || raw.includes('khotam') || raw.includes('persiapan')) return 70
 
-  // --- Level N (Pra PTPT & PPPH): urut by NOMOR Level, abaikan teks Juz/Kitab/pecahan ½ ---
-  const lvl = raw.match(/level\s*(\d+)/)
-  if (lvl) return parseInt(lvl[1], 10)
+  // --- Level (Pra PTPT & PPPH) ---
+  // Pra PTPT: jenjangnya DINAMAI jumlah juz — 'Level ½ Juz', 'Level 1 Juz', 'Level 1½ Juz',
+  //   'Level 2 Juz', 'Level 3 Juz'. Dua hal yang bikin pembacaan lama (angka pertama setelah
+  //   "Level") salah: '½' bukan digit sehingga TAK dapat peringkat sama sekali, dan
+  //   'Level 1½ Juz' terbaca 1 — bertabrakan dengan 'Level 1 Juz'.
+  // Karena itu: peringkat = level × 10, +5 bila ada setengah → ½=5, 1=10, 1½=15, 2=20, 3=30.
+  //   Kelipatan 10 menyisakan ruang agar jenjang "setengah" duduk di antara dua jenjang bulat.
+  // PPPH ('Level 1'..'Level 4') tetap benar: 10, 20, 30, 40.
+  // '1/2' dinormalkan ke '½' DULU: kalau tidak, pada 'level 1/2 juz' angka 1 keburu
+  //   tertangkap sebagai level bulat dan hasilnya 10, bukan 5.
+  const lvlRaw = raw.replace(/1\s*\/\s*2/g, '½')
+  const lvl = lvlRaw.match(/level\s*(\d+)?\s*(½)?/)
+  if (lvl && (lvl[1] || lvl[2])) {
+    const bulat = lvl[1] ? parseInt(lvl[1], 10) : 0
+    return bulat * 10 + (lvl[2] ? 5 : 0)
+  }
 
   // --- Romawi murni (SDI I-VI, PKBM VII-XII) ---
   if (ROMAWI[raw] != null) return ROMAWI[raw]

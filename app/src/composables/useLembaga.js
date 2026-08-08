@@ -278,7 +278,11 @@ export const DEFAULT_LEMBAGA_SEED = [
     lembaga: 'Pra PTPT',
     group: 'qiraati',
     tpq_group: 'TPQ',
-    kelas: ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5']
+    // Jenjang Pra PTPT DINAMAI jumlah juz (keputusan Kyai, 8 Agu 2026) — selaras dengan
+    // DEFAULT_KARTU_KENAIKAN_PRA_PTPT di utils/kenaikan.js yang memang sudah memakai
+    // nama ini. Urutannya dijaga kelasRank (½=5, 1=10, 1½=15, 2=20, 3=30).
+    // Catatan: PPPH TETAP 'Level 1'..'Level 4' polos, PTPT tetap 'Kelas 1'..'Kelas 6'.
+    kelas: ['Level ½ Juz', 'Level 1 Juz', 'Level 1½ Juz', 'Level 2 Juz', 'Level 3 Juz']
   },
   {
     lembaga: 'PTPT',
