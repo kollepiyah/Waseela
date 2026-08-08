@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#0F766E</color>
-    <color name="colorPrimaryDark">#115E59</color>
-    <color name="colorAccent">#2DD4BF</color>
+    <color name="colorPrimary">#065F46</color>
+    <color name="colorPrimaryDark">#064E3B</color>
+    <color name="colorAccent">#34D399</color>
     <!-- v.20.0526: Splash background mint green (match brand) -->
-    <color name="splashBg">#F2FEF9</color>
+    <color name="splashBg">#ECFDF5</color>
     <!-- v.100: warna aksen ikon notifikasi (FCM default_notification_color + LocalNotifications) -->
-    <color name="waseela_notif_accent">#0F766E</color>
+    <color name="waseela_notif_accent">#065F46</color>
 </resources>

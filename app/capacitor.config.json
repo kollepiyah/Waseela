@@ -4,12 +4,12 @@
   "webDir": "dist",
   "bundledWebRuntime": false,
   "android": {
-    "backgroundColor": "#0F766E",
+    "backgroundColor": "#065F46",
     "allowMixedContent": false,
     "captureInput": true
   },
   "ios": {
-    "backgroundColor": "#0F766E",
+    "backgroundColor": "#065F46",
     "contentInset": "always",
     "scrollEnabled": true
   },
@@ -18,7 +18,7 @@
       "launchShowDuration": 2000,
       "launchAutoHide": true,
       "launchFadeOutDuration": 300,
-      "backgroundColor": "#F2FEF9",
+      "backgroundColor": "#ECFDF5",
       "androidSplashResourceName": "splash",
       "androidScaleType": "CENTER",
       "showSpinner": false,
@@ -37,7 +37,7 @@
     },
     "LocalNotifications": {
       "smallIcon": "ic_stat_waseela",
-      "iconColor": "#0F766E"
+      "iconColor": "#065F46"
     },
     "PushNotifications": {
       "presentationOptions": [

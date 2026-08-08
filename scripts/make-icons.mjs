@@ -25,8 +25,8 @@ if (!existsSync(SRC)) {
   process.exit(1)
 }
 
-const TEAL = { r: 0x0f, g: 0x76, b: 0x6e, alpha: 1 } // #0F766E — warna merek
-const MINT = { r: 0xf2, g: 0xfe, b: 0xf9, alpha: 1 } // #F2FEF9 — latar splash
+const HIJAU = { r: 0x06, g: 0x5f, b: 0x46, alpha: 1 } // #065F46 — emerald, warna logo Waseela (terukur)
+const MINT = { r: 0xec, g: 0xfd, b: 0xf5, alpha: 1 } // #ECFDF5 — emerald-50, latar splash
 
 /**
  * Buang tepi transparan berdasarkan kanal alpha.
@@ -71,8 +71,8 @@ async function tulis(nama, buf) {
 
 console.log('\n═══ make-icons ═══\n')
 
-// ── 1. Ikon aplikasi 1024×1024 — latar teal + mark PUTIH ────────────────────
-// Kenapa mark putih di latar teal, bukan sebaliknya: ikon tampil di atas wallpaper
+// ── 1. Ikon aplikasi 1024×1024 — latar emerald + mark PUTIH ─────────────────
+// Kenapa mark putih di latar emerald, bukan sebaliknya: ikon tampil di atas wallpaper
 // apa pun. Latar solid menjaga kontras di layar terang maupun gelap, dan tak lenyap
 // saat sistem menerapkan masking bulat.
 //
@@ -83,7 +83,7 @@ console.log('\n═══ make-icons ═══\n')
   // Varian A — wordmark utuh, dikecilkan supaya muat di lingkaran aman.
   const MARK_W = Math.round(1024 * 0.58)
   const mark = await siluet({ r: 255, g: 255, b: 255 }, MARK_W)
-  const buf = await sharp({ create: { width: 1024, height: 1024, channels: 4, background: TEAL } })
+  const buf = await sharp({ create: { width: 1024, height: 1024, channels: 4, background: HIJAU } })
     .composite([{ input: mark, gravity: 'center' }])
     .png()
     .toBuffer()
@@ -104,14 +104,14 @@ console.log('\n═══ make-icons ═══\n')
     .joinChannel(alpha)
     .png()
     .toBuffer()
-  const buf = await sharp({ create: { width: 1024, height: 1024, channels: 4, background: TEAL } })
+  const buf = await sharp({ create: { width: 1024, height: 1024, channels: 4, background: HIJAU } })
     .composite([{ input: mark, gravity: 'center' }])
     .png()
     .toBuffer()
   await tulis('icon-monogram.png', buf)
 }
 
-// ── 2. splash.png 2732×2732 — latar mint + logo teal asli ───────────────────
+// ── 2. splash.png 2732×2732 — latar emerald-50 + logo asli ──────────────────
 // Ukuran 2732 = sisi terpanjang perangkat terbesar; Capacitor memusatkan lalu memotong,
 // jadi mark dibuat kecil (22%) supaya tak pernah terpotong di rasio mana pun.
 {

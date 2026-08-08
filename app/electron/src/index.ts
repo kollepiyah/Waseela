@@ -27,13 +27,13 @@ let mainWindow: BrowserWindow | null = null
 let splashWindow: BrowserWindow | null = null
 
 // v.80.0526: brand color (teal) untuk title bar overlay
-const BRAND_TEAL = '#0F766E'        // primary (teal-700)
-const BRAND_TEAL_DARK = '#134E4A'   // dark mode (teal-900)
+const BRAND_HIJAU = '#065F46'        // primary (emerald-800, warna logo Waseela)
+const BRAND_HIJAU_DARK = '#064E3B'   // dark mode (teal-900)
 
 // v.83.0526: Title bar theme palette — match Vue app light/dark mode
 //   Light: cream bg + slate symbol (mirip Claude desktop light mode)
 //   Dark: slate-800 bg + white symbol
-const TITLEBAR_LIGHT = { color: '#F2FEF9', symbolColor: '#475569' }  // cream + slate-600
+const TITLEBAR_LIGHT = { color: '#ECFDF5', symbolColor: '#475569' }  // cream + slate-600
 const TITLEBAR_DARK = { color: '#1E293B', symbolColor: '#FFFFFF' }   // slate-800 + white
 
 /**
@@ -89,7 +89,7 @@ function createSplashWindow() {
     console.warn('[splash] gagal baca tema tersimpan:', e)
   }
   const useDark = savedDark === true
-  const bodyBgColor = useDark ? '#0F172A' : '#F2FEF9'
+  const bodyBgColor = useDark ? '#0F172A' : '#ECFDF5'
   const bodyBgImage = useDark ? darkBgRule : lightBgRule
   // fallback OS HANYA kalau tema belum pernah di-set (savedDark === null)
   const osFallback = savedDark === null
