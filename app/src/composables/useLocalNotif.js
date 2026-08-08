@@ -48,7 +48,7 @@ export async function showLocal(opts) {
         body: String(opts.body || ''),
         smallIcon: 'ic_stat_icon',
         largeIcon: 'ic_launcher',
-        iconColor: '#0F766E',
+        iconColor: '#065F46',
         autoCancel: true,
         ongoing: false,
         extra: { link: opts.link || '' }

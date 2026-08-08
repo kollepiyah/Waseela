@@ -9,14 +9,14 @@ v.21.115.0528 · Source of truth untuk visual consistency. Wajib di-enforce di s
 ### Primary scale
 | Token | Hex | Use |
 |---|---|---|
-| `--color-primary` (teal-700) | `#0F766E` | Tombol CTA utama (Save, Submit, Tambah) |
-| `--color-primary-hover` (teal-800) | `#115E59` | Hover state primary |
-| `--color-primary-soft` (teal-100) | `#CCFBF1` | Background subtle / badge soft |
+| `--color-primary` (teal-700) | `#065F46` | Tombol CTA utama (Save, Submit, Tambah) |
+| `--color-primary-hover` (teal-800) | `#064E3B` | Hover state primary |
+| `--color-primary-soft` (teal-100) | `#D1FAE5` | Background subtle / badge soft |
 
 ### Action semantic
 | Purpose | Tailwind | Hex | Icon convention |
 |---|---|---|---|
-| **PRIMARY** (CTA utama) | `bg-[var(--color-primary)]` | `#0F766E` | `fa-save`, `fa-plus`, `fa-check` |
+| **PRIMARY** (CTA utama) | `bg-[var(--color-primary)]` | `#065F46` | `fa-save`, `fa-plus`, `fa-check` |
 | **INFO / PRINT** | `bg-cyan-600` | `#0891B2` | `fa-file-pdf`, `fa-print`, `fa-info` |
 | **SUCCESS / EXPORT DATA** | `bg-emerald-600` | `#059669` | `fa-file-excel`, `fa-download` |
 | **DANGER** (Delete/Logout) | `bg-rose-600` | `#E11D48` | `fa-trash`, `fa-times`, `fa-sign-out-alt` |

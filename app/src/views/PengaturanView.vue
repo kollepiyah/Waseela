@@ -1757,7 +1757,7 @@ function defaultForm() {
       { min: 55, max: 69, label: 'C' },
       { min: 0, max: 54, label: 'D' }
     ],
-    themeColor: '#0f766e',
+    themeColor: '#065f46',
     themeTextColor: '#1e293b',
     sidebarBgColor: '#0f172a',
     kalibrasiHijri: 0,

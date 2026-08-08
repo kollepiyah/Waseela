@@ -158,7 +158,7 @@ export function usePushNotifications() {
                   channelId: CHANNEL_ID,
                   // v.100: ikon kecil status bar = silhouette putih logo app (bukan kotak putih default)
                   smallIcon: 'ic_stat_waseela',
-                  iconColor: '#0F766E',
+                  iconColor: '#065F46',
                   // teruskan link supaya tap notif foreground bisa navigasi (lihat actionPerformed)
                   extra: notif?.data || {}
                 }

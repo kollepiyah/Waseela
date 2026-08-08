@@ -82,7 +82,7 @@ export function useExcel() {
       const cell = headerRow.getCell(i + 1)
       cell.value = c.header
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' } }
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F766E' } }
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF065F46' } }
       cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
       cell.border = {
         top: { style: 'thin' },
@@ -165,7 +165,7 @@ export function useExcel() {
       const cell = headerRow.getCell(i + 1)
       cell.value = col.header
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' } }
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F766E' } }
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF065F46' } }
       cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
       cell.border = {
         top: { style: 'thin' },

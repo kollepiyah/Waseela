@@ -7,7 +7,7 @@ import { useKeuangan } from './useKeuangan'
 import { fmtRp } from '@/utils/format'
 
 const NAMA_BULAN_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
-const PALETTE = ['#f43f5e', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#06b6d4', '#84cc16', '#f97316']
+const PALETTE = ['#f43f5e', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#06b6d4', '#84cc16', '#f97316']
 
 function ymOf(val) {
   if (!val) return null

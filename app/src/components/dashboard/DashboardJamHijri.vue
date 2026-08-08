@@ -4,7 +4,7 @@
     <svg class="pattern absolute inset-0 w-full h-full opacity-10" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
       <defs>
         <pattern id="bp-dash" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
-          <path d="M16 0 L32 16 L16 32 L0 16 Z" fill="none" stroke="#5EEAD4" stroke-width="1" />
+          <path d="M16 0 L32 16 L16 32 L0 16 Z" fill="none" stroke="#6EE7B7" stroke-width="1" />
         </pattern>
       </defs>
       <rect width="100%" height="100%" fill="url(#bp-dash)" />
@@ -13,10 +13,10 @@
     <div class="relative grid grid-cols-2 gap-3 items-center">
       <!-- Kiri: Hari + Hijri + Masehi -->
       <div class="text-left">
-        <p class="text-[10px] font-bold uppercase tracking-widest bg-[#5EEAD4]/25 text-[#CCFBF1] inline-block px-2 py-0.5 rounded mb-2 border border-[#5EEAD4]/40">
+        <p class="text-[10px] font-bold uppercase tracking-widest bg-[#6EE7B7]/25 text-[#D1FAE5] inline-block px-2 py-0.5 rounded mb-2 border border-[#6EE7B7]/40">
           {{ hari }}
         </p>
-        <p class="hijri-text text-xl md:text-2xl font-bold leading-tight text-[#CCFBF1]" dir="rtl">
+        <p class="hijri-text text-xl md:text-2xl font-bold leading-tight text-[#D1FAE5]" dir="rtl">
           {{ hijri }}
         </p>
         <p class="text-xs italic mt-1 text-white/85">{{ masehi }}</p>
@@ -24,7 +24,7 @@
 
       <!-- Kanan: Jam digital -->
       <div class="text-right">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-[#5EEAD4] mb-1">
+        <p class="text-[10px] font-bold uppercase tracking-widest text-[#6EE7B7] mb-1">
           <i class="far fa-clock mr-1"></i>WIB
         </p>
         <div class="jam-wrap leading-none">
@@ -66,7 +66,7 @@ watch(hijri, syncHijriWidget)
 <style scoped>
 .wsl-jam {
   /* v.21.80.0526: Olive deep gradient + subtle gold accent (Pesantren Modern) */
-  background: linear-gradient(135deg, #0F766E 0%, #134E4A 100%);
+  background: linear-gradient(135deg, #065F46 0%, #043D2F 100%);
 }
 :global(.dark) .wsl-jam,
 .dark-mode .wsl-jam {

@@ -56,7 +56,7 @@ function kopHtml(s = {}) {
   // v.100: baris-1 = gambar muassis (view in-app → URL bundel cukup; dataURL bila sudah ter-cache)
   const muSrc = muassisDataUrlSync() || MUASSIS_URL
   return (
-    '<div style="text-align:center;border-bottom:2px solid #0f766e;padding-bottom:9px;margin-bottom:11px;">' +
+    '<div style="text-align:center;border-bottom:2px solid #065f46;padding-bottom:9px;margin-bottom:11px;">' +
     (logo
       ? '<img src="' +
         esc(logo) +
@@ -66,7 +66,7 @@ function kopHtml(s = {}) {
       ? '<img src="' +
         muSrc +
         '" alt="" style="height:26px;margin:0 auto 2px;display:block;object-fit:contain;" />'
-      : '<div style="font-weight:800;font-size:16px;color:#0f766e;line-height:1.2;">' +
+      : '<div style="font-weight:800;font-size:16px;color:#065f46;line-height:1.2;">' +
         l1 +
         '</div>') +
     '<div style="font-weight:700;font-size:13px;line-height:1.2;">' +
@@ -152,7 +152,7 @@ export function buildReceiptStrukHtml(trx = {}, s = {}) {
     '</tr></table>' +
     '<div style="margin:10px 0 5px;">Dengan rincian pembayaran sebagai berikut :</div>' +
     '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
-    '<thead><tr style="background:#f0fdfa;">' +
+    '<thead><tr style="background:#ecfdf5;">' +
     '<th style="border:1px solid #cbd5e1;padding:4px 6px;width:30px;">No</th>' +
     '<th style="border:1px solid #cbd5e1;padding:4px 6px;text-align:left;">Jenis Pembayaran</th>' +
     '<th style="border:1px solid #cbd5e1;padding:4px 6px;width:96px;">Nominal</th>' +
@@ -260,7 +260,7 @@ export function buildSlipBisyarohHtml(slip = {}, s = {}) {
     '</tr></table>' +
     '<div style="margin:10px 0 5px;">Rincian bisyaroh :</div>' +
     '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
-    '<thead><tr style="background:#f0fdfa;">' +
+    '<thead><tr style="background:#ecfdf5;">' +
     '<th style="border:1px solid #cbd5e1;padding:4px 6px;text-align:left;">Keterangan</th>' +
     '<th style="border:1px solid #cbd5e1;padding:4px 6px;width:110px;">Nominal</th>' +
     '</tr></thead><tbody>' +
@@ -275,7 +275,7 @@ export function buildSlipBisyarohHtml(slip = {}, s = {}) {
     (potongan > 0 ? '- ' : '') +
     fmtRp(potongan) +
     '</td></tr>' +
-    '<tr><td style="text-align:right;font-weight:800;border-top:1.5px solid #334155;padding:3px 0 1.5px;">Take Home</td><td style="text-align:right;font-weight:800;white-space:nowrap;border-top:1.5px solid #334155;padding:3px 0 1.5px 10px;color:#0f766e;">' +
+    '<tr><td style="text-align:right;font-weight:800;border-top:1.5px solid #334155;padding:3px 0 1.5px;">Take Home</td><td style="text-align:right;font-weight:800;white-space:nowrap;border-top:1.5px solid #334155;padding:3px 0 1.5px 10px;color:#065f46;">' +
     fmtRp(take) +
     '</td></tr>' +
     '</table></td></tr></table>' +

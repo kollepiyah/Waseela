@@ -148,12 +148,12 @@ const formatted = computed(() => {
   width: 44px;
   height: 44px;
   border-radius: 9999px;
-  background: #f0fdfa;
-  border: 1px solid #99f6e4;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0f766e;
+  color: #065f46;
 }
 :global(.dark) .ava,
 .dark-mode .ava {

@@ -1088,7 +1088,7 @@ function onBackdrop(e) {
   margin: 0;
 }
 .mttl i {
-  color: #0f766e;
+  color: #065f46;
 }
 .mclose {
   padding: 0.5rem;
@@ -1110,8 +1110,8 @@ function onBackdrop(e) {
   gap: 0.75rem;
   padding: 0.75rem;
   border-radius: 0.75rem;
-  background: #f0fdfa;
-  border: 1px solid #99f6e4;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
   margin-bottom: 0.75rem;
 }
 :global(.dark) .santri-info,
@@ -1123,7 +1123,7 @@ function onBackdrop(e) {
   width: 40px;
   height: 40px;
   border-radius: 9999px;
-  background: #0f766e;
+  background: #065f46;
   color: white;
   display: flex;
   align-items: center;
@@ -1221,7 +1221,7 @@ function onBackdrop(e) {
   gap: 0.4rem;
 }
 .sect-ttl i {
-  color: #0f766e;
+  color: #065f46;
 }
 .sect-ttl.warn {
   color: #b91c1c;
@@ -1369,7 +1369,7 @@ td.jns {
   border-color: #3f3f46;
 }
 .cell.pick {
-  outline: 3px solid #0f766e;
+  outline: 3px solid #065f46;
   outline-offset: 1px;
 }
 :global(.dark) .cell.belum,
@@ -1420,7 +1420,7 @@ td.jns {
   transition: background 0.1s;
 }
 .nbrow:hover {
-  background: #f0fdfa;
+  background: #ecfdf5;
 }
 .nbrow.lunas {
   cursor: default;
@@ -1429,7 +1429,7 @@ td.jns {
   background: transparent;
 }
 .nbrow.pick {
-  outline: 3px solid #0f766e;
+  outline: 3px solid #065f46;
   outline-offset: 1px;
 }
 :global(.dark) .nbrow,
@@ -1502,20 +1502,20 @@ td.jns {
   gap: 0.3rem;
   padding: 0.4rem 0.7rem;
   border-radius: 9999px;
-  background: #ccfbf1;
-  color: #0f766e;
+  background: #d1fae5;
+  color: #065f46;
   font-weight: 800;
   font-size: 0.75rem;
   border: none;
   cursor: pointer;
 }
 .chip:hover {
-  background: #99f6e4;
+  background: #a7f3d0;
 }
 :global(.dark) .chip,
 .dark-mode .chip {
   background: rgba(15, 118, 110, 0.3);
-  color: #5eead4;
+  color: #6ee7b7;
 }
 
 /* keranjang */
@@ -1531,7 +1531,7 @@ td.jns {
   border-color: #3f3f46;
 }
 .cart-hd {
-  background: #0f766e;
+  background: #065f46;
   color: white;
   padding: 0.6rem 0.8rem;
   font-weight: 900;
@@ -1591,12 +1591,12 @@ td.jns {
 }
 .ci-komp {
   font-size: 0.62rem;
-  color: #0f766e;
+  color: #065f46;
   line-height: 1.3;
   margin-top: 2px;
 }
 :global(.dark) .ci-komp {
-  color: #5eead4;
+  color: #6ee7b7;
 }
 /* Potongan per baris — sengaja bergaya redup: ia pendamping nominal, bukan saingannya. */
 .ci-pot {
@@ -1752,13 +1752,13 @@ td.jns {
   cursor: pointer;
 }
 .mtd-btn:hover {
-  background: #99f6e4;
-  color: #0f766e;
+  background: #a7f3d0;
+  color: #065f46;
 }
 .mtd-btn.active {
-  background: #0f766e;
+  background: #065f46;
   color: white;
-  border-color: #0f766e;
+  border-color: #065f46;
 }
 :global(.dark) .mtd-btn,
 .dark-mode .mtd-btn {
@@ -1767,12 +1767,12 @@ td.jns {
 }
 :global(.dark) .mtd-btn.active,
 .dark-mode .mtd-btn.active {
-  background: #0f766e;
+  background: #065f46;
   color: white;
 }
 .row.nontunai .big {
   font-size: 0.82rem;
-  color: #0f766e;
+  color: #065f46;
 }
 .quick {
   display: grid;
@@ -1790,8 +1790,8 @@ td.jns {
   cursor: pointer;
 }
 .qbtn:hover {
-  background: #99f6e4;
-  color: #0f766e;
+  background: #a7f3d0;
+  color: #065f46;
 }
 :global(.dark) .qbtn,
 .dark-mode .qbtn {
@@ -1832,7 +1832,7 @@ td.jns {
 .btn-save {
   padding: 0.5rem 1.1rem;
   border-radius: 0.75rem;
-  background: #0f766e;
+  background: #065f46;
   color: white;
   font-weight: 800;
   font-size: 0.875rem;
@@ -1843,7 +1843,7 @@ td.jns {
   gap: 0.5rem;
 }
 .btn-save:hover {
-  background: #115e59;
+  background: #064e3b;
 }
 .btn-save:disabled {
   opacity: 0.6;
@@ -1964,28 +1964,28 @@ td.jns {
   border-color: #3f3f46;
 }
 .pbtn.live {
-  background: #0f766e;
+  background: #065f46;
   color: white;
 }
 .pbtn.live:hover {
-  background: #115e59;
+  background: #064e3b;
 }
 .ok-setting {
   margin-top: 0.85rem;
   background: transparent;
   border: none;
-  color: #0f766e;
+  color: #065f46;
   font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
   text-decoration: underline;
 }
 .ok-setting:hover {
-  color: #115e59;
+  color: #064e3b;
 }
 :global(.dark) .ok-setting,
 .dark-mode .ok-setting {
-  color: #5eead4;
+  color: #6ee7b7;
 }
 .fade-enter-active,
 .fade-leave-active {

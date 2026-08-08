@@ -197,7 +197,7 @@ onBeforeUnmount(() =>
     -apple-system,
     sans-serif;
   --bg-cream: #f9f6ee;
-  --theme-color: #0f766e;
+  --theme-color: #065f46;
 }
 
 body {
@@ -272,7 +272,7 @@ textarea {
 
 /* v.20.74.0526 A11Y: focus indicator (WCAG 2.4.7) */
 :focus-visible {
-  outline: 2px solid var(--theme-color, #0f766e) !important;
+  outline: 2px solid var(--theme-color, #065f46) !important;
   outline-offset: 2px !important;
   border-radius: 4px;
 }
@@ -282,7 +282,7 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid var(--theme-color, #0f766e) !important;
+  outline: 2px solid var(--theme-color, #065f46) !important;
   outline-offset: 2px !important;
 }
 
