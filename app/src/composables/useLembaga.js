@@ -3,11 +3,13 @@
 // v.20.15.0526: Fix subscription — legacy simpan di master/lembaga doc (.list), bukan koleksi terpisah
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
-import { subscribeDoc } from '@/services/firestore'
+import { subscribeDoc } from '@/services/db'
 import { useCollectionsStore } from '@/stores/collections'
 import { useAuthStore } from '@/stores/auth'
 // v.100: urutan lembaga canonical = sumber tunggal di utils/santriSort
 import { lembagaRank } from '@/utils/santriSort'
+// v.1.2.1: baris master/lembaga bisa {lembaga} atau {nama} — pakai pembaca yang sama
+import { namaLembaga } from '@/utils/jabatanUnit'
 
 // v.21.10.0526: Lembaga hierarchy — group → variants (kyai spec final)
 export const LEMBAGA_GROUPS = {
@@ -57,7 +59,9 @@ export const LEMBAGA_CANON_ALL = (() => {
   return out
 })()
 function _lkey(s) {
-  return String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9]/g, '')
+  return String(s == null ? '' : s)
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
 }
 // alias umum (tulisan beda) → kanonik. SMP/SMA = sub-tier PKBM → dipetakan ke 'PKBM'.
 const _LEMBAGA_ALIAS = {
@@ -100,13 +104,84 @@ export function getLembagaBroadGroup(namaLembaga) {
   return null
 }
 
+/**
+ * v.1.2.1 — SUMBER TUNGGAL: group tempat tugas dari NAMA lembaga.
+ *   'qiraati' | 'sekolah' | 'mahad' | 'non-lembaga'
+ *
+ * Kyai (22 Jul 2026): "saya menambah lembaga sekolah baru tapi tidak terdeteksi sekolah."
+ * Akarnya: deteksi "ini sekolah" tersebar sebagai daftar NAMA hardcoded
+ * (`['TK','SDI','MI','MTS','MA','SMP','SMA','PKBM'].some((s) => n.includes(s))`), padahal
+ * penanda yang Kyai isi di Master Data adalah `tipe: 'Formal'`. Dua akibatnya:
+ *   - lembaga baru di luar daftar (mis. "SMK") TAK PERNAH dikenali sekolah;
+ *   - cocok-substring bikin "Ma'had" salah dianggap sekolah (mengandung "MA").
+ *
+ * Urutan baca WAJIB data-dulu, konstanta-belakangan:
+ *   1. `tipe`  — diisi Kyai di form Master Data › Lembaga ('Formal'|'Qiraati'|'Non Lembaga').
+ *   2. `group` — HANYA ada di baris hasil DEFAULT_LEMBAGA_SEED; form TIDAK pernah
+ *                menulis field ini, jadi lembaga tambahan Kyai tak punya.
+ *   3. LEMBAGA_GROUPS — fallback terakhir kalau master/lembaga belum termuat atau
+ *                nama tak terdaftar. Lewat canonLembaga() supaya alias ikut kebaca
+ *                ('SMP'/'SMA' → PKBM, 'SD' → SDI).
+ *
+ * CATATAN Ma'had: form lembaga cuma punya 3 tipe, tak ada "Ma'had". Kalau baris Ma'had
+ * disunting lalu disimpan, ia ikut dapat `tipe` (default 'Qiraati') dan langkah 1 menang
+ * atas `group: 'mahad'`. Perilaku ini SAMA dengan groupOfLembaga lama di useGuru.js —
+ * sengaja tak diubah di sini supaya konsolidasi tetap murni.
+ */
+export function groupOfLembaga(nama, lembagaList) {
+  const k = _lkey(nama)
+  if (!k) return 'non-lembaga'
+  const row = (Array.isArray(lembagaList) ? lembagaList : []).find(
+    (x) => _lkey(namaLembaga(x)) === k
+  )
+  // 1. tipe (data yang Kyai isi sendiri)
+  const t = _lkey(row?.tipe)
+  if (t === 'formal') return 'sekolah'
+  if (t === 'qiraati') return 'qiraati'
+  if (t === 'nonlembaga') return 'non-lembaga'
+  // 2. group (baris seed lama)
+  const g = _lkey(row?.group)
+  if (g === 'sekolah' || g === 'qiraati' || g === 'mahad') return g
+  if (g === 'nonlembaga') return 'non-lembaga'
+  // 3. konstanta
+  return getLembagaBroadGroup(canonLembaga(nama)) || 'non-lembaga'
+}
+
+/** v.1.2.1 — Lembaga ini SEKOLAH formal? Sumber tunggal, ganti daftar nama hardcoded. */
+export function isSekolahLembaga(nama, lembagaList) {
+  return groupOfLembaga(nama, lembagaList) === 'sekolah'
+}
+
+/**
+ * v.1.2.1 — Daftar sekolah untuk KENAIKAN/MUTASI: nama dari master/lembaga
+ * (tipe 'Formal'), dengan PKBM dipecah jadi dua sub-tier SMP & SMA — kenaikan
+ * sekolah dipilih per tingkat, bukan per lembaga payung.
+ *
+ * Menggantikan konstanta ['TK','SDI','SMP','SMA'] yang dulu disalin di tiga tempat
+ * NaikKelasView. Untuk DEFAULT_LEMBAGA_SEED hasilnya PERSIS sama dengan konstanta
+ * LEMBAGA_KENAIKAN_SEKOLAH (nilai & urutan) — dijaga tes di lembagaSekolah.test.js.
+ * Baris varian TK (tk_group) dilewati: ia kelas di bawah payung "TK".
+ */
+export function sekolahTierList(lembagaList) {
+  const out = []
+  for (const l of Array.isArray(lembagaList) ? lembagaList : []) {
+    if (l?.tk_group) continue
+    const n = namaLembaga(l)
+    if (!n || !isSekolahLembaga(n, lembagaList)) continue
+    if (n.toUpperCase() === 'PKBM') out.push('SMP', 'SMA')
+    else out.push(n)
+  }
+  return [...new Set(out)]
+}
+
 // v.86.0526: cek apakah Kepala/PJ (lembaga = userLembaga) berhak melihat target_lembaga.
 //   - userLembaga variant/family (mis 'TPQ Sore' / 'TPQ') → scope SE-FAMILY (TPQ Pagi+Sore+Pra PTPT).
 //   - userLembaga label broad (mis 'Qiraati') → scope SE-BROAD-GROUP (semua qiraati).
 //   Dipakai untuk scoping Kepala Lembaga di Data Santri + view akademik (kyai: "Kepala = lembaganya").
 export function lembagaScopeMatches(userLembaga, targetLembaga) {
   if (!userLembaga || !targetLembaga) return false
-  if (String(userLembaga).toLowerCase().trim() === String(targetLembaga).toLowerCase().trim()) return true
+  if (String(userLembaga).toLowerCase().trim() === String(targetLembaga).toLowerCase().trim())
+    return true
   const uFam = getLembagaGroup(userLembaga) // family key kalau userLembaga = variant
   if (uFam) return getLembagaGroup(targetLembaga) === uFam // scope se-family
   // userLembaga bukan variant → mungkin label broad ('Qiraati'/'Sekolah') atau family key
@@ -126,8 +201,11 @@ export const PKBM_SUB_TIERS = {
 export function getPkbmSubTier(kelas) {
   if (kelas === null || kelas === undefined || kelas === '') return null
   let k = String(kelas).toUpperCase().trim()
-  k = k.replace(/^(KELAS|KLS|TINGKAT)\s+/, '').replace(/^(SMP|SMA)\s*[-\s]*/, '').trim()
-  const arab = { '7': 'VII', '8': 'VIII', '9': 'IX', '10': 'X', '11': 'XI', '12': 'XII' }
+  k = k
+    .replace(/^(KELAS|KLS|TINGKAT)\s+/, '')
+    .replace(/^(SMP|SMA)\s*[-\s]*/, '')
+    .trim()
+  const arab = { 7: 'VII', 8: 'VIII', 9: 'IX', 10: 'X', 11: 'XI', 12: 'XII' }
   if (arab[k]) k = arab[k]
   if (PKBM_SUB_TIERS.SMP.includes(k)) return 'SMP'
   if (PKBM_SUB_TIERS.SMA.includes(k)) return 'SMA'
@@ -300,7 +378,9 @@ export function useLembaga() {
 
   onUnmounted(() => {
     if (unsubLembaga) {
-      try { unsubLembaga() } catch (e) {}
+      try {
+        unsubLembaga()
+      } catch (e) {}
     }
   })
 

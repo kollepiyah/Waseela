@@ -2,16 +2,22 @@
 //   handle notif diterima (foreground) & di-tap (navigasi). Akses plugin via
 //   window.Capacitor.Plugins.PushNotifications (auto-register native; AMAN di web/desktop = no-op).
 //   Token disimpan ke santri/{id}.fcm_token (role santri) atau guru/{id}.fcm_token (guru/admin).
-//   Server (functions kirimNotifikasiMassal) yang resolve token dari `target` & kirim.
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+//   Migrasi Supabase: token kini ditulis ke Supabase via db.js (masuk data jsonb) — dibaca
+//   Edge Function dispatch-push. FCM (firebaseApp/messaging) tetap = transport push saja.
+import { supabase } from '@/services/supabase'
 // v.96.0626 perf: firebase/messaging di-LAZY (dynamic import di registerWeb) -> keluar dari boot bundle
-import { db, firebaseApp } from '@/services/firebase'
+// AUDIT AGU 2026 (P11): `services/firebase` juga di-LAZY. Impor statisnya dulu menyeret
+//   chunk vendor-firebase (79,8 kB: @firebase/app + app-check + installations) ke muat AWAL
+//   lewat rantai App.vue -> usePushNotifications, padahal `firebaseApp` cuma dipakai di SATU
+//   baris di dalam registerWeb() (lihat getMessaging di bawah).
 import { useAuthStore } from '@/stores/auth'
+import { BRAND } from '@/config/brand'
 
 const CHANNEL_ID = 'waseela_default'
 // v.95.0626: VAPID public key (Firebase Console > Cloud Messaging > Web Push certificates)
 // v.95.0626b: FIX — key lama tidak cocok dgn project -> 401 token-subscribe-failed. Diganti key asli Console.
-const VAPID_KEY = 'BOEAStvEGgdHCSKGONFbPY0olQ7OEUUvhbX3NofzqWyFBvaXG0tceRbvNE36Bw7qv35ZL6fXtOPEa6Wyp8VBWfY'
+const VAPID_KEY =
+  'BOEAStvEGgdHCSKGONFbPY0olQ7OEUUvhbX3NofzqWyFBvaXG0tceRbvNE36Bw7qv35ZL6fXtOPEa6Wyp8VBWfY'
 
 function isElectron() {
   return /electron/i.test((typeof navigator !== 'undefined' && navigator.userAgent) || '')
@@ -45,11 +51,14 @@ export function usePushNotifications() {
     const td = targetDoc()
     if (!t || !td) return
     try {
-      await setDoc(
-        doc(db, td.coll, td.id),
-        { fcm_token: t, fcm_token_at: serverTimestamp() },
-        { merge: true }
-      )
+      // v.109: RPC kolom-scoped (bukan mergeOne upsert) — lolos RLS utk santri/wali
+      //   termasuk anak yang di-switch. Lihat migration save_push_token_rpc.
+      const { error } = await supabase.rpc('save_push_token', {
+        p_coll: td.coll,
+        p_id: td.id,
+        p_token: t
+      })
+      if (error) throw error
     } catch (e) {
       console.warn('[push] saveToken gagal:', e?.message || e)
     }
@@ -59,7 +68,7 @@ export function usePushNotifications() {
     const td = targetDoc()
     if (!td) return
     try {
-      await setDoc(doc(db, td.coll, td.id), { fcm_token: null }, { merge: true })
+      await supabase.rpc('save_push_token', { p_coll: td.coll, p_id: td.id, p_token: null })
     } catch (e) {
       /* ignore */
     }
@@ -68,22 +77,30 @@ export function usePushNotifications() {
   // WEB push (PWA/browser) via firebase/messaging + VAPID. SW: /firebase-messaging-sw.js
   async function registerWeb() {
     try {
-      const { getMessaging, getToken, onMessage, isSupported } = await import('firebase/messaging')
+      // Gerbang murah DULU, baru unduh SDK-nya. Sebelumnya import firebase/messaging
+      // (37,8 kB) dijalankan lebih dulu lalu langsung di-buang oleh `return` di bawah —
+      // Electron & browser tanpa Notification membayarnya percuma tiap login.
       if (isElectron()) return // desktop Electron: tak ada web push
       if (!(typeof window !== 'undefined' && 'Notification' in window)) return
+      const { getMessaging, getToken, onMessage, isSupported } = await import('firebase/messaging')
       if (!(await isSupported().catch(() => false))) return
       let perm = Notification.permission
       if (perm === 'default') perm = await Notification.requestPermission()
       if (perm !== 'granted') return
+      // Init Firebase App + App Check baru DI SINI (izin notif sudah diberikan).
+      const { firebaseApp } = await import('@/services/firebase')
       const messaging = getMessaging(firebaseApp)
       const token = await getToken(messaging, { vapidKey: VAPID_KEY })
       if (token) await saveToken(token)
       onMessage(messaging, (payload) => {
         const n = (payload && payload.notification) || {}
         try {
-          // eslint-disable-next-line no-new
           // v.95.0626c: icon-192 ADA (manifest/SW); badge diperbaiki dari /icon-72.png (tidak ter-serve) ke /icon-192.png
-          new Notification(n.title || 'Waseela', { body: n.body || '', icon: '/icon-192.png', badge: '/icon-192.png' })
+          new Notification(n.title || BRAND.appName, {
+            body: n.body || '',
+            icon: '/icon-192.png',
+            badge: '/icon-192.png'
+          })
         } catch (e) {
           /* ignore */
         }
@@ -112,7 +129,7 @@ export function usePushNotifications() {
       try {
         await p.createChannel?.({
           id: CHANNEL_ID,
-          name: 'Notifikasi',
+          name: `Notifikasi ${BRAND.appName}`,
           description: 'Pengumuman & event penting',
           importance: 5,
           visibility: 1
@@ -136,12 +153,12 @@ export function usePushNotifications() {
               notifications: [
                 {
                   id: Date.now() % 2147483000,
-                  title: notif?.title || 'Waseela',
+                  title: notif?.title || BRAND.appName,
                   body: notif?.body || '',
                   channelId: CHANNEL_ID,
-                  // v.100: ikon kecil status bar = silhouette putih app (bukan kotak putih default)
+                  // v.100: ikon kecil status bar = silhouette putih logo app (bukan kotak putih default)
                   smallIcon: 'ic_stat_waseela',
-                  iconColor: '#065F46',
+                  iconColor: '#0F766E',
                   // teruskan link supaya tap notif foreground bisa navigasi (lihat actionPerformed)
                   extra: notif?.data || {}
                 }

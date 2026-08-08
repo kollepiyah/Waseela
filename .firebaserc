@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "waseela-id"
+  },
+  "targets": {
+    "waseela-id": {
+      "hosting": {
+        "main": [
+          "waseela"
+        ]
+      }
+    }
+  }
+}

@@ -16,8 +16,8 @@
             {{ importRekapPreview.plan.length }} baris
           </h3>
           <button
-            @click="importRekapPreview = null"
             class="text-slate-400 hover:text-rose-600 text-xl"
+            @click="importRekapPreview = null"
           >
             <i class="fas fa-times"></i>
           </button>
@@ -141,15 +141,15 @@
         </div>
         <div class="p-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2">
           <button
-            @click="importRekapPreview = null"
             class="px-4 py-2 text-xs font-bold rounded-lg bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 text-slate-700 dark:text-slate-100"
+            @click="importRekapPreview = null"
           >
             Batal
           </button>
           <button
-            @click="confirmImportRekap"
             :disabled="importingRekap || importRekapPreview.applyCount === 0"
             class="px-4 py-2 text-xs font-bold rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white disabled:opacity-50"
+            @click="confirmImportRekap"
           >
             <i :class="['fas', importingRekap ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i
             >{{
@@ -178,20 +178,18 @@
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <button
-          @click="pilihKategori('qiraati')"
           class="group relative overflow-hidden bg-gradient-to-br from-emerald-500 dark:from-emerald-700 to-teal-700 dark:to-teal-900 hover:from-emerald-600 dark:from-emerald-800 hover:to-teal-800 rounded-2xl p-5 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+          @click="pilihKategori('qiraati')"
         >
           <i class="fas fa-mosque text-2xl drop-shadow mb-2"></i>
           <h3 class="text-base md:text-lg font-black leading-tight drop-shadow-sm !text-white">
             Rekap Qiraati
           </h3>
-          <p class="text-[11px] text-white/85 font-medium mt-0.5">
-            TPQ Sore · Pra PTPT · PTPT · PPPH
-          </p>
+          <p class="text-[11px] text-white/85 font-medium mt-0.5">PTPT · PPPH</p>
         </button>
         <button
-          @click="pilihKategori('diniyah')"
           class="group relative overflow-hidden bg-gradient-to-br from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900 hover:from-cyan-600 dark:from-cyan-800 hover:to-cyan-800 rounded-2xl p-5 text-left text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+          @click="pilihKategori('diniyah')"
         >
           <i class="fas fa-book text-2xl drop-shadow mb-2"></i>
           <h3 class="text-base md:text-lg font-black leading-tight drop-shadow-sm !text-white">
@@ -209,9 +207,9 @@
     >
       <div class="flex items-center gap-3 mb-4">
         <button
-          @click="backToLanding"
           class="text-xs font-bold px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 transition cursor-pointer"
           title="Kembali"
+          @click="backToLanding"
         >
           <i class="fas fa-arrow-left text-slate-600"></i>
         </button>
@@ -224,40 +222,11 @@
           </p>
         </div>
       </div>
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
+      <!-- v.1.2.3: rekap prestasi bulanan HANYA PTPT & PPPH (TPQ Pagi/Sore/Pra PTPT tak perlu, Kyai). -->
+      <div class="grid grid-cols-2 gap-2 md:gap-3">
         <button
-          @click="pilihLembagaInput('TPQ Pagi')"
           class="bg-gradient-to-br from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-3 text-left text-white shadow-sm transition-all cursor-pointer"
-        >
-          <i class="fas fa-sun text-base drop-shadow"></i>
-          <h3 class="text-xs md:text-sm font-black leading-tight drop-shadow-sm !text-white mt-1">
-            TPQ Pagi
-          </h3>
-          <p class="text-[10px] text-white/85 font-medium mt-0.5">Shift pagi</p>
-        </button>
-        <button
-          @click="pilihLembagaInput('TPQ Sore')"
-          class="bg-gradient-to-br from-teal-500 dark:from-teal-700 to-teal-700 dark:to-teal-900 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-3 text-left text-white shadow-sm transition-all cursor-pointer"
-        >
-          <i class="fas fa-cloud-sun text-base drop-shadow"></i>
-          <h3 class="text-xs md:text-sm font-black leading-tight drop-shadow-sm !text-white mt-1">
-            TPQ Sore
-          </h3>
-          <p class="text-[10px] text-white/85 font-medium mt-0.5">Shift sore</p>
-        </button>
-        <button
-          @click="pilihLembagaInput('Pra PTPT')"
-          class="bg-gradient-to-br from-teal-600 dark:from-teal-800 to-teal-800 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-3 text-left text-white shadow-sm transition-all cursor-pointer"
-        >
-          <i class="fas fa-book text-base drop-shadow"></i>
-          <h3 class="text-xs md:text-sm font-black leading-tight drop-shadow-sm !text-white mt-1">
-            Pra PTPT
-          </h3>
-          <p class="text-[10px] text-white/85 font-medium mt-0.5">Persiapan tahfizh</p>
-        </button>
-        <button
           @click="pilihLembagaInput('PTPT')"
-          class="bg-gradient-to-br from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-3 text-left text-white shadow-sm transition-all cursor-pointer"
         >
           <i class="fas fa-quran text-base drop-shadow"></i>
           <h3 class="text-xs md:text-sm font-black leading-tight drop-shadow-sm !text-white mt-1">
@@ -266,8 +235,8 @@
           <p class="text-[10px] text-white/85 font-medium mt-0.5">Program tahfizh</p>
         </button>
         <button
-          @click="pilihLembagaInput('PPPH')"
           class="bg-gradient-to-br from-cyan-600 dark:from-cyan-800 to-cyan-800 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-3 text-left text-white shadow-sm transition-all cursor-pointer"
+          @click="pilihLembagaInput('PPPH')"
         >
           <i class="fas fa-scroll text-base drop-shadow"></i>
           <h3 class="text-xs md:text-sm font-black leading-tight drop-shadow-sm !text-white mt-1">
@@ -285,9 +254,9 @@
     >
       <div class="flex items-center gap-3 mb-4">
         <button
-          @click="backToLanding"
           class="text-xs font-bold px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 transition cursor-pointer"
           title="Kembali"
+          @click="backToLanding"
         >
           <i class="fas fa-arrow-left text-slate-600"></i>
         </button>
@@ -302,8 +271,8 @@
       </div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
         <button
-          @click="$router.push('/rekap-diniyah?lembaga=SDI')"
           class="bg-gradient-to-br from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-4 text-left text-white shadow-sm transition-all cursor-pointer"
+          @click="$router.push('/rekap-diniyah?lembaga=SDI')"
         >
           <i class="fas fa-school text-xl drop-shadow"></i>
           <h3 class="text-base font-black leading-tight drop-shadow-sm !text-white mt-1">SDI</h3>
@@ -312,16 +281,16 @@
           </p>
         </button>
         <button
-          @click="$router.push('/rekap-diniyah?lembaga=PKBM&jenjang=SMP')"
           class="bg-gradient-to-br from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-4 text-left text-white shadow-sm transition-all cursor-pointer"
+          @click="$router.push('/rekap-diniyah?lembaga=PKBM&jenjang=SMP')"
         >
           <i class="fas fa-school-flag text-xl drop-shadow"></i>
           <h3 class="text-base font-black leading-tight drop-shadow-sm !text-white mt-1">SMP</h3>
           <p class="text-[11px] text-white/85 font-medium mt-0.5">PKBM · Kelas VII–IX</p>
         </button>
         <button
-          @click="$router.push('/rekap-diniyah?lembaga=PKBM&jenjang=SMA')"
           class="bg-gradient-to-br from-cyan-700 dark:from-cyan-900 to-cyan-900 hover:shadow-md hover:-translate-y-0.5 rounded-xl p-4 text-left text-white shadow-sm transition-all cursor-pointer"
+          @click="$router.push('/rekap-diniyah?lembaga=PKBM&jenjang=SMA')"
         >
           <i class="fas fa-graduation-cap text-xl drop-shadow"></i>
           <h3 class="text-base font-black leading-tight drop-shadow-sm !text-white mt-1">SMA</h3>
@@ -335,9 +304,9 @@
       <!-- HEADER WITH BACK (admin/super only) -->
       <button
         v-if="isFullFilter"
-        @click="backToSub"
         class="inline-flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 transition cursor-pointer text-slate-700 dark:text-slate-200"
         title="Pilih lembaga lain"
+        @click="backToSub"
       >
         <i class="fas fa-arrow-left"></i> Pilih Lembaga Lain
       </button>
@@ -361,13 +330,13 @@
             <button
               v-for="m in modes"
               :key="m.id"
-              @click="mode = m.id"
               :class="[
                 'px-3 py-1.5 text-[11px] font-bold rounded-lg transition',
                 mode === m.id
                   ? 'bg-white shadow-sm text-cyan-700'
                   : 'text-slate-500 hover:text-slate-700'
               ]"
+              @click="mode = m.id"
             >
               <i :class="['fas', m.icon, 'mr-1']"></i>{{ m.label }}
             </button>
@@ -426,13 +395,13 @@
           <button
             v-for="t in tipeOptions"
             :key="t.id"
-            @click="filterTipe = t.id"
             :class="[
               'px-3 py-1.5 text-[11px] font-bold rounded-lg transition cursor-pointer',
               filterTipe === t.id
                 ? 'bg-white dark:bg-slate-800 shadow-sm text-cyan-700'
                 : 'text-slate-500 hover:text-slate-700'
             ]"
+            @click="filterTipe = t.id"
           >
             <i :class="['fas', t.icon, 'mr-1']"></i>{{ t.label }}
           </button>
@@ -488,44 +457,44 @@
           class="flex flex-nowrap md:flex-wrap items-center gap-2 overflow-x-auto md:overflow-visible hide-scrollbar [&>*]:shrink-0 md:[&>*]:shrink w-full md:w-auto -mx-1 px-1 md:mx-0 md:px-0"
         >
           <button
-            @click="cetakHTML()"
             aria-label="Cetak rekap HTML"
             class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
+            @click="cetakHTML()"
           >
             <i class="fas fa-print"></i>Cetak
           </button>
           <button
-            @click="exportPdf()"
             :disabled="busy"
             aria-label="Ekspor rekap PDF"
             class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+            @click="exportPdf()"
           >
             <i class="fas fa-file-pdf"></i>PDF
           </button>
           <button
-            @click="exportExcel()"
             :disabled="busy"
             aria-label="Ekspor rekap Excel"
             class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+            @click="exportExcel()"
           >
             <i class="fas fa-file-excel"></i>Excel
           </button>
           <button
             v-if="gsheetConfigured()"
-            @click="kirimRekapGsheet()"
             :disabled="busy"
             aria-label="Kirim rekap ke Google Sheet"
             class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+            @click="kirimRekapGsheet()"
           >
             <i :class="['fas', 'fa-table']"></i>Google Sheet
           </button>
           <!-- v.100 Batch10: impor massal nilai prestasi (data baru & banyak) — admin -->
           <button
             v-if="isFullFilter"
-            @click="downloadTemplateRekap()"
             :disabled="busy"
             aria-label="Unduh template impor"
             class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+            @click="downloadTemplateRekap()"
           >
             <i class="fas fa-file-arrow-down"></i>Template Impor
           </button>
@@ -545,15 +514,15 @@
               type="file"
               accept=".xlsx,.xls"
               class="hidden"
-              @change="onImportRekap"
               :disabled="importingRekap"
+              @change="onImportRekap"
             />
           </label>
           <button
-            @click="simpanRekap()"
             :disabled="busy"
             aria-label="Simpan rekap"
             class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white text-xs font-black transition cursor-pointer"
+            @click="simpanRekap()"
           >
             <i :class="['fas', busy ? 'fa-spinner fa-spin' : 'fa-save']"></i
             >{{ busy ? 'Menyimpan...' : 'SIMPAN' }}
@@ -622,8 +591,8 @@
               </div>
             </div>
             <button
-              @click="toggleExpand(s.id)"
               class="text-cyan-500 hover:bg-cyan-50 px-2 py-1 rounded"
+              @click="toggleExpand(s.id)"
             >
               <i :class="['fas', expandedId === s.id ? 'fa-chevron-up' : 'fa-chevron-down']"></i>
             </button>
@@ -669,16 +638,16 @@
                         class="border border-slate-200 px-1 py-1 text-center whitespace-nowrap"
                       >
                         <button
-                          @click="openEditPrestasi(r)"
                           class="text-cyan-600 hover:text-cyan-800 px-1"
                           title="Koreksi"
+                          @click="openEditPrestasi(r)"
                         >
                           <i class="fas fa-pen"></i>
                         </button>
                         <button
-                          @click="hapusPrestasi(r)"
                           class="text-rose-600 hover:text-rose-800 px-1"
                           title="Hapus"
+                          @click="hapusPrestasi(r)"
                         >
                           <i class="fas fa-trash"></i>
                         </button>
@@ -790,7 +759,7 @@
                   >
                     {{ s.nama }}
                     <span
-                      v-if="isGuruMode && !canEditPrestasi(s)"
+                      v-if="!canEditPrestasi(s)"
                       class="ml-1 text-[8px] font-black px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-700 align-middle"
                       title="Santri kelas sekolah Anda — prestasi qiraati hanya dapat dilihat"
                       >SEKOLAH</span
@@ -809,7 +778,6 @@
                       min="1"
                       max="30"
                       :value="getJuzNum(s)"
-                      @input="setJuz(s.id, $event.target.value)"
                       :readonly="!canEditPrestasi(s)"
                       :class="[
                         'w-full text-center rounded p-1 text-[11px] font-bold border outline-none focus:ring-2 focus:ring-rose-400',
@@ -817,6 +785,7 @@
                           ? 'bg-rose-50 text-rose-900 border-rose-300'
                           : 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed'
                       ]"
+                      @input="setJuz(s.id, $event.target.value)"
                     />
                     <span v-else class="text-[10px] text-slate-400">-</span>
                   </td>
@@ -824,7 +793,6 @@
                     <input
                       type="text"
                       :value="getEdit(s.id, 'awal')"
-                      @input="setEdit(s.id, 'awal', $event.target.value)"
                       :readonly="!canEditPrestasi(s)"
                       :class="[
                         'w-full text-center border-2 rounded-lg p-1.5 text-[11px] font-black shadow-sm focus:border-teal-500 outline-none',
@@ -832,13 +800,13 @@
                           ? 'border-slate-200'
                           : 'border-slate-100 bg-slate-100 text-slate-500 cursor-not-allowed'
                       ]"
+                      @input="setEdit(s.id, 'awal', $event.target.value)"
                     />
                   </td>
                   <td class="p-1 border border-slate-300 bg-white">
                     <input
                       type="text"
                       :value="getEdit(s.id, 'akhir')"
-                      @input="setEdit(s.id, 'akhir', $event.target.value)"
                       :readonly="!canEditPrestasi(s)"
                       :class="[
                         'w-full text-center border-2 rounded-lg p-1.5 text-[11px] font-black shadow-sm focus:border-teal-500 outline-none',
@@ -846,6 +814,7 @@
                           ? 'border-slate-200'
                           : 'border-slate-100 bg-slate-100 text-slate-500 cursor-not-allowed'
                       ]"
+                      @input="setEdit(s.id, 'akhir', $event.target.value)"
                     />
                   </td>
                   <td class="p-1 border border-slate-300 bg-slate-50">
@@ -863,7 +832,6 @@
                       v-else
                       type="text"
                       :value="getEdit(s.id, 'total')"
-                      @input="setEdit(s.id, 'total', $event.target.value)"
                       :readonly="!canEditPrestasi(s)"
                       :class="[
                         'w-full text-center font-black text-[11px] p-1.5 rounded-lg border-2 shadow-sm focus:border-teal-500 outline-none',
@@ -871,6 +839,7 @@
                           ? 'border-slate-200'
                           : 'border-slate-100 bg-slate-100 text-slate-500 cursor-not-allowed'
                       ]"
+                      @input="setEdit(s.id, 'total', $event.target.value)"
                     />
                   </td>
                 </tr>
@@ -901,7 +870,7 @@
                   >
                 </p>
                 <span
-                  v-if="isGuruMode && !canEditPrestasi(s)"
+                  v-if="!canEditPrestasi(s)"
                   class="text-[8px] font-black px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-700 flex-shrink-0"
                   title="Santri kelas sekolah Anda — prestasi qiraati hanya dapat dilihat"
                   >SEKOLAH</span
@@ -919,7 +888,6 @@
                     max="30"
                     inputmode="numeric"
                     :value="getJuzNum(s)"
-                    @input="setJuz(s.id, $event.target.value)"
                     :readonly="!canEditPrestasi(s)"
                     :class="[
                       'w-full text-center rounded-lg p-2 text-sm font-bold border outline-none focus:ring-2 focus:ring-rose-400',
@@ -927,6 +895,7 @@
                         ? 'bg-rose-50 dark:bg-rose-900/30 text-rose-900 dark:text-rose-200 border-rose-300'
                         : 'bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed'
                     ]"
+                    @input="setJuz(s.id, $event.target.value)"
                   />
                 </label>
                 <label class="block">
@@ -938,7 +907,6 @@
                     type="text"
                     inputmode="numeric"
                     :value="getEdit(s.id, 'awal')"
-                    @input="setEdit(s.id, 'awal', $event.target.value)"
                     :readonly="!canEditPrestasi(s)"
                     :class="[
                       'w-full text-center font-black text-sm p-2 rounded-lg border-2 outline-none focus:border-teal-500',
@@ -946,6 +914,7 @@
                         ? 'border-slate-200 bg-white dark:bg-slate-900 dark:text-white'
                         : 'border-slate-100 bg-slate-100 text-slate-500 cursor-not-allowed'
                     ]"
+                    @input="setEdit(s.id, 'awal', $event.target.value)"
                   />
                 </label>
                 <label class="block">
@@ -957,7 +926,6 @@
                     type="text"
                     inputmode="numeric"
                     :value="getEdit(s.id, 'akhir')"
-                    @input="setEdit(s.id, 'akhir', $event.target.value)"
                     :readonly="!canEditPrestasi(s)"
                     :class="[
                       'w-full text-center font-black text-sm p-2 rounded-lg border-2 outline-none focus:border-teal-500',
@@ -965,6 +933,7 @@
                         ? 'border-slate-200 bg-white dark:bg-slate-900 dark:text-white'
                         : 'border-slate-100 bg-slate-100 text-slate-500 cursor-not-allowed'
                     ]"
+                    @input="setEdit(s.id, 'akhir', $event.target.value)"
                   />
                 </label>
                 <label class="block">
@@ -987,7 +956,6 @@
                     type="text"
                     inputmode="numeric"
                     :value="getEdit(s.id, 'total')"
-                    @input="setEdit(s.id, 'total', $event.target.value)"
                     :readonly="!canEditPrestasi(s)"
                     :class="[
                       'w-full text-center font-black text-sm p-2 rounded-lg border-2 outline-none focus:border-teal-500',
@@ -995,6 +963,7 @@
                         ? 'border-slate-200 bg-white dark:bg-slate-900 dark:text-white'
                         : 'border-slate-100 bg-slate-100 text-slate-500 cursor-not-allowed'
                     ]"
+                    @input="setEdit(s.id, 'total', $event.target.value)"
                   />
                 </label>
               </div>
@@ -1059,75 +1028,73 @@
       </div>
     </template>
   </div>
-    <!-- v.107: modal koreksi prestasi bulanan (super_admin) -->
+  <!-- v.107: modal koreksi prestasi bulanan (super_admin) -->
+  <div
+    v-if="editP"
+    class="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-4"
+    @click.self="editP = null"
+  >
     <div
-      v-if="editP"
-      class="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-4"
-      @click.self="editP = null"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 w-full max-w-xs shadow-xl border border-[var(--border-subtle)]"
     >
-      <div
-        class="bg-[var(--bg-card)] rounded-2xl p-4 w-full max-w-xs shadow-xl border border-[var(--border-subtle)]"
-      >
-        <h3 class="text-sm font-bold text-[var(--text-primary)] mb-3">
-          Koreksi Prestasi — {{ editP.label }}
-        </h3>
-        <div class="space-y-2">
-          <label class="block text-[11px] font-semibold text-[var(--text-secondary)]"
-            >Awal
-            <input
-              v-model="editP.awal"
-              type="number"
-              class="mt-0.5 w-full px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
-            />
-          </label>
-          <label class="block text-[11px] font-semibold text-[var(--text-secondary)]"
-            >Akhir
-            <input
-              v-model="editP.akhir"
-              type="number"
-              class="mt-0.5 w-full px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
-            />
-          </label>
-          <label class="block text-[11px] font-semibold text-[var(--text-secondary)]"
-            >Total
-            <input
-              v-model="editP.total"
-              type="number"
-              class="mt-0.5 w-full px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
-            />
-          </label>
-          <label class="block text-[11px] font-semibold text-[var(--text-secondary)]"
-            >Juz (opsional)
-            <input
-              v-model="editP.juz"
-              type="text"
-              class="mt-0.5 w-full px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
-            />
-          </label>
-        </div>
-        <div class="flex justify-end gap-2 mt-4">
-          <button
-            @click="editP = null"
-            class="h-9 px-3 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200"
-          >
-            Batal
-          </button>
-          <button
-            @click="saveEditPrestasi()"
-            class="h-9 px-3 rounded-xl text-xs font-bold bg-teal-600 text-white hover:bg-teal-700"
-          >
-            Simpan
-          </button>
-        </div>
+      <h3 class="text-sm font-bold text-[var(--text-primary)] mb-3">
+        Koreksi Prestasi — {{ editP.label }}
+      </h3>
+      <div class="space-y-2">
+        <label class="block text-[11px] font-semibold text-[var(--text-secondary)]"
+          >Awal
+          <input
+            v-model="editP.awal"
+            type="number"
+            class="mt-0.5 w-full px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
+          />
+        </label>
+        <label class="block text-[11px] font-semibold text-[var(--text-secondary)]"
+          >Akhir
+          <input
+            v-model="editP.akhir"
+            type="number"
+            class="mt-0.5 w-full px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
+          />
+        </label>
+        <label class="block text-[11px] font-semibold text-[var(--text-secondary)]"
+          >Total
+          <input
+            v-model="editP.total"
+            type="number"
+            class="mt-0.5 w-full px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
+          />
+        </label>
+        <label class="block text-[11px] font-semibold text-[var(--text-secondary)]"
+          >Juz (opsional)
+          <input
+            v-model="editP.juz"
+            type="text"
+            class="mt-0.5 w-full px-2.5 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)]"
+          />
+        </label>
+      </div>
+      <div class="flex justify-end gap-2 mt-4">
+        <button
+          class="h-9 px-3 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200"
+          @click="editP = null"
+        >
+          Batal
+        </button>
+        <button
+          class="h-9 px-3 rounded-xl text-xs font-bold bg-teal-600 text-white hover:bg-teal-700"
+          @click="saveEditPrestasi()"
+        >
+          Simpan
+        </button>
       </div>
     </div>
-  </template>
+  </div>
+</template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue'
-import { subscribeColl, deleteOne } from '@/services/firestore'
-import { db } from '@/services/firebase'
-import { doc, setDoc, updateDoc } from 'firebase/firestore'
+import { subscribeColl, deleteOne, updateOne, mergeOne } from '@/services/db'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useExcel } from '@/composables/useExcel'
@@ -1139,13 +1106,14 @@ import { buildListPdf } from '@/utils/pdfBuilder'
 import { muassisDataUrlSync } from '@/utils/kopMuassis' // v.100: baris-1 KOP print = gambar muassis
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router' // v.100c-fix: pilihKategori('diniyah') pakai router.push (sebelumnya undefined → ReferenceError)
-import { isFullFilterRole, isKepalaLembaga, isSuperAdmin } from '@/utils/roleScope'
-import { ownsSekolah, deteksiTipeGuru } from '@/utils/guruScope' // v.100b: guru sekolah lihat prestasi qiraati santri kelasnya (read-only); v.100d: deteksiTipeGuru utk toggle kategori guru dual
-import { lembagaScopeMatches } from '@/composables/useLembaga'
+import { isFullFilterRole, isSuperAdmin } from '@/utils/roleScope'
+import { ownsSekolah, deteksiTipeGuru, scopeQiraati } from '@/utils/guruScope' // v.100b: guru sekolah lihat prestasi qiraati santri kelasnya (read-only); v.100d: deteksiTipeGuru utk toggle kategori guru dual; v.1.2.8: scopeQiraati = scope kepala per-sisi
 import { sortSantri } from '@/utils/santriSort'
 import { useMobileShell } from '@/composables/useMobileShell'
 
-const LEMBAGA_QIRAATI = ['TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH']
+// v.1.2.3: rekap prestasi bulanan HANYA untuk PTPT & PPPH (TPQ Pagi/Sore/Pra PTPT tak
+//   perlu prestasi bulanan — Kyai). Menyetir tombol lembaga, filter, scope santri, & ekspor.
+const LEMBAGA_QIRAATI = ['PTPT', 'PPPH']
 const BULAN_LIST = [
   'Januari',
   'Februari',
@@ -1208,7 +1176,7 @@ async function saveEditPrestasi() {
   const e = editP.value
   if (!e) return
   try {
-    await updateDoc(doc(db, 'riwayat_prestasi', String(e.id)), {
+    await updateOne('riwayat_prestasi', String(e.id), {
       awal: e.awal === '' ? null : Number(e.awal),
       akhir: e.akhir === '' ? null : Number(e.akhir),
       total: e.total === '' ? null : Number(e.total),
@@ -1242,12 +1210,10 @@ const router = useRouter()
 const { isMobile } = useMobileShell()
 const isFullFilter = computed(() => isFullFilterRole(auth.sesiAktif))
 const isGuruMode = computed(() => !isFullFilter.value)
-// v.86.0526: Kepala/PJ (role guru, bukan admin) discope ke lembaganya.
-const kepalaScope = computed(() => {
-  const s = auth.sesiAktif
-  if (!s || s.role === 'admin' || s.id === 'admin') return null
-  return isKepalaLembaga(s) ? s.lembaga || null : null
-})
+// v.1.2.8 (Kyai 5 Agu 2026): scope kepala PER-SISI — sumber tunggal di utils/guruScope.
+//   Menutup bug "Kepala SDI yang juga guru ngaji PTPT melihat SEMUA santri SDI di rekap
+//   prestasi PTPT"; alasan lengkapnya ada di komentar scopeQiraati.
+const qs = computed(() => scopeQiraati(auth.sesiAktif))
 function _lowS(v) {
   return String(v || '')
     .toLowerCase()
@@ -1262,9 +1228,11 @@ function ownNgaji(s) {
 function ownSekolah(s) {
   return ownsSekolah(s, auth.sesiAktif?.guru || auth.sesiAktif?.nama)
 }
-// Boleh edit prestasi? admin/kepala = ya; guru = hanya santri NGAJI ampuannya (sekolah = read-only).
+// Boleh edit prestasi? admin penuh = ya. Kepala = lembaga NGAJI yang ia pimpin + santri
+//   ngaji ampuannya (kepala SEKOLAH tak dapat kuasa atas nilai qiraati). Guru = santri
+//   NGAJI ampuannya saja; santri kelas sekolahnya read-only.
 function canEditPrestasi(s) {
-  return !isGuruMode.value || ownNgaji(s)
+  return qs.value.edit(s)
 }
 // v.100d: filter kategori utk guru DUAL (mengampu ngaji DAN wali kelas sekolah) → ekspor terpisah
 const filterTipe = ref('all') // 'all' | 'qiraati' | 'sekolah'
@@ -1331,7 +1299,7 @@ const santriQiraati = computed(() => {
     const lmb = String(s.lembaga || '')
       .trim()
       .toLowerCase()
-    return LEMBAGA_QIRAATI.some((q) => q.toLowerCase() === lmb) || lmb === 'tpq'
+    return LEMBAGA_QIRAATI.some((q) => q.toLowerCase() === lmb)
   })
 })
 
@@ -1347,21 +1315,18 @@ function lembagaMatch(s, filter) {
 
 const filteredSantri = computed(() => {
   let list = santriQiraati.value
-  // Guru mode: santri ngaji ampuan (editable) + santri kelas sekolahnya (read-only, lihat prestasi qiraati)
-  if (isGuruMode.value) {
-    list = list.filter((s) => ownNgaji(s) || ownSekolah(s))
-    // v.100d: guru DUAL pisah kategori → ekspor terpisah. qiraati=ngaji (editable); sekolah=read-only (badge "SEKOLAH")
-    if (filterTipe.value === 'qiraati') list = list.filter((s) => ownNgaji(s))
-    else if (filterTipe.value === 'sekolah')
-      list = list.filter((s) => ownSekolah(s) && !ownNgaji(s))
+  // Satu penyaring untuk semua non-admin: guru = santri ngaji ampuan (editable) + santri
+  //   kelas sekolahnya (read-only); kepala = itu semua PLUS lembaga ngaji yang ia pimpin.
+  if (!qs.value.adminPenuh) {
+    list = list.filter((s) => qs.value.lihat(s))
+    // v.100d: guru DUAL pisah kategori → ekspor terpisah. qiraati=ngaji (editable);
+    //   sekolah=read-only (badge "SEKOLAH"). Toggle ini hanya muncul untuk guru.
+    if (isGuruMode.value) {
+      if (filterTipe.value === 'qiraati') list = list.filter((s) => ownNgaji(s))
+      else if (filterTipe.value === 'sekolah')
+        list = list.filter((s) => ownSekolah(s) && !ownNgaji(s))
+    }
   }
-  // v.86.0526: Kepala/PJ → hanya santri lembaganya (block lintas-lembaga)
-  if (kepalaScope.value)
-    list = list.filter(
-      (s) =>
-        lembagaScopeMatches(kepalaScope.value, s.lembaga) ||
-        lembagaScopeMatches(kepalaScope.value, s.lembaga_sekolah)
-    )
   if (filterLembaga.value) list = list.filter((s) => lembagaMatch(s, filterLembaga.value))
   if (filterKelas.value) list = list.filter((s) => String(s.kelas || '') === filterKelas.value)
   const kw = search.value.trim().toLowerCase()
@@ -1560,23 +1525,19 @@ async function simpanRekap() {
         if (e.total !== undefined) payload.prestasi_total = e.total
       }
       if (Object.keys(payload).length === 0) continue
-      promises.push(updateDoc(doc(db, 'santri', String(id)), payload))
+      promises.push(updateOne('santri', String(id), payload))
       // v.87.0526: event notif prestasi (1 per santri / bulan berjalan) -> Notif Center wali.
       const _periode = new Date().toISOString().slice(0, 7)
       const _npId = `np_${id}_${_periode}`
       promises.push(
-        setDoc(
-          doc(db, 'notif_prestasi', _npId),
-          {
-            id: _npId,
-            santri_id: String(id),
-            santri_nama: s.nama || '',
-            total: String(payload.prestasi_total ?? e.total ?? ''),
-            periode: _periode,
-            createdAt: new Date().toISOString()
-          },
-          { merge: true }
-        )
+        mergeOne('notif_prestasi', _npId, {
+          id: _npId,
+          santri_id: String(id),
+          santri_nama: s.nama || '',
+          total: String(payload.prestasi_total ?? e.total ?? ''),
+          periode: _periode,
+          createdAt: new Date().toISOString()
+        })
       )
       // v.100d: snapshot prestasi BULANAN (periode = bulan/tahun terpilih) → submenu Riwayat
       const _rpAwal = e.awal !== undefined ? e.awal : s.prestasi_awal || ''
@@ -1590,24 +1551,20 @@ async function simpanRekap() {
       const _rpJuz = s.lembaga === 'PTPT' ? (e.juz !== undefined ? e.juz : s.juz || '') : ''
       const _rpId = `rp_${id}_${periodeSel.value}`
       promises.push(
-        setDoc(
-          doc(db, 'riwayat_prestasi', _rpId),
-          {
-            id: _rpId,
-            santri_id: String(id),
-            santri_nama: s.nama || '',
-            lembaga: s.lembaga || '',
-            kelas: s.kelas || '',
-            periode: periodeSel.value,
-            bulan_label: bulanLabelSel.value,
-            awal: String(_rpAwal || ''),
-            akhir: String(_rpAkhir || ''),
-            total: String(_rpTotal || ''),
-            juz: String(_rpJuz || ''),
-            updatedAt: new Date().toISOString()
-          },
-          { merge: true }
-        )
+        mergeOne('riwayat_prestasi', _rpId, {
+          id: _rpId,
+          santri_id: String(id),
+          santri_nama: s.nama || '',
+          lembaga: s.lembaga || '',
+          kelas: s.kelas || '',
+          periode: periodeSel.value,
+          bulan_label: bulanLabelSel.value,
+          awal: String(_rpAwal || ''),
+          akhir: String(_rpAkhir || ''),
+          total: String(_rpTotal || ''),
+          juz: String(_rpJuz || ''),
+          updatedAt: new Date().toISOString()
+        })
       )
     }
     await Promise.all(promises)
@@ -1932,42 +1889,34 @@ async function confirmImportRekap() {
     for (const it of items) {
       importRekapProgress.value = { i: importRekapProgress.value.i + 1, total: items.length }
       try {
-        await updateDoc(doc(db, 'santri', String(it.santriId)), it.payload)
+        await updateOne('santri', String(it.santriId), it.payload)
         // event notif prestasi (sama dgn simpanRekap) → Notif Center wali
         const _npId = `np_${it.santriId}_${_periode}`
-        await setDoc(
-          doc(db, 'notif_prestasi', _npId),
-          {
-            id: _npId,
-            santri_id: String(it.santriId),
-            santri_nama: it.nama || '',
-            total: String(it.payload.prestasi_total ?? it.totalIn ?? ''),
-            periode: _periode,
-            createdAt: new Date().toISOString()
-          },
-          { merge: true }
-        )
+        await mergeOne('notif_prestasi', _npId, {
+          id: _npId,
+          santri_id: String(it.santriId),
+          santri_nama: it.nama || '',
+          total: String(it.payload.prestasi_total ?? it.totalIn ?? ''),
+          periode: _periode,
+          createdAt: new Date().toISOString()
+        })
         // v.100d: snapshot prestasi BULANAN (periode = bulan/tahun terpilih di layar)
         const _sImp = santriRaw.value.find((x) => String(x.id) === String(it.santriId))
         const _rpId = `rp_${it.santriId}_${periodeSel.value}`
-        await setDoc(
-          doc(db, 'riwayat_prestasi', _rpId),
-          {
-            id: _rpId,
-            santri_id: String(it.santriId),
-            santri_nama: it.nama || '',
-            lembaga: it.lembaga || _sImp?.lembaga || '',
-            kelas: _sImp?.kelas || '',
-            periode: periodeSel.value,
-            bulan_label: bulanLabelSel.value,
-            awal: String(it.payload.prestasi_awal ?? _sImp?.prestasi_awal ?? ''),
-            akhir: String(it.payload.prestasi_akhir ?? _sImp?.prestasi_akhir ?? ''),
-            total: String(it.payload.prestasi_total ?? it.totalIn ?? _sImp?.prestasi_total ?? ''),
-            juz: String(it.payload.juz ?? ''),
-            updatedAt: new Date().toISOString()
-          },
-          { merge: true }
-        )
+        await mergeOne('riwayat_prestasi', _rpId, {
+          id: _rpId,
+          santri_id: String(it.santriId),
+          santri_nama: it.nama || '',
+          lembaga: it.lembaga || _sImp?.lembaga || '',
+          kelas: _sImp?.kelas || '',
+          periode: periodeSel.value,
+          bulan_label: bulanLabelSel.value,
+          awal: String(it.payload.prestasi_awal ?? _sImp?.prestasi_awal ?? ''),
+          akhir: String(it.payload.prestasi_akhir ?? _sImp?.prestasi_akhir ?? ''),
+          total: String(it.payload.prestasi_total ?? it.totalIn ?? _sImp?.prestasi_total ?? ''),
+          juz: String(it.payload.juz ?? ''),
+          updatedAt: new Date().toISOString()
+        })
         ok++
       } catch (err) {
         fail++

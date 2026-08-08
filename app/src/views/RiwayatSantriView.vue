@@ -63,22 +63,22 @@
           <div class="flex items-center gap-2 mt-2 flex-wrap">
             <button
               type="button"
-              @click="setPresetBulanIni"
               class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-cyan-50 text-cyan-700 hover:bg-cyan-100 border border-cyan-200"
+              @click="setPresetBulanIni"
             >
               Bulan ini
             </button>
             <button
               type="button"
-              @click="setPresetSemester"
               class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-cyan-50 text-cyan-700 hover:bg-cyan-100 border border-cyan-200"
+              @click="setPresetSemester"
             >
               Semester ini
             </button>
             <button
               type="button"
-              @click="setPresetSetahun"
               class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-cyan-50 text-cyan-700 hover:bg-cyan-100 border border-cyan-200"
+              @click="setPresetSetahun"
             >
               1 tahun ({{ tahunSampai }})
             </button>
@@ -151,9 +151,9 @@
             <button
               type="button"
               :disabled="busyId === s.id"
-              @click="cetakRiwayat(s)"
               aria-label="Cetak PDF riwayat santri"
               class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+              @click="cetakRiwayat(s)"
             >
               <i :class="['fas', busyId === s.id ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>
               {{ busyId === s.id ? 'Memproses...' : 'Cetak PDF' }}
@@ -188,12 +188,11 @@
 // Tidak pakai Firestore where() — fetch semua + filter di client supaya
 // kompat dgn santri_id (bisa string atau number di data lama).
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { collection, getDocs } from 'firebase/firestore'
-import { db } from '@/services/firebase'
-import { subscribeColl } from '@/services/firestore'
+import { subscribeColl, getAll } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
+import { useGedungScope } from '@/composables/useGedungScope'
 import { sortSantri } from '@/utils/santriSort'
 import { cetakRiwayatSantriPdf, buildKopFromSettings } from '@/utils/riwayatSantriPdf'
 
@@ -215,6 +214,8 @@ const BULAN = [
 const auth = useAuthStore()
 const settings = useSettingsStore()
 const toast = useToast()
+// v.111: scope Gedung — admin keuangan ber-gedung hanya lihat santri gedungnya
+const { allowSantri } = useGedungScope()
 
 const isFullAccess = computed(() => {
   const s = auth.sesiAktif
@@ -258,7 +259,7 @@ const tahunOptions = computed(() => {
 })
 
 const filteredSantri = computed(() => {
-  let list = santriRaw.value.filter((s) => s.aktif !== false)
+  let list = santriRaw.value.filter((s) => s.aktif !== false && allowSantri(s.id))
   if (selectedLembaga.value) {
     list = list.filter(
       (s) => s.lembaga === selectedLembaga.value || s.lembaga_sekolah === selectedLembaga.value
@@ -354,16 +355,12 @@ async function cetakRiwayat(s) {
   busyId.value = s.id
   lastDebug.value = null
   try {
-    const [tgSnap, biSnap, tbSnap] = await Promise.all([
-      getDocs(collection(db, 'keuangan_tagihan')),
-      getDocs(collection(db, 'keuangan_buku_induk')),
-      getDocs(collection(db, 'keuangan_tabungan_santri'))
+    const [tagihan, bukuInduk, tabungan] = await Promise.all([
+      getAll('keuangan_tagihan'),
+      getAll('keuangan_buku_induk'),
+      getAll('keuangan_tabungan_santri')
     ])
-    const tagihan = tgSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
-    const pembayaran = biSnap.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
-      .filter((r) => r.sumber === 'pos_santri')
-    const tabungan = tbSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    const pembayaran = bukuInduk.filter((r) => r.sumber === 'pos_santri')
     const kop = buildKopFromSettings(settings.settings || {})
     const { stats } = await cetakRiwayatSantriPdf({
       santri: s,

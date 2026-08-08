@@ -2,16 +2,21 @@
   "name": "waseela-ops",
   "version": "1.0.0",
   "private": true,
-  "description": "Waseela — skrip ops root (build tenant, deploy Firebase Hosting, migrasi data Firestore→Supabase). Aplikasi Vue ada di app/.",
+  "description": "Waseela — skrip ops root (brand, tes, rilis web/Android/desktop). Aplikasi Vue ada di app/.",
   "scripts": {
-    "build": "node scripts/build-tenant.mjs demo",
-    "deploy": "node scripts/build-tenant.mjs demo && npx firebase deploy --only hosting:main",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "brand": "node scripts/apply-brand.mjs",
+    "build": "npm run build --prefix app",
+    "deploy": "npm run build --prefix app && npx firebase deploy --only hosting:main",
     "firebase:deploy": "npx firebase deploy --only hosting:main",
-    "migrate:dry": "node scripts/migrate-firestore-to-supabase.mjs demo --dry",
-    "migrate": "node scripts/migrate-firestore-to-supabase.mjs demo"
+    "build:apk": "node scripts/build-apk.cjs",
+    "build:aab": "node scripts/build-aab.cjs",
+    "electron:release": "node scripts/electron-release.cjs",
+    "sync:ammu": "node scripts/sync-from-ammu.mjs"
   },
   "devDependencies": {
-    "@supabase/supabase-js": "^2.108.2",
-    "firebase-admin": "^12.7.0"
+    "jsdom": "^29.1.1",
+    "vitest": "^2.1.8"
   }
 }

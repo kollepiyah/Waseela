@@ -17,6 +17,7 @@
 // Target yang dikenal dispatch-push: 'semua' | 'admin' | {type:'guru',nama|id} |
 //   {type:'santri',id} | {type:'wa',wa} | {type:'lembaga',lembaga}.
 import { setOne } from './db'
+import { BRAND } from '@/config/brand'
 
 /** Id unik per kiriman (lihat jebakan #1 di atas). */
 function _idNotif(prefix) {
@@ -48,7 +49,7 @@ export async function antreNotif(o = {}) {
   const id = _idNotif(o.prefix)
   await setOne('notif_queue', id, {
     id,
-    judul: String(o.judul || 'Mambaul Ulum'),
+    judul: String(o.judul || BRAND.appName),
     pesan: String(o.pesan || ''),
     kategori: String(o.kategori || ''),
     target: o.target || 'semua',

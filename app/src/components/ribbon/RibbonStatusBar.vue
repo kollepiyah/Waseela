@@ -7,6 +7,7 @@
       <span style="opacity: 0.85"
         >{{ santriCount.toLocaleString('id-ID') }} santri · {{ guruCount }} guru</span
       >
+      <span style="opacity: 0.7">{{ version }}</span>
       <span class="zoom"><RibbonIcon name="search" :size="13" /> 100%</span>
     </div>
   </div>
@@ -18,6 +19,7 @@ import { storeToRefs } from 'pinia'
 import RibbonIcon from './RibbonIcon.vue'
 import { useCollectionsStore } from '@/stores/collections'
 import { useSettingsStore } from '@/stores/settings'
+import { BRAND } from '@/config/brand'
 
 const collections = useCollectionsStore()
 collections.ensure('santri', 'guru') // langganan tunggal (sudah dipakai dashboard) — tak menambah beban
@@ -27,8 +29,11 @@ const settings = useSettingsStore()
 const santriCount = computed(() => (santri.value || []).length)
 const guruCount = computed(() => (guru.value || []).length)
 const lembagaName = computed(
-  () => settings.settings?.namaLembaga || settings.settings?.appTitle || 'Waseela'
+  () => settings.settings?.namaLembaga || settings.settings?.appTitle || BRAND.namaLembaga
 )
+// versi tampil: ambil dari settings bila ada supaya tak menambah titik bump baru di kode
+const version = computed(() => settings.settings?.appVersion || BRAND.version)
+
 const hijri = computed(() => {
   try {
     return new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', {

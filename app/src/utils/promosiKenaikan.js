@@ -2,15 +2,23 @@
 //   Diekstrak apa-adanya dari NaikKelasView.saveFormKenaikan + resolveKenaikanSchemaPath (perilaku TAK berubah);
 //   `settings` & `lembagaList` yang dulu ref view, kini parameter.
 import { getKartuKenaikanSchema } from './kenaikan'
-import { db } from '@/services/firebase'
-import { doc, setDoc, updateDoc } from 'firebase/firestore'
+import { labelPasangan } from './pasanganGuru'
+import { jenjangLembaga, indexJenjang } from './jenjangQiraati' // v.1.2.2: jodohkan label master ↔ kartu
+import { setOne, updateOne } from '@/services/db'
 
 // v.21.75: Resolve kelas label dari Form Kenaikan ke schema {kelasId, itemId}
 // PTPT: {kelas: "Kelas 1", juz: "5"} → {kelasId: "kelas_1", itemId: "juz_5"}
 // Pra PTPT: {kelas: "Level 1", khotam_ke: "I"} → {kelasId: "lvl_1", itemId: "kh_I"}
 // TPQ: {kelas: "Jilid 1A"} → {kelasId: "jilid_1", itemId: "1A"}
 // PPPH: {kelas: "Level 1 (Arba'in Nawawi)"} → {kelasId: "lvl_1", itemId: "arb_done"}
-export function resolveKenaikanSchemaPath(lembaga, kelasLabel, juzNum, khotamKe, settings) {
+export function resolveKenaikanSchemaPath(
+  lembaga,
+  kelasLabel,
+  juzNum,
+  khotamKe,
+  settings,
+  lembagaList
+) {
   if (!lembaga || !kelasLabel) return { kelasId: null, itemId: null }
   const schema = getKartuKenaikanSchema(lembaga, settings)
   if (!schema || !Array.isArray(schema.kelasList)) return { kelasId: null, itemId: null }
@@ -20,10 +28,14 @@ export function resolveKenaikanSchemaPath(lembaga, kelasLabel, juzNum, khotamKe,
   if (kelasEntry) {
     let itemId = null
     if (juzNum) {
-      const it = kelasEntry.items.find((i) => i.label === `Juz ${juzNum}` || i.id === `juz_${juzNum}`)
+      const it = kelasEntry.items.find(
+        (i) => i.label === `Juz ${juzNum}` || i.id === `juz_${juzNum}`
+      )
       itemId = it?.id || null
     } else if (khotamKe) {
-      const it = kelasEntry.items.find((i) => i.label === khotamKe || i.label === String(khotamKe).toUpperCase())
+      const it = kelasEntry.items.find(
+        (i) => i.label === khotamKe || i.label === String(khotamKe).toUpperCase()
+      )
       itemId = it?.id || null
     } else if (kelasEntry.items.length === 1) {
       itemId = kelasEntry.items[0].id
@@ -44,13 +56,38 @@ export function resolveKenaikanSchemaPath(lembaga, kelasLabel, juzNum, khotamKe,
     }
   }
 
+  // 3) v.1.2.2 — jodohkan lewat INDEX bila labelnya beda BENTUK.
+  //    master/lembaga menamai jenjang 'Level 3 Juz' / PTPT '3', sedangkan kartu memakai
+  //    'Level 5 (3 Juz)' / 'Kelas 3'. Urutannya sama, jadi index-lah penghubungnya.
+  //    HANYA jalan kalau dua langkah di atas gagal (dulu: gagal = kartu tak tercap
+  //    diam-diam) dan jumlah jenjangnya sama — kalau beda, tak ada dasar menjodohkan.
+  if (Array.isArray(lembagaList) && lembagaList.length) {
+    const jenjang = jenjangLembaga(lembaga, lembagaList)
+    const i = indexJenjang(jenjang, kelasLabel)
+    if (i >= 0 && jenjang.length === schema.kelasList.length) {
+      const k = schema.kelasList[i]
+      const items = Array.isArray(k?.items) ? k.items : []
+      const cocok = (it) => {
+        const lbl = String(it?.label ?? '')
+          .trim()
+          .toLowerCase()
+        if (juzNum) return lbl === `juz ${juzNum}`.toLowerCase() || it?.id === `juz_${juzNum}`
+        if (khotamKe) return lbl === String(khotamKe).trim().toLowerCase()
+        return false
+      }
+      const it = juzNum || khotamKe ? items.find(cocok) : items.length === 1 ? items[0] : null
+      return { kelasId: k?.id || null, itemId: it?.id || null }
+    }
+  }
+
   return { kelasId: null, itemId: null }
 }
 
 /**
  * Bangun payload kenaikan Qiraati (PURE — tak menulis Firestore).
  * @param {Object} s - dokumen santri (sumber kelas/lembaga/riwayat lama).
- * @param {Object} opts - { lembaga, kelas, juz, khotam_ke, guru, kelas_sekolah, catatan }.
+ * @param {Object} opts - { lembaga, kelas, juz, khotam_ke, guru, guru_pagi, guru_sore,
+ *                          kelas_sekolah, catatan }.
  * @param {Object} ctx - { settings, lembagaList }.
  * @returns {{ payload: Object, rkEntry: Object }}
  */
@@ -61,24 +98,74 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
   const klsBaru = opts.kelas || ''
   const khotamKe = lmbBaru.toLowerCase().trim() === 'pra ptpt' ? opts.khotam_ke || '' : ''
 
+  // v.1.1.9 FIX: dulu kenaikan HANYA menulis `guru`, sedangkan guru_pagi/guru_sore
+  //   dibiarkan nilai LAMA. Padahal kelasKeyQiraati (statistik) dan semua filter
+  //   ampuan membaca guru_pagi/guru_sore duluan — jadi "pindah guru" praktis tak
+  //   berefek: santri tetap terhitung di kelas guru lama. Sekarang pasangannya
+  //   ditulis utuh, dan `guru` dipertahankan sebagai cermin field lama.
+  const pagi = String(opts.guru_pagi ?? '').trim()
+  const sore = String(opts.guru_sore ?? '').trim()
+  const adaPasangan = !!(pagi || sore)
+
   const payload = {
     kelas_sekolah: opts.kelas_sekolah || '',
     lembaga: opts.lembaga || '',
     kelas: opts.kelas || '',
-    guru: opts.guru || ''
+    guru: (adaPasangan ? pagi || sore : opts.guru) || ''
+  }
+  // Hanya sentuh pasangan bila pemanggil memang memilih guru — jangan mengosongkan
+  // assignment yang sudah ada waktu form dibiarkan kosong.
+  if (adaPasangan) {
+    payload.guru_pagi = pagi
+    payload.guru_sore = sore
   }
   if (opts.lembaga === 'PTPT' && opts.juz) {
     payload.juz = `JUZ ${opts.juz}`
   }
-  const today = new Date().toISOString().slice(0, 10)
-  const todayId = new Date().toLocaleDateString('id-ID')
+  // v.1.2.2: label PJ PTPT — diisi saat santri MASUK PTPT dari lembaga sebelumnya.
+  //   Hanya ditulis bila pemanggil memang memilih; jangan mengosongkan label yang ada.
+  if (String(opts.pj_ptpt ?? '').trim()) payload.pj_ptpt = String(opts.pj_ptpt).trim()
+  // v.1.2.5: tanggal lulus/naik bisa diatur penguji lewat `opts.tanggal` ('YYYY-MM-DD').
+  //   Default = hari ini (perilaku lama dipertahankan PERSIS). Dipakai untuk cap kartu
+  //   kenaikan, riwayat & tgl_naik — supaya tes yang benar terjadi di tanggal lampau
+  //   (backfill) tercatat akurat. `today` sengaja UTC-slice saat default agar identik
+  //   dengan versi lama; `todayId` lokal.
+  const tglPilih = /^\d{4}-\d{2}-\d{2}$/.test(String(opts.tanggal || '')) ? opts.tanggal : ''
+  const today = tglPilih || new Date().toISOString().slice(0, 10)
+  const todayId = tglPilih
+    ? new Date(`${tglPilih}T00:00:00`).toLocaleDateString('id-ID')
+    : new Date().toLocaleDateString('id-ID')
 
   // v.21.75: Update kartu_kenaikan via schema-aware path (kelasId.itemId = tanggal)
   const kk = { ...(s.kartu_kenaikan || {}) }
   const lmb = opts.lembaga
   const kls = opts.kelas
-  if (lmb && kls) {
-    const resolved = resolveKenaikanSchemaPath(lmb, kls, opts.juz, opts.khotam_ke, settings)
+
+  // v.1.1.9 FIX (Kyai 21 Jul 2026) — kartu PTPT dicap SATU KOLOM TERLALU KANAN.
+  //   `opts.juz` = juz TUJUAN (santri tes juz 10 -> target juz 11), dan dulu itu yang
+  //   dipakai mencap kartu, sehingga lulus tes juz 10 mengisi kolom "Juz 11".
+  //   Keputusan Kyai: tanggal di kolom "Juz N" = TANGGAL LULUS TES JUZ N.
+  //   Jadi yang dicap adalah juz yang BARU SAJA LULUS = opts.juz - 1, dan blok
+  //   kelasnya ikut juz itu (juz 10 -> Kelas 2), BUKAN kelas tujuan (Kelas 3) —
+  //   kalau kelasnya tak ikut digeser, item juz_10 tak ada di blok Kelas 3 dan
+  //   capnya hilang diam-diam.
+  //   juz tujuan 1 (belum pernah lulus juz apa pun) -> tak ada yang dicap.
+  const juzTujuan = Number(opts.juz)
+  const isPtptJuz = lmb === 'PTPT' && Number.isFinite(juzTujuan) && juzTujuan > 0
+  const juzLulus = isPtptJuz ? juzTujuan - 1 : NaN
+  const adaCap = !isPtptJuz || juzLulus >= 1
+  const klsCap = isPtptJuz && juzLulus >= 1 ? `Kelas ${Math.ceil(juzLulus / 5)}` : kls
+  const juzCap = isPtptJuz ? (juzLulus >= 1 ? String(juzLulus) : '') : opts.juz
+
+  if (lmb && kls && adaCap) {
+    const resolved = resolveKenaikanSchemaPath(
+      lmb,
+      klsCap,
+      juzCap,
+      opts.khotam_ke,
+      settings,
+      lembagaList
+    )
     if (resolved.kelasId) {
       if (!kk[lmb]) kk[lmb] = {}
       if (!kk[lmb][resolved.kelasId]) kk[lmb][resolved.kelasId] = {}
@@ -100,7 +187,7 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
       payload.kartu_kenaikan = kk
     } else {
       if (!kk[lmb]) kk[lmb] = {}
-      if (!kk[lmb][kls]) kk[lmb][kls] = {}
+      if (!kk[lmb][klsCap]) kk[lmb][klsCap] = {}
       // v.100e: ceremonial diisi MANUAL (tidak auto-stamp di sini).
       payload.kartu_kenaikan = kk
     }
@@ -116,7 +203,12 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
   let ket = `${aksi} ke ${lmbBaru} Kelas ${klsBaru}`
   if (lmbBaru === 'PTPT' && opts.juz) ket += ` (Juz ${opts.juz})`
   if (lmbBaru === 'Pra PTPT' && khotamKe) ket += ` (Khotam ${khotamKe})`
-  if (opts.guru) ket += ` | Guru: ${opts.guru}`
+  // Riwayat mencatat PASANGAN ("A & B"), bukan satu nama — supaya jejak pindah kelas
+  //   terbaca utuh waktu ditelusuri belakangan.
+  const guruTeks = adaPasangan
+    ? labelPasangan({ guru_pagi: pagi, guru_sore: sore })
+    : opts.guru || ''
+  if (guruTeks) ket += ` | Guru: ${guruTeks}`
 
   if (fromKls !== toKls || opts.juz || khotamKe) {
     riwayat.push({
@@ -128,7 +220,7 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
       kelas_to: toKls,
       juz: opts.juz ? `JUZ ${opts.juz}` : null,
       catatan: opts.catatan || '',
-      guru: opts.guru || ''
+      guru: guruTeks
     })
 
     // PATCH v.21.50 — Auto-catatan transisi penting (Poin 13 legacy)
@@ -136,16 +228,27 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
     const klsL = (s.kelas || '').toLowerCase()
     const lmbgB = (lmbBaru || '').toUpperCase()
     const klsB = (klsBaru || '').toLowerCase()
-    // 1) Persiapan Khotaman → Pra PTPT (level 1)
-    if (klsL.includes('persiapan khotaman') && lmbgB.includes('PRA PTPT') && klsB.includes('level 1')) {
+    // 1) Persiapan Khotaman → Pra PTPT (level pertama)
+    //    v.1.2.3: label master level pertama = 'Level ½ Juz'; 'level 1' dipertahankan utk data lama.
+    if (
+      klsL.includes('persiapan khotaman') &&
+      lmbgB.includes('PRA PTPT') &&
+      (klsB === 'level 1' || klsB.includes('½ juz'))
+    ) {
       riwayat.push({
         tanggal: todayId,
         tgl_naik: today,
         keterangan: `Telah LULUS IMTAS pada tanggal ${todayId}`
       })
     }
-    // 2) Pra PTPT level 5 → PTPT kelas 1
-    else if (lmbgL.includes('PRA PTPT') && klsL.includes('level 5') && lmbgB === 'PTPT' && klsB.includes('kelas 1')) {
+    // 2) Pra PTPT level terakhir → PTPT kelas 1
+    //    v.1.2.3: label master level terakhir = 'Level 3 Juz'; 'level 5' dipertahankan utk data lama.
+    else if (
+      lmbgL.includes('PRA PTPT') &&
+      (klsL === 'level 5' || klsL.includes('3 juz')) &&
+      lmbgB === 'PTPT' &&
+      klsB.includes('kelas 1')
+    ) {
       riwayat.push({
         tanggal: todayId,
         tgl_naik: today,
@@ -154,8 +257,12 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
     }
     // 3) PTPT (kelas terakhir) → lembaga lain
     else if (lmbgL === 'PTPT' && lmbgB !== 'PTPT' && lmbgB !== '') {
-      const lembagaPTPT = (lembagaList || []).find((l) => String(l.lembaga || '').toUpperCase() === 'PTPT')
-      const klsListPTPT = (lembagaPTPT && (lembagaPTPT.kelas_list || lembagaPTPT.kelas)) || ['Kelas 6']
+      const lembagaPTPT = (lembagaList || []).find(
+        (l) => String(l.lembaga || '').toUpperCase() === 'PTPT'
+      )
+      const klsListPTPT = (lembagaPTPT && (lembagaPTPT.kelas_list || lembagaPTPT.kelas)) || [
+        'Kelas 6'
+      ]
       const kelasTerakhirPTPT = klsListPTPT[klsListPTPT.length - 1] || 'Kelas 6'
       if ((s.kelas || '').toLowerCase() === String(kelasTerakhirPTPT).toLowerCase()) {
         riwayat.push({
@@ -180,7 +287,9 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
     khotam_ke: khotamKe || '',
     juz: lmbBaru === 'PTPT' ? `JUZ ${opts.juz}` : ''
   }
-  payload.riwayat_kenaikan = Array.isArray(s.riwayat_kenaikan) ? [...s.riwayat_kenaikan, rkEntry] : [rkEntry]
+  payload.riwayat_kenaikan = Array.isArray(s.riwayat_kenaikan)
+    ? [...s.riwayat_kenaikan, rkEntry]
+    : [rkEntry]
 
   return { payload, rkEntry }
 }
@@ -190,10 +299,10 @@ export function buildKenaikanQiraatiPayload(s, opts = {}, ctx = {}) {
  * (sumber notif untuk wali; best-effort — kegagalan event tak menggagalkan kenaikan).
  */
 export async function writeKenaikan(s, payload, rkEntry) {
-  await updateDoc(doc(db, 'santri', String(s.id)), payload)
+  await updateOne('santri', String(s.id), payload)
   try {
     const evId = `rk_${s.id}_${Date.now()}`
-    await setDoc(doc(db, 'riwayat_kenaikan', evId), {
+    await setOne('riwayat_kenaikan', evId, {
       id: evId,
       santri_id: String(s.id),
       santri_nama: s.nama || '',

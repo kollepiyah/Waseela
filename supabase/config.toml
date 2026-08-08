@@ -1,14 +1,10 @@
-# Supabase config — WASEELA (MULTI-TENANT, white-label portal pesantren).
-# Diturunkan dari pola Ammu (single-tenant) + LAPISAN MULTI-TENANT (tenant_id + RLS).
-#
-# Beda inti dari Ammu:
-#   Ammu    : 1 project = 1 pesantren (Mambaul Ulum), TANPA tenant_id, RLS peran saja.
-#   Waseela : 1 project = BANYAK pesantren, kolom tenant_id + RLS peran & tenant.
-#             Nambah pembeli = tambah BARIS di tabel `tenants`, BUKAN project baru.
-#
-# Region target: ap-southeast-1 (Singapore) — sesuai ROADMAP DB (HANDOVER.md).
-# project_id DIISI setelah project Supabase Waseela di-RESUME + di-link (lihat MIGRATION-PLAN.md).
-project_id = "TODO-isi-ref-project-waseela-setelah-resume"
+# Supabase config — Waseela (SINGLE-TENANT, satu lembaga per project).
+# Project ref: rzwefjilxzsqlokkwiyt — region ap-southeast-1 (Singapore).
+# Skema dikelola via supabase/migrations/*.sql → auto-apply lewat integrasi GitHub saat push.
+# TIDAK ada tenant_id (single-tenant); RLS hanya untuk PERAN
+# (super_admin / admin / admin_keuangan / guru / santri).
+project_id = "rzwefjilxzsqlokkwiyt"
 
 [db]
+# Versi Postgres untuk `supabase start` lokal (opsional). Remote di-manage Supabase.
 major_version = 15

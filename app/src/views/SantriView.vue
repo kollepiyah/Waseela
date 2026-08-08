@@ -26,28 +26,28 @@
         <!-- v.21.17c.0526: View mode actions (sidebar) vs Master mode actions (Master Data) -->
         <button
           v-if="isFullAccess"
-          @click="cetakPdf"
           aria-label="Cetak daftar santri PDF"
           class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
+          @click="cetakPdf"
         >
           <i class="fas fa-file-pdf"></i>Cetak PDF
         </button>
         <button
           v-if="isFullAccess"
-          @click="exportSantriExcel"
           :disabled="exporting"
           aria-label="Ekspor daftar santri Excel"
           class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+          @click="exportSantriExcel"
         >
           <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i
           >{{ exporting ? 'Ekspor...' : 'Ekspor Excel' }}
         </button>
         <button
           v-if="isFullAccess && gsheetConfigured()"
-          @click="kirimGoogleSheet"
           :disabled="sendingGsheet"
           aria-label="Kirim daftar santri ke Google Sheet"
           class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+          @click="kirimGoogleSheet"
         >
           <i :class="['fas', sendingGsheet ? 'fa-spinner fa-spin' : 'fa-table']"></i
           >{{ sendingGsheet ? 'Mengirim...' : 'Google Sheet' }}
@@ -64,8 +64,8 @@
         <!-- Master mode: full CRUD buttons -->
         <template v-if="isFullAccess && isMasterMode">
           <button
-            @click="downloadTemplateSantri"
             class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
+            @click="downloadTemplateSantri"
           >
             <i class="fas fa-download"></i>Template
           </button>
@@ -78,8 +78,8 @@
               type="file"
               accept=".xlsx,.xls"
               class="hidden"
-              @change="onImportSantri"
               :disabled="importing"
+              @change="onImportSantri"
             />
           </label>
           <router-link
@@ -110,29 +110,29 @@
         ><i class="fas fa-check-square mr-1"></i>{{ selectedCount }} terpilih</span
       >
       <button
-        @click="bulkSetStatusSantri('aktif')"
         :disabled="bulkSaving"
         class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"
+        @click="bulkSetStatusSantri('aktif')"
       >
         <i class="fas fa-check"></i>Set Aktif
       </button>
       <button
-        @click="bulkSetStatusSantri('tidak_aktif')"
         :disabled="bulkSaving"
         class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"
+        @click="bulkSetStatusSantri('tidak_aktif')"
       >
         <i class="fas fa-user-slash"></i>Set Non-aktif
       </button>
       <button
-        @click="bulkDelete"
         :disabled="bulkSaving"
         class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"
+        @click="bulkDelete"
       >
         <i class="fas fa-trash"></i>Hapus
       </button>
       <button
-        @click="clearSelection"
         class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-slate-200 hover:bg-slate-300 text-[var(--text-primary)] text-[11px] font-bold transition cursor-pointer ml-auto"
+        @click="clearSelection"
       >
         <i class="fas fa-times"></i>Batal
       </button>
@@ -152,8 +152,8 @@
             {{ importPreview.rows.length }} baris
           </h3>
           <button
-            @click="importPreview = null"
             class="text-[var(--text-tertiary)] hover:text-rose-600 text-xl"
+            @click="importPreview = null"
           >
             <i class="fas fa-times"></i>
           </button>
@@ -173,6 +173,14 @@
               <p class="text-2xl font-black text-rose-700">{{ importPreview.skipCount }}</p>
             </div>
           </div>
+          <p
+            class="mb-3 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 px-2.5 py-2 text-[11px] text-amber-800 dark:text-amber-200"
+          >
+            <i class="fas fa-circle-info mr-1"></i>
+            <b>Kolom kosong di file tidak menimpa data lama.</b> Jadi impor file yang hanya berisi
+            sebagian kolom (mis. guru sekolah saja) aman — guru ngaji yang sudah terisi tetap utuh.
+            Untuk <i>mengosongkan</i> sebuah field, sunting lewat form santri.
+          </p>
           <table class="w-full border border-[var(--border-subtle)]">
             <thead class="bg-[var(--bg-muted)]">
               <tr>
@@ -216,15 +224,15 @@
         </div>
         <div class="p-4 border-t border-[var(--border-subtle)] flex justify-end gap-2">
           <button
-            @click="importPreview = null"
             class="px-4 py-2 text-xs font-bold rounded-lg bg-slate-200 hover:bg-slate-300"
+            @click="importPreview = null"
           >
             Batal
           </button>
           <button
-            @click="confirmImportSantri"
             :disabled="importing"
             class="px-4 py-2 text-xs font-bold rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white disabled:opacity-50"
+            @click="confirmImportSantri"
           >
             <i :class="['fas', importing ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i
             >{{
@@ -253,8 +261,9 @@
           class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
         />
       </div>
-      <!-- v.97.0626: filter dropdown (lembaga Qiraati + Sekolah, status tempat, status aktif) -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+      <!-- v.1.2.0 (Kyai): akun GURU cukup cari nama — deretan filter ini hanya untuk
+           admin. Untuk guru, pemisahan Qiraati/Sekolah ditangani sub-tab di bawah. -->
+      <div v-if="isFullAccess" class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
         <select
           v-model="filterLembaga"
           class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
@@ -285,6 +294,61 @@
           <option value="tidak_aktif">Tidak aktif / Keluar</option>
         </select>
       </div>
+      <!-- v.111: filter Gedung & PJ PTPT — pisah Pra PTPT per gedung / PTPT per PJ ("gak campur") -->
+      <div
+        v-if="isFullAccess && (gedungOptions.length || pjPtptOptions.length)"
+        class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2"
+      >
+        <select
+          v-if="gedungOptions.length"
+          v-model="filterGedung"
+          class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+        >
+          <option value="">Semua gedung</option>
+          <option v-for="g in gedungOptions" :key="g" :value="g">{{ g }}</option>
+        </select>
+        <select
+          v-if="pjPtptOptions.length"
+          v-model="filterPjPtpt"
+          class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+        >
+          <option value="">Semua PJ PTPT</option>
+          <option v-for="p in pjPtptOptions" :key="p" :value="p">PJ: {{ p }}</option>
+        </select>
+      </div>
+      <!-- v.1.2.4: filter per KELAS-GURU (rombel pasangan) — pantau per kelas guru -->
+      <div v-if="isFullAccess && kelasGuruOptions.length" class="mt-2">
+        <select
+          v-model="filterKelasGuru"
+          class="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+        >
+          <option value="">Semua kelas (guru)</option>
+          <option v-for="k in kelasGuruOptions" :key="k.optKey" :value="k.optKey">
+            {{ filterLembaga ? '' : k.lembaga + ' — ' }}{{ k.label }} · {{ k.jumlah }} santri
+          </option>
+        </select>
+      </div>
+      <!-- v.1.2.0: sub-tab Qiraati / Sekolah — muncul hanya bila akun ini memang
+           menaungi KEDUA sisi (mis. kepala lembaga sekolah yang juga guru qiraati). -->
+      <div v-if="punyaDuaSisi" class="flex gap-2 mt-3">
+        <button
+          v-for="t in [
+            { v: 'qiraati', l: 'Qiraati', n: jumlahSisi.qiraati },
+            { v: 'sekolah', l: 'Sekolah', n: jumlahSisi.sekolah }
+          ]"
+          :key="t.v"
+          :class="[
+            'flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
+            sisiTab === t.v
+              ? 'bg-teal-600 text-white border-teal-700'
+              : 'bg-white dark:bg-slate-900 text-[var(--text-secondary)] border-[var(--border-default)]'
+          ]"
+          @click="sisiTab = t.v"
+        >
+          {{ t.l }} ({{ t.n }})
+        </button>
+      </div>
+
       <!-- v.21.22c.0526: Select-all (Master mode only) -->
       <div
         v-if="isMasterMode && isFullAccess && santri.length > 0"
@@ -295,8 +359,8 @@
             type="checkbox"
             :checked="isAllVisibleSelected"
             :indeterminate.prop="isSomeVisibleSelected"
-            @change="toggleSelectAllVisible"
             class="w-4 h-4 rounded border-[var(--border-default)] text-teal-600 focus:ring-teal-500 cursor-pointer"
+            @change="toggleSelectAllVisible"
           />
           <span class="text-[11px] font-bold text-[var(--text-secondary)]"
             >Pilih semua ({{ santri.length }})</span
@@ -318,10 +382,12 @@
       v-else-if="santri.length === 0"
       icon="fa-user-slash"
       :title="
-        search || filterLembaga || filterMukim ? 'Tidak ada santri yang cocok' : 'Belum ada santri'
+        search || filterLembaga || filterMukim || filterKelasGuru
+          ? 'Tidak ada santri yang cocok'
+          : 'Belum ada santri'
       "
       :description="
-        search || filterLembaga || filterMukim
+        search || filterLembaga || filterMukim || filterKelasGuru
           ? 'Coba ubah filter atau kata kunci pencarian'
           : isFullAccess
             ? 'Tambah santri pertama di Master Data'
@@ -340,8 +406,8 @@
           <span class="flex-1 h-px bg-[var(--border-subtle)]"></span>
         </div>
         <div
-          @click="goProfil(s, $event)"
           class="bg-[var(--bg-card)] rounded-xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm hover:shadow-md transition cursor-pointer"
+          @click="goProfil(s, $event)"
         >
           <div class="flex items-start gap-3">
             <!-- v.21.22c.0526: Checkbox (Master mode only) -->
@@ -349,8 +415,8 @@
               v-if="isMasterMode && isFullAccess"
               type="checkbox"
               :checked="selected.has(String(s.id))"
-              @change="toggleSelect(s.id)"
               class="flex-shrink-0 mt-2 w-4 h-4 rounded border-[var(--border-default)] text-teal-600 focus:ring-teal-500 cursor-pointer"
+              @change="toggleSelect(s.id)"
             />
             <div
               class="flex-shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-cyan-100 to-cyan-100 dark:from-cyan-700 dark:to-cyan-700 border-2 border-white dark:border-slate-700 flex items-center justify-center overflow-hidden"
@@ -365,7 +431,8 @@
                     {{ s.nama }}
                   </h3>
                   <p class="text-[11px] text-[var(--text-secondary)] mt-0.5">
-                    No. Induk: {{ s.nis || '-' }} · {{ s.jk === 'L' ? 'Laki-laki' : 'Perempuan' }}
+                    No. Induk: {{ s.nis || '-' }} · {{ s.jk === 'L' ? 'Laki-laki' : 'Perempuan'
+                    }}<span v-if="usiaKini(s.tgl_lahir)"> · {{ usiaKini(s.tgl_lahir) }}</span>
                   </p>
                 </div>
                 <!-- v.21.12.0526: Ma'had / Fullday / Tidak Aktif / (PP tanpa label) -->
@@ -396,8 +463,12 @@
                   class="text-[10px] bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-700 px-2 py-0.5 rounded font-bold"
                   >Sekolah: {{ s.kelas_sekolah }}</span
                 >
+                <!-- v.1.2.1: '-' = penanda TANPA juz yang ditulis form santri untuk lembaga
+                     non-PTPT (useSantriForm: `juz: f.lembaga === 'PTPT' ? … : '-'`). Dulu di sini
+                     hanya dicek truthy, jadi setiap santri non-PTPT yang PERNAH DIEDIT mendadak
+                     dapat label "Juz" kosong. Lima view lain sudah memakai penjaga ini. -->
                 <span
-                  v-if="s.juz"
+                  v-if="s.juz && s.juz !== '-'"
                   class="text-[10px] bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-700 px-2 py-0.5 rounded font-bold"
                   >Juz {{ juzNum(s.juz) }}</span
                 >
@@ -408,6 +479,12 @@
                   :key="k"
                   class="text-[10px] bg-slate-50 dark:bg-slate-700/40 text-[var(--text-secondary)] border border-slate-200 dark:border-slate-600 px-1.5 py-0.5 rounded"
                   >{{ label }}</span
+                >
+                <!-- v.1.2.4: tanda santri yg hanya ikut pagi/sore -->
+                <span
+                  v-if="shiftNgajiLabel(s)"
+                  class="text-[10px] bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 px-1.5 py-0.5 rounded font-bold"
+                  >{{ shiftNgajiLabel(s) }}</span
                 >
               </div>
               <div class="flex items-center gap-2 mt-1.5 text-[11px] text-[var(--text-secondary)]">
@@ -422,6 +499,20 @@
                   <i class="fab fa-whatsapp"></i>{{ s.wa }}
                 </a>
               </div>
+              <!-- v.1.2.1 (Kyai): guru boleh perbaiki data KELAS santri ampuannya (impor salah). -->
+              <div
+                v-if="!isFullAccess"
+                class="mt-2 pt-2 border-t border-[var(--border-subtle)] flex justify-end"
+              >
+                <button
+                  type="button"
+                  class="text-[10px] text-teal-700 dark:text-teal-300 hover:underline font-bold"
+                  title="Perbaiki Lembaga/Kelas Qiraati & Sekolah (dan Juz PTPT)"
+                  @click.stop="bukaEditKelas(s)"
+                >
+                  <i class="fas fa-graduation-cap mr-1"></i>Edit Kelas
+                </button>
+              </div>
               <!-- v.21.24.0526: Edit/Reset Sandi/Toggle Aktif/Delete (Master mode only) -->
               <!-- v.86.0526: pisah dari baris data (border-top + pt) biar tombol tidak menempel/overlap dg no WA -->
               <div
@@ -429,20 +520,20 @@
                 class="mt-2 pt-2 border-t border-[var(--border-subtle)] flex justify-end items-center gap-3 flex-wrap"
               >
                 <button
-                  @click="resetSandiSantri(s)"
                   class="text-[10px] text-cyan-700 dark:text-cyan-300 hover:underline font-bold"
                   title="Reset sandi ke 1234"
+                  @click="resetSandiSantri(s)"
                 >
                   <i class="fas fa-key mr-1"></i>Reset Sandi
                 </button>
                 <button
-                  @click="toggleAktifSantri(s)"
                   :class="[
                     'text-[10px] font-bold hover:underline',
                     s.aktif === false
                       ? 'text-emerald-700 dark:text-emerald-300'
                       : 'text-cyan-700 dark:text-cyan-300'
                   ]"
+                  @click="toggleAktifSantri(s)"
                 >
                   <i
                     :class="['fas', s.aktif === false ? 'fa-toggle-on' : 'fa-toggle-off', 'mr-1']"
@@ -456,8 +547,8 @@
                   <i class="fas fa-edit mr-1"></i>Edit
                 </router-link>
                 <button
-                  @click="deleteSantri(s)"
                   class="text-[10px] text-rose-700 dark:text-rose-300 hover:underline font-bold"
+                  @click="deleteSantri(s)"
                 >
                   <i class="fas fa-trash mr-1"></i>Hapus
                 </button>
@@ -471,6 +562,15 @@
     <p class="text-center text-[10px] text-slate-400 dark:text-[var(--text-secondary)] pt-2">
       <i class="fas fa-circle-info mr-1"></i>Menampilkan {{ santri.length }} santri · v.74.0526
     </p>
+
+    <!-- v.1.2.1 (Kyai): dialog edit kelas santri utk guru (perbaiki impor salah).
+         v-if: komponen (beserta langganan useSantriForm) hanya hidup saat mengedit. -->
+    <EditKelasSantriDialog
+      v-if="editKelasSantri"
+      :open="true"
+      :santri="editKelasSantri"
+      @close="editKelasSantri = null"
+    />
   </div>
 </template>
 
@@ -482,14 +582,17 @@ import { definePageActions } from '@/composables/useRibbonContext'
 import { useSantri } from '@/composables/useSantri'
 import { getPkbmSubTier, canonLembaga } from '@/composables/useLembaga' // v.99: PKBM -> SMP/SMA; v.100: auto-deteksi nama lembaga kanonik
 import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan canonical dropdown lembaga
+import { gedungList } from '@/utils/gedung' // v.111: filter Gedung (pisah Pra PTPT per gedung)
 import { useAuthStore } from '@/stores/auth'
-import { ownsNgaji, ownsSekolah, deteksiTipeGuru } from '@/utils/guruScope' // v.100b: pisah santri qiraati/sekolah utk guru dual
+import { ownsNgaji, ownsSekolah, headsLembaga } from '@/utils/guruScope' // v.100b/1.2.3: pisah santri qiraati/sekolah + kepala lembaga per-sisi
 
 // v.21.17c.0526: mode prop — 'view' (sidebar, default) atau 'master' (di Master Data tab, full CRUD)
 const props = defineProps({ mode: { type: String, default: 'view' } })
 const isMasterMode = computed(() => props.mode === 'master')
 // v.21.13b.0526: + toTitleCase + normalizeWA + parseMultipleWA (v.21.22b dual WA)
-import { getNamaGuruGelar, toTitleCase, normalizeWA, parseMultipleWA, juzNum } from '@/utils/format'
+import { getNamaGuruGelar, toTitleCase, normalizeWA, juzNum } from '@/utils/format'
+import { shiftNgajiOf } from '@/utils/kelasHitung' // v.1.2.4: label shift ngaji (pagi/sore saja)
+import { usiaKini } from '@/utils/usia' // umur santri auto dari tgl lahir (card + ekspor)
 import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet'
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
@@ -500,11 +603,20 @@ import { useConfirm } from '@/composables/useConfirm'
 import SkeletonCard from '@/components/layout/SkeletonCard.vue'
 import EmptyState from '@/components/layout/EmptyState.vue' // v.91.0626
 import PageHeader from '@/components/layout/PageHeader.vue' // v.91.0626
-import { setDoc, doc, serverTimestamp, deleteDoc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
-import { deleteOne, getAll } from '@/services/firestore' // v.91.0626: hapus = backup ke audit_log dulu
-import { resetUserPassword } from '@/services/auth' // v.105: reset sandi via Firebase Auth (bukan field plaintext)
-import { planRegenerateNis, applyNisChanges } from '@/utils/nisGenerator' // v.100 Batch14: auto-NIS pasca impor (reshuffle tgl lahir tertua)
+import EditKelasSantriDialog from '@/components/form/EditKelasSantriDialog.vue' // v.1.2.1: edit kelas oleh guru
+// v.91.0626: deleteOne = backup ke audit_log dulu. serverTimestamp = shim ISO (db.js).
+import { mergeOne, addOne, deleteOne, getAll, serverTimestamp } from '@/services/db'
+// v.111: registry field santri = sumber tunggal template/ekspor/impor (auto-detect field baru)
+import {
+  santriTemplateColumns,
+  santriExportColumns,
+  santriToExportRow,
+  applyImportFields,
+  petakanNomorIdentitas
+} from '@/services/santriFields'
+import { resetUserPassword, provisionAkunSenyap } from '@/services/authSupabase' // reset sandi + buat akun login (Edge Function)
+import { planAppendNis, applyNisChanges } from '@/utils/nisGenerator' // v.111: auto-NIS pasca impor = APPEND (No. Induk lama tetap; baru lanjut nomor)
+import { BRAND } from '@/config/brand'
 
 const exporting = ref(false)
 const importing = ref(false)
@@ -525,11 +637,21 @@ const {
   loading,
   search,
   filterLembaga,
+  filterKelasGuru,
+  kelasGuruOptions,
   filterMukim,
   filterStatus,
+  filterGedung,
+  filterPjPtpt,
   stats,
-  isFullAccess
+  isFullAccess,
+  pjPtptDistinct
 } = useSantri()
+
+// v.111: opsi filter Gedung (master) + PJ PTPT — pisah Pra PTPT/PTPT.
+// v.1.2.1: opsi PJ ikut PJ EFEKTIF (dari guru) supaya sama dengan penyaringannya.
+const gedungOptions = computed(() => gedungList(settingsStore.settings || {}))
+const pjPtptOptions = pjPtptDistinct
 
 // v.107: filter <-> URL query — pertahankan filter saat "back" dari halaman detail/profil.
 //   Baca query saat mount + saat berubah (dukung global-search header ?q= + pita ?tempat=).
@@ -556,34 +678,59 @@ watch([search, filterLembaga, filterMukim, filterStatus], () => {
   if (filterStatus.value && filterStatus.value !== 'aktif') q.status = filterStatus.value
   router.replace({ query: q }).catch(() => {})
 })
+// v.1.2.4: ganti lembaga → reset filter Kelas-Guru (kunci rombel jadi tak relevan)
+watch(filterLembaga, () => {
+  filterKelasGuru.value = ''
+})
 
-// v.100b: guru DUAL-role (Qiraati + Sekolah) → pisah daftar jadi 2 section.
-//   Tipe dideteksi dari SELURUH santri (santriRaw), tak terpengaruh filter/cari aktif.
+// ── v.1.2.0 (Kyai 21 Jul): pisah Qiraati / Sekolah pakai SUB-TAB, bukan dua section
+//    bertumpuk. Alasannya kasus nyata: "ada kepala lembaga sekolah yg juga guru
+//    qiraati" — daftarnya tercampur dan sulit dibaca.
+//
+//    Kuncinya: santri digolongkan menurut SISI MANA ia masuk ke daftar SAYA, bukan
+//    menurut sifat santrinya. Satu santri bisa ikut ngaji DAN sekolah, jadi partisi
+//    per-santri tak masuk akal — yang dipartisi adalah alasan ia terlihat oleh saya:
+//      Qiraati : saya pengampu ngajinya, ATAU (kepala) lembaga ngajinya se-scope saya
+//      Sekolah : saya guru sekolahnya,   ATAU (kepala) lembaga sekolahnya se-scope saya
+//    Dengan begitu kepala sekolah merangkap guru qiraati melihat kelas ngajinya di tab
+//    Qiraati dan santri sekolahnya di tab Sekolah — tak pernah tercampur.
 const myNamaGuru = computed(() => authStore.sesiAktif?.guru || authStore.sesiAktif?.nama || '')
-const guruDual = computed(() => {
-  if (isFullAccess.value) return false
-  const t = deteksiTipeGuru(santriRaw.value, myNamaGuru.value)
-  return t.qiraati && t.sekolah
-})
-// Daftar tampil + peta header section (pada santri pertama tiap grup). Non-dual → list apa adanya.
-const guruDisplay = computed(() => {
-  if (!guruDual.value) return { rows: santri.value, headerById: {} }
-  const nm = myNamaGuru.value
-  const ngaji = [],
-    sekolah = []
-  for (const s of santri.value) {
-    if (ownsNgaji(s, nm)) ngaji.push(s)
-    else if (ownsSekolah(s, nm)) sekolah.push(s)
-    else ngaji.push(s)
+// v.1.2.3: sisi ditentukan headsLembaga PER-SISI (bukan isKepalaScope + user.lembaga utk
+//   keduanya) — kepala SEKOLAH dulu tak pernah masuk sisi Sekolah karena dicocokkan ke
+//   lembaga NGAJI-nya. Kini: Qiraati = kelas ngaji ampuan sendiri ATAU kepala lembaga
+//   ngaji-nya; Sekolah = kelas sekolah ampuan sendiri ATAU kepala sekolah-nya. Kepala SDI
+//   yang juga guru ngaji: Qiraati = kelasnya, Sekolah = seluruh SDI — persis guru dual-role.
+function sisiQiraati(s) {
+  return ownsNgaji(s, myNamaGuru.value) || headsLembaga(authStore.sesiAktif, s.lembaga)
+}
+function sisiSekolah(s) {
+  return ownsSekolah(s, myNamaGuru.value) || headsLembaga(authStore.sesiAktif, s.lembaga_sekolah)
+}
+
+const sisiTab = ref('qiraati')
+// Hitung dari SELURUH santri dalam scope (santriRaw), bukan hasil pencarian — kalau
+//   tidak, sub-tab akan muncul-hilang mengikuti kata kunci.
+const jumlahSisi = computed(() => {
+  if (isFullAccess.value) return { qiraati: 0, sekolah: 0 }
+  let q = 0,
+    k = 0
+  for (const s of santriRaw.value || []) {
+    if (s.aktif === false) continue
+    if (sisiQiraati(s)) q++
+    if (sisiSekolah(s)) k++
   }
-  const headerById = {}
-  if (ngaji.length) headerById[ngaji[0].id] = `Santri Qiraati Saya (${ngaji.length})`
-  if (sekolah.length) headerById[sekolah[0].id] = `Santri Kelas Sekolah Saya (${sekolah.length})`
-  return { rows: [...ngaji, ...sekolah], headerById }
+  return { qiraati: q, sekolah: k }
 })
-const santriRows = computed(() => guruDisplay.value.rows)
-function sectionHeaderFor(s) {
-  return guruDisplay.value.headerById[String(s.id)] || guruDisplay.value.headerById[s.id] || null
+const punyaDuaSisi = computed(
+  () => !isFullAccess.value && jumlahSisi.value.qiraati > 0 && jumlahSisi.value.sekolah > 0
+)
+const santriRows = computed(() => {
+  if (!punyaDuaSisi.value) return santri.value
+  return santri.value.filter(sisiTab.value === 'qiraati' ? sisiQiraati : sisiSekolah)
+})
+// Header section lama tak dipakai lagi — pemisahnya kini sub-tab.
+function sectionHeaderFor() {
+  return null
 }
 
 // v.98 full-native (Electron): header in-page disembunyikan, aksi pindah ke grup pita "Aksi Halaman"
@@ -639,6 +786,12 @@ function goProfil(s, e) {
   router.push('/profil/santri/' + s.id)
 }
 
+// v.1.2.1 (Kyai): guru buka dialog edit kelas santri ampuannya (perbaiki impor salah).
+const editKelasSantri = ref(null)
+function bukaEditKelas(s) {
+  editKelasSantri.value = s
+}
+
 // v.21.11.0526: Bulk selection state
 const selected = ref(new Set())
 const bulkSaving = ref(false)
@@ -679,7 +832,7 @@ function clearSelection() {
 async function deleteSantri(s) {
   const ok = await confirmDlg({
     title: `Hapus ${s.nama}?`,
-    message: `Santri "${s.nama}" (No. Induk: ${s.nis || '-'}) akan dihapus permanen dari Firestore. Aksi ini tidak bisa di-undo.`,
+    message: `Santri "${s.nama}" (No. Induk: ${s.nis || '-'}) akan dihapus permanen. Aksi ini tidak bisa di-undo.`,
     confirmText: 'Hapus',
     danger: true
   })
@@ -718,7 +871,7 @@ async function toggleAktifSantri(s) {
   })
   if (!ok) return
   try {
-    await setDoc(doc(db, 'santri', String(s.id)), { aktif: newStatus }, { merge: true })
+    await mergeOne('santri', String(s.id), { aktif: newStatus })
     toast.success(`${s.nama} di-set ${newStatus ? 'AKTIF' : 'TIDAK AKTIF'}`)
   } catch (e) {
     toast.error('Gagal: ' + (e.message || e))
@@ -730,7 +883,7 @@ async function bulkDelete() {
   if (ids.length === 0) return
   const ok = await confirmDlg({
     title: `Hapus ${ids.length} santri?`,
-    message: `${ids.length} santri akan dihapus PERMANEN dari Firestore. Aksi ini tidak bisa di-undo. Lanjutkan?`,
+    message: `${ids.length} santri akan dihapus PERMANEN. Aksi ini tidak bisa di-undo. Lanjutkan?`,
     confirmText: 'Hapus Semua',
     danger: true
   })
@@ -768,7 +921,7 @@ async function bulkSetStatusSantri(status) {
     failCount = 0
   for (const id of ids) {
     try {
-      await setDoc(doc(db, 'santri', String(id)), { aktif: status === 'aktif' }, { merge: true })
+      await mergeOne('santri', String(id), { aktif: status === 'aktif' })
       okCount++
     } catch (e) {
       failCount++
@@ -827,6 +980,15 @@ function formatGuru(s) {
   return labels
 }
 
+// v.1.2.4: label shift ngaji hanya bila santri HANYA ikut pagi/sore (default keduanya
+//   tak diberi chip supaya kartu tak ramai).
+function shiftNgajiLabel(s) {
+  const sh = shiftNgajiOf(s)
+  if (sh === 'pagi') return 'Pagi saja'
+  if (sh === 'sore') return 'Sore saja'
+  return ''
+}
+
 function cleanWa(wa) {
   return String(wa || '')
     .replace(/[^0-9]/g, '')
@@ -845,8 +1007,11 @@ async function cetakPdf() {
       nama: s.nama || '',
       nis: s.nis || '',
       jk: s.jk || '',
+      usia: usiaKini(s.tgl_lahir),
       lembaga: s.lembaga || '',
       kelas: s.kelas || '',
+      lembaga_sekolah: s.lembaga_sekolah || '',
+      kelas_sekolah: s.kelas_sekolah || '',
       wa: s.wa || ''
     }))
     await buildListPdf({
@@ -855,14 +1020,19 @@ async function cetakPdf() {
       format: 'a4',
       kop,
       title: 'DAFTAR SANTRI',
+      // v.110.0626: kolom Nama dilebarkan; header sekolah dipendekkan "Sekolah"/"Kelas"
+      //   (width = bobot relatif, auto-skala ke lebar halaman di buildListPdf).
       columns: [
-        { key: 'no', header: 'No', width: 12 },
-        { key: 'nama', header: 'Nama Santri', width: 60 },
-        { key: 'nis', header: 'No. Induk', width: 25 },
-        { key: 'jk', header: 'JK', width: 12 },
-        { key: 'lembaga', header: 'Lembaga', width: 35 },
-        { key: 'kelas', header: 'Kelas', width: 25 },
-        { key: 'wa', header: 'No. WA', width: 35 }
+        { key: 'no', header: 'No', width: 8 },
+        { key: 'nama', header: 'Nama Santri', width: 64 },
+        { key: 'nis', header: 'No. Induk', width: 22 },
+        { key: 'jk', header: 'JK', width: 8 },
+        { key: 'usia', header: 'Usia', width: 16 },
+        { key: 'lembaga', header: 'Lembaga', width: 24 },
+        { key: 'kelas', header: 'Kelas', width: 18 },
+        { key: 'lembaga_sekolah', header: 'Sekolah', width: 20 },
+        { key: 'kelas_sekolah', header: 'Kelas', width: 12 },
+        { key: 'wa', header: 'No. WA', width: 26 }
       ],
       rows,
       filename: `daftar-santri-${new Date().toISOString().slice(0, 10)}.pdf`
@@ -888,6 +1058,7 @@ async function kirimGoogleSheet() {
       nama: s.nama || '',
       nis: s.nis || '',
       jk: s.jk || '',
+      usia: usiaKini(s.tgl_lahir),
       lembaga: s.lembaga || '',
       kelas: s.kelas || '',
       lembaga_sekolah: s.lembaga_sekolah || '',
@@ -899,7 +1070,7 @@ async function kirimGoogleSheet() {
       title: `Data Santri ${new Date().toISOString().slice(0, 10)}`,
       sheetName: 'Data Santri',
       kop: [
-        ss.kopLine1 || '',
+        ss.kopLine1 || BRAND.kopLine1,
         ss.kopLine2 || '',
         ss.kopLine3 || ''
       ].filter(Boolean),
@@ -909,6 +1080,7 @@ async function kirimGoogleSheet() {
         { key: 'nama', header: 'Nama Santri', width: 28 },
         { key: 'nis', header: 'No. Induk', width: 14 },
         { key: 'jk', header: 'L/P', width: 6 },
+        { key: 'usia', header: 'Usia', width: 10 },
         { key: 'lembaga', header: 'Lembaga Qiraati', width: 16 },
         { key: 'kelas', header: 'Kelas', width: 14 },
         { key: 'lembaga_sekolah', header: 'Lembaga Sekolah', width: 16 },
@@ -933,120 +1105,20 @@ async function exportSantriExcel() {
   if (exporting.value) return
   exporting.value = true
   try {
-    // v.99: ekspor LENGKAP — selaras dgn template & impor (round-trip ekspor→edit→impor)
-    const _g = (s) =>
-      Array.isArray(s.guru_sekolah) ? s.guru_sekolah.join(' | ') : s.guru_sekolah || ''
-    const rows = (santri.value || []).map((s, i) => ({
-      no: i + 1,
-      nis: s.nis || '',
-      nis_sekolah: s.nis_sekolah || '',
-      nisn: s.nisn || '',
-      nik: s.nik || '',
-      nama: s.nama || '',
-      panggilan: s.nama_panggilan || '',
-      jk: s.jk || '',
-      tempat_lahir: s.tempat_lahir || '',
-      tgl_lahir: s.tgl_lahir || '',
-      tgl_masuk: s.tgl_masuk || '',
-      no_kk: s.no_kk || '',
-      wali: s.nama_wali || s.wali || '',
-      wa: s.wa || '',
-      lembaga: s.lembaga || '',
-      kelas: s.kelas || '',
-      juz: s.juz || '',
-      guru_pagi: s.guru_pagi || '',
-      guru_sore: s.guru_sore || '',
-      lembaga_sekolah: s.lembaga_sekolah || '',
-      kelas_sekolah: s.kelas_sekolah || '',
-      guru_sekolah: _g(s),
-      asal_sekolah: s.asal_sekolah || '',
-      nama_ayah: s.nama_ayah || (s.ayah && s.ayah.nama) || '',
-      nik_ayah: s.nik_ayah || (s.ayah && s.ayah.nik) || '',
-      pendidikan_ayah: s.pendidikan_ayah || (s.ayah && s.ayah.pendidikan) || '',
-      pekerjaan_ayah: s.pekerjaan_ayah || (s.ayah && s.ayah.pekerjaan) || '',
-      hp_ayah: s.hp_ayah || (s.ayah && s.ayah.telp) || '',
-      nama_ibu: s.nama_ibu || (s.ibu && s.ibu.nama) || '',
-      nik_ibu: s.nik_ibu || (s.ibu && s.ibu.nik) || '',
-      pendidikan_ibu: s.pendidikan_ibu || (s.ibu && s.ibu.pendidikan) || '',
-      pekerjaan_ibu: s.pekerjaan_ibu || (s.ibu && s.ibu.pekerjaan) || '',
-      hp_ibu: s.hp_ibu || (s.ibu && s.ibu.telp) || '',
-      penghasilan_ortu: s.penghasilan_ortu || '',
-      alamat: s.alamat || '',
-      dusun: s.alamat_dusun || '',
-      rt: s.alamat_rt || '',
-      rw: s.alamat_rw || '',
-      desa: s.alamat_desa || '',
-      kecamatan: s.alamat_kecamatan || '',
-      kabupaten: s.alamat_kabupaten || '',
-      provinsi: s.alamat_provinsi || '',
-      aktif: s.aktif === false ? 'false' : 'true',
-      mukim: s.is_mukim ? 'true' : 'false',
-      fullday: s.is_fullday ? 'true' : 'false',
-      catatan: s.catatan_riwayat_pribadi || '',
-      tgl_keluar: s.tgl_keluar || '',
-      alasan_keluar: s.alasan_keluar || ''
-    }))
+    // v.111: ekspor LENGKAP diturunkan dari registry santriFields (selaras template & impor)
+    const rows = (santri.value || []).map((s, i) => santriToExportRow(s, i))
     const ss = settingsStore.settings || {}
     await exportStyled(rows, {
       filename: `data_santri_${new Date().toISOString().slice(0, 10)}.xlsx`,
       sheetName: 'Data Santri',
       kop: [
         ss.kopLine1 || '',
-        ss.kopLine2 || '',
+        ss.kopLine2 || BRAND.kopLine2,
         ss.kopLine3 || '',
         ss.kopLine4 || ''
       ],
       subtitle: `Data Santri — ${rows.length} santri (${new Date().toLocaleDateString('id-ID')})`,
-      columns: [
-        { key: 'no', header: 'No', width: 5 },
-        { key: 'nis', header: 'No. Induk', width: 12 },
-        { key: 'nis_sekolah', header: 'NIS', width: 12 },
-        { key: 'nisn', header: 'NISN', width: 14 },
-        { key: 'nik', header: 'NIK', width: 18 },
-        { key: 'nama', header: 'Nama Santri', width: 26 },
-        { key: 'panggilan', header: 'Nama Panggilan', width: 14 },
-        { key: 'jk', header: 'L/P', width: 5 },
-        { key: 'tempat_lahir', header: 'Tempat Lahir', width: 14 },
-        { key: 'tgl_lahir', header: 'Tgl Lahir (DD/MM/YYYY)', width: 14 },
-        { key: 'tgl_masuk', header: 'Tgl Masuk (DD/MM/YYYY)', width: 14 },
-        { key: 'no_kk', header: 'No KK', width: 18 },
-        { key: 'wali', header: 'Nama Wali', width: 22 },
-        { key: 'wa', header: 'No WA Wali', width: 16 },
-        { key: 'lembaga', header: 'Lembaga Qiraati', width: 14 },
-        { key: 'kelas', header: 'Kelas Qiraati', width: 12 },
-        { key: 'juz', header: 'Juz (PTPT)', width: 8 },
-        { key: 'guru_pagi', header: 'Guru Pagi', width: 18 },
-        { key: 'guru_sore', header: 'Guru Sore', width: 18 },
-        { key: 'lembaga_sekolah', header: 'Lembaga Sekolah', width: 14 },
-        { key: 'kelas_sekolah', header: 'Kelas Sekolah', width: 12 },
-        { key: 'guru_sekolah', header: 'Guru Sekolah (pisah |)', width: 22 },
-        { key: 'asal_sekolah', header: 'Asal Sekolah', width: 18 },
-        { key: 'nama_ayah', header: 'Nama Ayah', width: 20 },
-        { key: 'nik_ayah', header: 'NIK Ayah', width: 18 },
-        { key: 'pendidikan_ayah', header: 'Pendidikan Ayah', width: 14 },
-        { key: 'pekerjaan_ayah', header: 'Pekerjaan Ayah', width: 14 },
-        { key: 'hp_ayah', header: 'HP Ayah', width: 16 },
-        { key: 'nama_ibu', header: 'Nama Ibu', width: 20 },
-        { key: 'nik_ibu', header: 'NIK Ibu', width: 18 },
-        { key: 'pendidikan_ibu', header: 'Pendidikan Ibu', width: 14 },
-        { key: 'pekerjaan_ibu', header: 'Pekerjaan Ibu', width: 14 },
-        { key: 'hp_ibu', header: 'HP Ibu', width: 16 },
-        { key: 'penghasilan_ortu', header: 'Penghasilan Ortu', width: 14 },
-        { key: 'alamat', header: 'Alamat', width: 28 },
-        { key: 'dusun', header: 'Dusun/Jalan', width: 16 },
-        { key: 'rt', header: 'RT', width: 6 },
-        { key: 'rw', header: 'RW', width: 6 },
-        { key: 'desa', header: 'Desa', width: 14 },
-        { key: 'kecamatan', header: 'Kecamatan', width: 14 },
-        { key: 'kabupaten', header: 'Kabupaten', width: 14 },
-        { key: 'provinsi', header: 'Provinsi', width: 14 },
-        { key: 'aktif', header: 'Status Aktif (true/false)', width: 12 },
-        { key: 'mukim', header: 'Mukim (true/false)', width: 10 },
-        { key: 'fullday', header: 'Fullday (true/false)', width: 10 },
-        { key: 'catatan', header: 'Catatan Riwayat Pribadi (Mukim)', width: 26 },
-        { key: 'tgl_keluar', header: 'Tgl Keluar (DD/MM/YYYY)', width: 14 },
-        { key: 'alasan_keluar', header: 'Alasan Keluar', width: 18 }
-      ]
+      columns: santriExportColumns()
     })
     toast.success(`Ekspor ${rows.length} santri ke Excel`)
   } catch (e) {
@@ -1059,61 +1131,12 @@ async function exportSantriExcel() {
 // v.21.13b.0526: Template TANPA KOP supaya importFile auto-detect headers di row 1
 async function downloadTemplateSantri() {
   try {
-    // v.99: template diselaraskan dengan SEMUA field form santri (biodata + ortu + alamat detail)
-    const headers = [
-      'No. Induk',
-      'NIS',
-      'NISN',
-      'NIK',
-      'Nama Santri',
-      'Nama Panggilan',
-      'L/P',
-      'Tempat Lahir',
-      'Tgl Lahir (DD/MM/YYYY)',
-      'Tgl Masuk (DD/MM/YYYY)',
-      'No KK',
-      'Nama Wali',
-      'No WA Wali',
-      'Lembaga Qiraati',
-      'Kelas Qiraati',
-      'Juz (PTPT)',
-      'Guru Pagi',
-      'Guru Sore',
-      'Lembaga Sekolah',
-      'Kelas Sekolah',
-      'Guru Sekolah (pisah |)',
-      'Asal Sekolah',
-      'Nama Ayah',
-      'NIK Ayah',
-      'Pendidikan Ayah',
-      'Pekerjaan Ayah',
-      'HP Ayah',
-      'Nama Ibu',
-      'NIK Ibu',
-      'Pendidikan Ibu',
-      'Pekerjaan Ibu',
-      'HP Ibu',
-      'Penghasilan Ortu',
-      'Alamat',
-      'Dusun/Jalan',
-      'RT',
-      'RW',
-      'Desa',
-      'Kecamatan',
-      'Kabupaten',
-      'Provinsi',
-      'Status Aktif (true/false)',
-      'Mukim (true/false)',
-      'Fullday (true/false)',
-      'Catatan Riwayat Pribadi (Mukim)',
-      'Tgl Keluar (DD/MM/YYYY)',
-      'Alasan Keluar'
-    ]
+    // v.111: template diturunkan dari registry santriFields (1 sumber utk template/ekspor/impor)
     await exportStyled([], {
       filename: 'Template_Data_Santri.xlsx',
       sheetName: 'Template_Santri',
       // No KOP — headers at row 1
-      columns: headers.map((h) => ({ key: h, header: h, width: Math.max(12, h.length + 2) }))
+      columns: santriTemplateColumns()
     })
     toast.success('Template santri ter-download. Nama=TitleCase, Lembaga=UPPERCASE saat impor.')
   } catch (e) {
@@ -1121,61 +1144,7 @@ async function downloadTemplateSantri() {
   }
 }
 
-function parseTglDDMMYYYY(v) {
-  if (!v) return ''
-  // v.99: guard bug epoch Excel — sel tanggal KOSONG sering terbaca SheetJS sebagai
-  //   Date/serial 0 = 1899-12-30. Tahun < 1901 = mustahil utk data santri -> kosongkan
-  //   (jangan isi otomatis). Berlaku tgl_lahir/tgl_masuk/tgl_keluar.
-  if (v instanceof Date) {
-    if (isNaN(v.getTime()) || v.getFullYear() < 1901) return ''
-    return v.toISOString().slice(0, 10)
-  }
-  const s = String(v).trim()
-  if (!s) return ''
-  const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)
-  if (m) {
-    if (Number(m[3]) < 1901) return ''
-    return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`
-  }
-  // ISO atau format lain — buang epoch eksplisit
-  if (s.slice(0, 10) === '1899-12-30' || s.slice(0, 10) === '1900-01-00') return ''
-  return s
-}
-
-// v.21.22b.0526: parseBool — broader matching. Note: untuk field aktif, default true di call site.
-function parseBool(v) {
-  if (v === true) return true
-  if (v === false) return false
-  const s = String(v || '')
-    .toLowerCase()
-    .trim()
-  if (['true', 'ya', 'y', '1', 'aktif', 'mukim', 'fullday'].includes(s)) return true
-  return false
-}
-// Khusus aktif — terima lebih flexible, default true kalau ambigu
-function parseAktif(v) {
-  if (v === true) return true
-  if (v === false) return false
-  const s = String(v || '')
-    .toLowerCase()
-    .trim()
-  if (
-    [
-      'false',
-      'tidak',
-      'no',
-      'n',
-      '0',
-      'tidak aktif',
-      'non-aktif',
-      'nonaktif',
-      'keluar',
-      'non aktif'
-    ].includes(s)
-  )
-    return false
-  return true // default: aktif (kalau "Aktif" / "TRUE" / "1" / kosong / unknown)
-}
+// v.111: parser tgl/bool/aktif kini tinggal di services/santriFields (dipakai registry impor)
 
 async function onImportSantri(e) {
   const file = e.target?.files?.[0]
@@ -1194,6 +1163,7 @@ async function onImportSantri(e) {
       updateCount = 0,
       skipCount = 0
     const allMapped = []
+    // v.1.1.9: normalisasi "0" -> '' pindah ke petakanNomorIdentitas (santriFields).
     function _pick(row, ...aliases) {
       for (const alias of aliases) {
         if (row[alias] !== undefined && row[alias] !== null && row[alias] !== '') return row[alias]
@@ -1206,11 +1176,18 @@ async function onImportSantri(e) {
       }
       return ''
     }
-    // v.100: template BARU punya kolom 'No. Induk' (auto pondok) + 'NIS' (NIS Dinas manual).
-    //   Template LAMA hanya punya 'NIS' = nomor auto pondok → tetap dipetakan ke field nis (No. Induk).
-    const hasNoIndukCol = rows.some((row) =>
-      Object.keys(row).some((k) => String(k).toLowerCase().replace(/[\s.]/g, '') === 'noinduk')
-    )
+    // Pemetaan nomor identitas (v.1.1.9 — laporan Kyai 21 Jul 2026):
+    //   'No. Induk' -> santri.nis          = nomor pondok, DIGENERATE APLIKASI (planAppendNis)
+    //   'NIS'       -> santri.nis_sekolah  = NIS Dinas, diisi manual
+    //
+    // DULU ada heuristik `hasNoIndukCol`: kalau file tak punya kolom 'No. Induk',
+    // kolom 'NIS' dianggap nomor pondok dan ditulis ke `nis`. Itu meleset untuk file
+    // Excel lama Kyai yang kolom NIS-nya berisi NIS DINAS — akibatnya NIS Dinas
+    // MENIMPA No. Induk yang sudah digenerate aplikasi.
+    //
+    // Sekarang tanpa tebak-tebakan: tiap kolom dipetakan ke field-nya sendiri, dan
+    // `nis` HANYA ditulis bila kolom 'No. Induk' benar-benar terisi — jadi impor tak
+    // akan pernah lagi menimpa nomor pondok hasil generate.
     for (const r of rows) {
       const namaRaw = String(_pick(r, 'Nama Santri', 'Nama', 'NAMA', 'nama') || '').trim()
       if (!namaRaw) {
@@ -1218,13 +1195,10 @@ async function onImportSantri(e) {
         continue
       }
       const nama = toTitleCase(namaRaw)
-      const nis = String(
-        (hasNoIndukCol ? _pick(r, 'No. Induk', 'No Induk', 'no_induk') : _pick(r, 'NIS', 'nis')) ||
-          ''
-      ).trim()
-      const nisSekolah = String(
-        (hasNoIndukCol ? _pick(r, 'NIS', 'nis') : _pick(r, 'NIS Dinas', 'nis_sekolah')) || ''
-      ).trim()
+      // Nomor identitas: 'No. Induk' -> nis (pondok, generate app) · 'NIS' -> nis_sekolah
+      //   (Dinas). Fungsi murni di santriFields supaya bisa diuji — pemetaan ini sudah
+      //   dua kali jadi sumber bug.
+      const { nis, nis_sekolah: nisSekolah } = petakanNomorIdentitas(r, _pick)
       // v.100 Batch12: auto-deteksi nama lembaga ke bentuk kanonik ("PRA PTPT" -> "Pra PTPT", dst)
       const lembaga = canonLembaga(_pick(r, 'Lembaga Qiraati', 'Lembaga', 'lembaga'))
       const kelas = String(_pick(r, 'Kelas Qiraati', 'Kelas', 'kelas') || '').trim()
@@ -1238,8 +1212,21 @@ async function onImportSantri(e) {
       const action = idx >= 0 ? 'update' : 'new'
       if (action === 'new') newCount++
       else updateCount++
-      const aktifVal = _pick(r, 'Status Aktif (true/false)', 'Status Aktif', 'Aktif', 'aktif')
-      const waList = parseMultipleWA(_pick(r, 'No WA Wali', 'No WA', 'WA Wali', 'WA', 'wa'))
+      // v.111: field non-manual (biodata/ortu/alamat/status/Gedung/PJ PTPT/dst) diisi
+      // dari registry santriFields → tambah field master cukup 1 entri di sana.
+      // ATURAN GABUNG (Kyai 21 Jul 2026): kolom KOSONG di file jangan menimpa nilai
+      //   lama. Field registry ditangani applyImportFields; field `manual` di bawah
+      //   ini harus dijaga di sini juga — dulu `lembaga`/`kelas`/`wali` kosong ikut
+      //   tertulis dan menghapus data santri yang sudah lengkap.
+      const wali = toTitleCase(_pick(r, 'Nama Wali', 'Wali', 'wali') || '')
+      const data = { nama }
+      if (nis) data.nis = nis // kosong = jangan sentuh No. Induk hasil generate app
+      if (nisSekolah) data.nis_sekolah = nisSekolah
+      if (lembaga) data.lembaga = lembaga
+      if (kelas) data.kelas = kelas
+      if (wali) data.wali = wali
+      applyImportFields(data, r, _pick)
+      if (action === 'new') data.custom_fields = {} // santri baru: inisialisasi; pd update = no-op
       allMapped.push({
         existingId: idx >= 0 ? existing[idx].id : null,
         action,
@@ -1247,99 +1234,8 @@ async function onImportSantri(e) {
         nis,
         lembaga,
         kelas,
-        wali: toTitleCase(_pick(r, 'Nama Wali', 'Wali', 'wali') || ''),
-        data: {
-          nis,
-          nama,
-          ...(hasNoIndukCol ? { nis_sekolah: nisSekolah } : {}), // template lama tak punya kolom NIS Dinas → jangan timpa
-          // v.99: biodata tambahan (selaras form + template baru)
-          nisn: String(_pick(r, 'NISN', 'nisn') || '').trim(),
-          nik: String(_pick(r, 'NIK', 'nik') || '').trim(),
-          nama_panggilan: toTitleCase(_pick(r, 'Nama Panggilan', 'nama_panggilan') || ''),
-          tempat_lahir: toTitleCase(_pick(r, 'Tempat Lahir', 'tempat_lahir') || ''),
-          no_kk: String(_pick(r, 'No KK', 'No. KK', 'no_kk') || '').trim(),
-          jk: String(_pick(r, 'L/P', 'JK', 'Jenis Kelamin', 'jk') || 'L')
-            .trim()
-            .toUpperCase()
-            .charAt(0),
-          tgl_lahir: parseTglDDMMYYYY(
-            _pick(r, 'Tgl Lahir (DD/MM/YYYY)', 'Tgl Lahir', 'Tanggal Lahir', 'tgl_lahir')
-          ),
-          tgl_masuk: parseTglDDMMYYYY(
-            _pick(r, 'Tgl Masuk (DD/MM/YYYY)', 'Tgl Masuk', 'Tanggal Masuk', 'tgl_masuk')
-          ),
-          wali: toTitleCase(_pick(r, 'Nama Wali', 'Wali', 'wali') || ''),
-          wa: waList[0] || '',
-          wa_2: waList[1] || '',
-          lembaga,
-          kelas,
-          guru_pagi: toTitleCase(_pick(r, 'Guru Pagi', 'Guru Kelas Pagi', 'guru_pagi') || ''),
-          guru_sore: toTitleCase(_pick(r, 'Guru Sore', 'Guru Kelas Sore', 'guru_sore') || ''),
-          juz: String(_pick(r, 'Juz (PTPT)', 'Juz', 'juz') || '')
-            .trim()
-            .toUpperCase(),
-          lembaga_sekolah: canonLembaga(_pick(r, 'Lembaga Sekolah', 'lembaga_sekolah')),
-          kelas_sekolah: String(_pick(r, 'Kelas Sekolah', 'kelas_sekolah') || '').trim(),
-          guru_sekolah: String(
-            _pick(r, 'Guru Sekolah (pisah |)', 'Guru Sekolah', 'guru_sekolah') || ''
-          )
-            .split('|')
-            .map((s) => s.trim())
-            .filter(Boolean),
-          aktif: parseAktif(aktifVal),
-          is_mukim: parseBool(_pick(r, 'Mukim (true/false)', 'Mukim', "Ma'had", 'is_mukim')),
-          is_fullday: parseBool(_pick(r, 'Fullday (true/false)', 'Fullday', 'is_fullday')),
-          catatan_riwayat_pribadi: String(
-            _pick(
-              r,
-              'Catatan Riwayat Pribadi (Mukim)',
-              'Catatan Riwayat Pribadi',
-              'catatan_riwayat_pribadi'
-            ) || ''
-          ).trim(),
-          alamat: String(_pick(r, 'Alamat', 'alamat') || '').trim(),
-          // v.99: alamat detail
-          alamat_dusun: String(_pick(r, 'Dusun/Jalan', 'Dusun', 'alamat_dusun') || '').trim(),
-          alamat_rt: String(_pick(r, 'RT', 'alamat_rt') || '').trim(),
-          alamat_rw: String(_pick(r, 'RW', 'alamat_rw') || '').trim(),
-          alamat_desa: String(_pick(r, 'Desa', 'Desa / Kelurahan', 'alamat_desa') || '').trim(),
-          alamat_kecamatan: String(_pick(r, 'Kecamatan', 'alamat_kecamatan') || '').trim(),
-          alamat_kabupaten: String(_pick(r, 'Kabupaten', 'alamat_kabupaten') || '').trim(),
-          alamat_provinsi: String(_pick(r, 'Provinsi', 'alamat_provinsi') || '').trim(),
-          // v.99: asal sekolah + penghasilan + data ortu (flat + nested ayah/ibu spt form)
-          asal_sekolah: toTitleCase(_pick(r, 'Asal Sekolah', 'asal_sekolah') || ''),
-          penghasilan_ortu: String(_pick(r, 'Penghasilan Ortu', 'penghasilan_ortu') || '').trim(),
-          nama_ayah: toTitleCase(_pick(r, 'Nama Ayah', 'nama_ayah') || ''),
-          nik_ayah: String(_pick(r, 'NIK Ayah', 'nik_ayah') || '').trim(),
-          pendidikan_ayah: String(_pick(r, 'Pendidikan Ayah', 'pendidikan_ayah') || '').trim(),
-          pekerjaan_ayah: String(_pick(r, 'Pekerjaan Ayah', 'pekerjaan_ayah') || '').trim(),
-          hp_ayah: String(_pick(r, 'HP Ayah', 'hp_ayah') || '').trim(),
-          nama_ibu: toTitleCase(_pick(r, 'Nama Ibu', 'nama_ibu') || ''),
-          nik_ibu: String(_pick(r, 'NIK Ibu', 'nik_ibu') || '').trim(),
-          pendidikan_ibu: String(_pick(r, 'Pendidikan Ibu', 'pendidikan_ibu') || '').trim(),
-          pekerjaan_ibu: String(_pick(r, 'Pekerjaan Ibu', 'pekerjaan_ibu') || '').trim(),
-          hp_ibu: String(_pick(r, 'HP Ibu', 'hp_ibu') || '').trim(),
-          ayah: {
-            nama: toTitleCase(_pick(r, 'Nama Ayah', 'nama_ayah') || ''),
-            nik: String(_pick(r, 'NIK Ayah', 'nik_ayah') || '').trim(),
-            pekerjaan: String(_pick(r, 'Pekerjaan Ayah', 'pekerjaan_ayah') || '').trim(),
-            pendidikan: String(_pick(r, 'Pendidikan Ayah', 'pendidikan_ayah') || '').trim(),
-            telp: String(_pick(r, 'HP Ayah', 'hp_ayah') || '').trim()
-          },
-          ibu: {
-            nama: toTitleCase(_pick(r, 'Nama Ibu', 'nama_ibu') || ''),
-            nik: String(_pick(r, 'NIK Ibu', 'nik_ibu') || '').trim(),
-            pekerjaan: String(_pick(r, 'Pekerjaan Ibu', 'pekerjaan_ibu') || '').trim(),
-            pendidikan: String(_pick(r, 'Pendidikan Ibu', 'pendidikan_ibu') || '').trim(),
-            telp: String(_pick(r, 'HP Ibu', 'hp_ibu') || '').trim()
-          },
-          // v.99: status keluar
-          tgl_keluar: parseTglDDMMYYYY(
-            _pick(r, 'Tgl Keluar (DD/MM/YYYY)', 'Tgl Keluar', 'tgl_keluar')
-          ),
-          alasan_keluar: String(_pick(r, 'Alasan Keluar', 'alasan_keluar') || '').trim(),
-          custom_fields: {}
-        }
+        wali,
+        data
       })
     }
     importPreview.value = {
@@ -1365,20 +1261,16 @@ async function confirmImportSantri() {
   try {
     for (const item of importPreview.value.rows) {
       try {
-        const numId = item.existingId
-          ? Number(item.existingId) ||
-            Number(String(item.existingId).replace(/\D/g, '')) ||
-            Date.now() + ok
-          : Date.now() + ok
-        await setDoc(
-          doc(db, 'santri', String(numId)),
-          {
-            id: numId,
-            ...item.data,
-            _imported_v21_26_at: serverTimestamp()
-          },
-          { merge: true }
-        )
+        // v.110.0626 FIX duplikat: id Supabase = TEKS alfanumerik (mis. _genId / id Firestore
+        //   hasil migrasi). JANGAN coerce ke Number — Number() bikin id BEDA dari record asli →
+        //   mergeOne nulis baris baru = DUPLIKAT. Existing → update pakai id apa adanya;
+        //   baru → addOne (generate id sendiri).
+        const payload = { ...item.data, _imported_v21_26_at: serverTimestamp() }
+        if (item.existingId) {
+          // v.111: JANGAN timpa No. Induk lama dgn kosong — No. Induk santri lama TETAP
+          if (!String(payload.nis || '').trim()) delete payload.nis
+          await mergeOne('santri', String(item.existingId), payload)
+        } else await addOne('santri', payload)
         ok++
       } catch (e) {
         fail++
@@ -1386,17 +1278,31 @@ async function confirmImportSantri() {
       }
     }
     toast.success(`Impor selesai: ${ok} OK, ${fail} gagal`)
-    // v.100 Batch14: regenerate No. Induk otomatis (IMPOR = reshuffle SEMUA santri by tgl lahir tertua → nama A–Z)
+    // v.111: No. Induk lama TETAP — hanya santri baru (No. Induk kosong) yg diberi nomor,
+    //   MELANJUTKAN dari No. tertinggi (append, urut tgl lahir tertua → nama A–Z).
     try {
       const fresh = await getAll('santri')
-      const plan = planRegenerateNis(fresh)
+      const plan = planAppendNis(fresh)
       const res = await applyNisChanges(plan.changes, { sesi: authStore?.sesiAktif, mode: 'impor' })
-      let msg = `No. Induk digenerate ulang: ${res.changed} diperbarui`
+      let msg = res.changed
+        ? `No. Induk baru untuk ${res.changed} santri (lanjut dari No. ${String(plan.base).padStart(4, '0')})`
+        : 'Semua santri sudah punya No. Induk — tidak ada perubahan'
       if (plan.skipped.length) msg += `, ${plan.skipped.length} tanpa tgl lahir (dilewati)`
       if (res.fail) msg += `, ${res.fail} gagal`
       toast.success(msg)
     } catch (e) {
-      toast.warning('No. Induk gagal digenerate ulang: ' + (e.message || e))
+      toast.warning('No. Induk gagal diproses: ' + (e.message || e))
+    }
+    // K1-b: akun login lahir bersama datanya. WAJIB sesudah blok No. Induk di atas —
+    //   kunci akun santri = No. Induk (fallback digit WA), jadi provision lebih dulu
+    //   akan membuat akun ber-kunci yang sebentar lagi berubah (dan jadi yatim).
+    //   Senyap: impor TIDAK boleh gagal gara-gara pembuatan akun (mis. Edge Function
+    //   belum ter-deploy, atau pengimpor bukan admin).
+    try {
+      const _prov = await provisionAkunSenyap()
+      if (_prov?.dibuat) toast.success(`${_prov.dibuat} akun login baru dibuat`)
+    } catch (e) {
+      /* senyap */
     }
     importPreview.value = null
   } catch (e) {

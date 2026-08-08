@@ -7,7 +7,7 @@
 // tapi user tidak tahu di mana, atau WebView mem-block download blob URL.
 //
 // Solusi: detect Capacitor.isNativePlatform() → simpan via @capacitor/filesystem
-// ke folder Documents/<AppName> + buka share dialog via @capacitor/share supaya
+// ke folder Documents/Waseela + buka share dialog via @capacitor/share supaya
 // user bisa pilih app pembuka (PDF viewer, WhatsApp, Email, Files app, dst).
 //
 // Penggunaan:

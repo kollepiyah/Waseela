@@ -1,59 +1,78 @@
-# Waseela — Template Aplikasi Portal Pesantren (white-label)
+# Waseela — Portal Manajemen Lembaga Pendidikan
 
-Produk white-label portal pesantren & sekolah. Satu kode
-bersama (`app/`) + lapisan config per-lembaga (`tenants/`). Tiap lembaga = **project
-Firebase terpisah** (isolasi data otomatis) + (opsional) app Android sendiri.
+Aplikasi manajemen pesantren & sekolah: santri, guru, absensi, rapor, keuangan
+(syahriyah/POS/tabungan/bisyaroh), kegiatan, dan kanal informasi.
+Web + Android + Desktop. Dikembangkan oleh **Bakafrawi Project**.
 
-> Arah jangka panjang: pendekatan **B (template build-per-tenant)** ini = on-ramp.
-> Saat skala besar, lapisan config yang sama dipakai ulang untuk naik ke **C1
-> (multi-tenant, 1 app, 1 project + tenantId)**. Lihat catatan proyek.
+## Arsitektur
 
-## Struktur
+**Single-tenant**: satu pemasangan = satu lembaga = satu project Supabase sendiri.
+Isolasi data terjadi di batas project, bukan di baris tabel — sederhana dan tak bisa
+bocor antar-lembaga.
+
+| Lapis | Isi |
+|---|---|
+| Data · Auth · Storage | **Supabase** (41 migrasi + RLS berbasis peran) |
+| Notifikasi + Hosting | **Firebase** — FCM & App Check saja, tak menyentuh data lembaga |
+| Klien | Vue 3 SPA (`app/`) · Android (Capacitor) · Desktop (Electron) |
 
 ```
 Waseela/
-├── app/                       # SATU kode bersama. JANGAN edit untuk branding.
-│   └── src/tenant.config.js   # ACTIVE config — DIGENERATE, jangan edit langsung
-├── tenants/
-│   ├── _template/             # cetakan: salin ini untuk lembaga baru
-│   └── demo/                  # tenant demo (showcase)
-│       └── tenant.config.js   # SUMBER KEBENARAN config 1 lembaga
-└── scripts/
-    └── build-tenant.mjs       # set config aktif + (opsional) build
+├── app/
+│   ├── src/config/brand.js   # SUMBER TUNGGAL identitas produk & default merek
+│   ├── src/                  # Vue 3 SPA
+│   ├── android/              # Capacitor (Android)
+│   └── electron/             # Desktop
+├── brand-assets/             # logo/ikon/splash sumber → disebar apply-brand.mjs
+├── supabase/{migrations,functions}
+├── tests/unit/               # 67 berkas, ~870 tes
+└── scripts/                  # brand, white-label, sync, rilis
 ```
 
-## Pembagian config
+## Merek: dua lapis yang sengaja dipisah
 
-| Tipe | Di mana | Contoh |
+| Lapis | Isi | Siapa yang mengisi |
 |---|---|---|
-| **Build-time** (tak bisa runtime) | `tenants/<slug>/tenant.config.js` | `firebaseConfig`, `appId`, `appName`, `themeColor` |
-| **Runtime** (admin bisa ubah via UI Pengaturan → Firestore `settings/web`) | seed di `branding` + diisi admin | nama lembaga, kop, logo, kontak, channel |
-| **Feature-flags** (nyala/mati modul) | `features` di tenant.config | `keuangan`, `psb`, `fingerprint`, dst |
+| **Produk** | nama app, logo, ikon, splash, hak cipta | tetap — Waseela · © Bakafrawi Project |
+| **Lembaga** | kop surat 1–4, logo kop, alamat, telp, nama lembaga, motto | **pembeli**, lewat UI Pengaturan (tanpa rebuild) |
 
-## Tambah lembaga baru
+Bidang identitas lembaga **dikirim kosong**. Jangan menulis nama lembaga sebagai
+literal di komponen — arahkan ke `BRAND.*` supaya gerbang audit tetap bermakna.
 
-1. `cp -r tenants/_template tenants/<slug>` (mis. `al-falah`).
-2. Buat **project Firebase baru** untuk lembaga itu → isi `firebaseConfig`.
-3. Isi `appId`, `appName`, `branding`, atur `features`.
-4. (opsional) taruh `tenants/<slug>/logo.png`.
-5. `node scripts/build-tenant.mjs <slug>` → hasil di `app/dist/`.
-
-## Pengembangan
+## Perintah
 
 ```bash
-cd app
-npm install
-npm run dev          # pakai tenant aktif terakhir (default: demo)
+npm test                              # 67 berkas tes
+npm run build                         # build web (app/dist)
+node scripts/whitelabel.mjs --audit   # gerbang: nol jejak identitas (sumber + hasil build)
+node scripts/apply-brand.mjs          # sebar logo/ikon/splash + audit aset
+node scripts/sync-from-ammu.mjs --dry # intip fitur baru dari repo hulu
+npm run deploy                        # build + firebase deploy hosting
+npm run build:apk                     # APK Android (sideload)
+npm run build:aab                     # AAB (Play Store)
+npm run electron:release              # installer desktop
 ```
 
-Ganti tenant aktif tanpa build: `node scripts/build-tenant.mjs <slug> --no-build`.
+## Sebelum mengirim ke pembeli
 
-## Catatan
+Wajib lulus **keduanya** — gerbang teks tak bisa melihat gambar:
 
-- `app/src/tenant.config.js` di-generate (gitignore disarankan); tenant `demo`
-  disertakan agar `npm run dev` jalan langsung.
-- Native Android (folder `android/`) belum disertakan — di-generate via
-  `npx cap add android` + `npx cap sync` saat menyiapkan build AAB per lembaga
-  (appId sudah otomatis dari `capacitor.config.json` yang dipatch build-tenant).
-- Skema akademik (rapor/kenaikan/jenjang) = **data-driven** (admin isi via UI
-  MasterData/FieldSchema) — untuk lembaga sejenis (Qiraati/Diniyah) tak perlu kode baru.
+```bash
+node scripts/whitelabel.mjs --audit
+node scripts/apply-brand.mjs
+```
+
+Langkah provisioning lengkap: [`RUNBOOK-PEMBELI.md`](RUNBOOK-PEMBELI.md).
+
+## Menyusul fitur baru dari hulu
+
+Arsitektur Waseela identik dengan repo hulu, jadi sync = salin + terapkan ulang aturan
+white-label. **Repo hulu hanya dibaca**, tak pernah ditulis.
+
+```bash
+node scripts/sync-from-ammu.mjs --dry   # lihat dulu
+node scripts/sync-from-ammu.mjs         # salin + white-label + gerbang + tes
+```
+
+Kalau gerbang gagal, tambahkan aturannya di `scripts/whitelabel-rules.mjs` —
+**jangan menambal berkasnya langsung**, tambalan itu hilang di sync berikutnya.

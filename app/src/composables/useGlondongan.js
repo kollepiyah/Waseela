@@ -6,7 +6,7 @@
 //     - Baca catatan evaluasi              : guru kelas santri + PJ (via view Task #6).
 //   Nilai glondongan/berjalan TAK masuk rapor (murni catatan evaluasi).
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { subscribeColl, subscribeDoc, updateOne, deleteOne, getOne, mergeOne } from '@/services/firestore'
+import { subscribeColl, subscribeDoc, updateOne, deleteOne, getOne, mergeOne } from '@/services/db'
 import { antreNotifBanyak, targetGuru, targetSantri } from '@/services/notif'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'

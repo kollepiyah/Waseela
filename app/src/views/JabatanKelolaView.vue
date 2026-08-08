@@ -1,15 +1,22 @@
 <script setup>
 // v.21.85.0527: Kelola Jabatan (ACF + CRUD) — sub-menu Master Data > Lembaga > Jabatan
-// Model master/jabatan: { list: [string...] (kompat lama), items: [{nama, tipe_pegawai, tipe_lembaga}] }
+// Model master/jabatan: { list: [string...] (kompat lama),
+//   items: [{nama, tipe_pegawai, tipe_lembaga, units:[]}] }
+// v.1.1.9: + units[] — unit/lembaga tempat jabatan ini bertugas. Kosong = global
+//   (jabatan "Guru"). Lihat utils/jabatanUnit.js.
 import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
-import { subscribeDoc } from '@/services/firestore'
-import { doc, setDoc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { subscribeDoc, mergeOne } from '@/services/db'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
+import { namaLembaga, normalizeUnits } from '@/utils/jabatanUnit'
 
 const toast = useToast()
 const confirmDlg = useConfirm()
+
+// v.1.1.9: opsi unit = master/lembaga.list (sumber sebenarnya; termasuk lembaga yang
+//   ditambah belakangan). Konstanta LEMBAGA_GROUPS di useLembaga.js sengaja TIDAK dipakai.
+const unitOptions = ref([])
+let _unsubLembaga = null
 
 const TIPE_PEGAWAI = [
   { value: 'guru_pegawai', label: 'Guru & Pegawai', icon: 'fa-users' },
@@ -55,33 +62,53 @@ function normalize(data) {
       .filter((it) => it && (it.nama || typeof it === 'string'))
       .map((it) =>
         typeof it === 'string'
-          ? { nama: it, tipe_pegawai: 'guru_pegawai', tipe_lembaga: 'lembaga' }
+          ? { nama: it, tipe_pegawai: 'guru_pegawai', tipe_lembaga: 'lembaga', units: [] }
           : {
               nama: String(it.nama || '').trim(),
               tipe_pegawai: it.tipe_pegawai || 'guru_pegawai',
-              tipe_lembaga: it.tipe_lembaga || 'lembaga'
+              tipe_lembaga: it.tipe_lembaga || 'lembaga',
+              // v.1.1.9: data lama tak punya units → [] = global (perilaku sekarang).
+              units: normalizeUnits(it.units)
             }
       )
   }
   if (rawList.length > 0) {
     // Upgrade dari list strings → items (infer default)
-    return rawList
-      .filter(Boolean)
-      .map((nama) => ({ nama: String(nama).trim(), tipe_pegawai: 'guru_pegawai', tipe_lembaga: 'lembaga' }))
+    return rawList.filter(Boolean).map((nama) => ({
+      nama: String(nama).trim(),
+      tipe_pegawai: 'guru_pegawai',
+      tipe_lembaga: 'lembaga',
+      units: []
+    }))
   }
   return null
 }
 
 onMounted(() => {
   _unsub = subscribeDoc('master', 'jabatan', (data) => {
-    const norm = normalize(data)
-    if (norm && norm.length > 0) {
-      items.value = norm
-    } else {
-      // Seed default (idempotent — hanya bila kosong)
+    // Seed HANYA saat dokumennya memang BELUM ADA. Syarat lama ("norm kosong") ikut memicu
+    // seed pada dokumen yang ADA tapi daftarnya kosong — mis. sesudah jabatan TERAKHIR
+    // dihapus (hapus() -> persist([]) -> realtime balik ke sini), atau saat 1 entri cacat
+    // tanpa nama tersaring habis oleh normalize(). Akibatnya 17 default muncul lagi DAN
+    // ditulis balik ke DB: "hapus semua jabatan" jadi mustahil & kustomisasi tertimpa.
+    // master_sel = using(true) (baca publik), jadi null di sini benar-benar berarti
+    // "baris tak ada" — bukan "ditolak RLS".
+    if (data === null) {
       items.value = [...DEFAULT_ITEMS]
-      persist(DEFAULT_ITEMS).catch(() => {})
+      persist(DEFAULT_ITEMS).catch((e) => {
+        // Jangan ditelan: view ini super_admin-only & master_upd = auth_can_manage(), jadi
+        // gagal di sini sinyal nyata (dulu .catch(() => {}) -> daftar tampak ter-seed di
+        // layar padahal DB tak berubah).
+        toast.error('Gagal menyiapkan jabatan default: ' + (e?.message || e))
+      })
+      return
     }
+    items.value = normalize(data) || []
+  })
+  // v.1.1.9: opsi unit dari master/lembaga (sumber sebenarnya, ikut lembaga yang Kyai tambah).
+  _unsubLembaga = subscribeDoc('master', 'lembaga', (doc) => {
+    const list = Array.isArray(doc?.list) ? doc.list : []
+    unitOptions.value = list.map(namaLembaga).filter(Boolean)
   })
 })
 onUnmounted(() => {
@@ -90,21 +117,33 @@ onUnmounted(() => {
       _unsub()
     } catch (e) {}
   }
+  if (_unsubLembaga) {
+    try {
+      _unsubLembaga()
+    } catch (e) {}
+  }
 })
 
 // Tulis ke Firestore: simpan items + sync list (kompat reader lama yg pakai .list)
 async function persist(arr) {
   const list = arr.map((it) => it.nama)
-  await setDoc(doc(db, 'master', 'jabatan'), { items: arr, list }, { merge: true })
+  await mergeOne('master', 'jabatan', { items: arr, list })
 }
 
-const form = reactive({ nama: '', tipe_pegawai: 'guru_pegawai', tipe_lembaga: 'lembaga', idx: null })
+const form = reactive({
+  nama: '',
+  tipe_pegawai: 'guru_pegawai',
+  tipe_lembaga: 'lembaga',
+  units: [],
+  idx: null
+})
 const saving = ref(false)
 
 function resetForm() {
   form.nama = ''
   form.tipe_pegawai = 'guru_pegawai'
   form.tipe_lembaga = 'lembaga'
+  form.units = []
   form.idx = null
 }
 function editItem(idx) {
@@ -113,7 +152,19 @@ function editItem(idx) {
   form.nama = it.nama
   form.tipe_pegawai = it.tipe_pegawai || 'guru_pegawai'
   form.tipe_lembaga = it.tipe_lembaga || 'lembaga'
+  form.units = normalizeUnits(it.units)
   form.idx = idx
+}
+
+function toggleUnit(nama) {
+  const cur = [...form.units]
+  const i = cur.findIndex((x) => x.toLowerCase() === String(nama).toLowerCase())
+  if (i >= 0) cur.splice(i, 1)
+  else cur.push(nama)
+  form.units = cur
+}
+function unitDipilih(nama) {
+  return form.units.some((x) => x.toLowerCase() === String(nama).toLowerCase())
 }
 
 async function simpan() {
@@ -131,7 +182,12 @@ async function simpan() {
   saving.value = true
   try {
     const arr = [...items.value]
-    const entry = { nama, tipe_pegawai: form.tipe_pegawai, tipe_lembaga: form.tipe_lembaga }
+    const entry = {
+      nama,
+      tipe_pegawai: form.tipe_pegawai,
+      tipe_lembaga: form.tipe_lembaga,
+      units: normalizeUnits(form.units)
+    }
     if (form.idx !== null) arr[form.idx] = entry
     else arr.push(entry)
     await persist(arr)
@@ -184,8 +240,8 @@ const sorted = computed(() =>
         <i class="fas fa-id-badge text-teal-500 mr-2"></i>Kelola Jabatan
       </h1>
       <p class="text-xs text-[var(--text-secondary)] mt-0.5">
-        Master jabatan untuk dropdown Data Guru/Pegawai. Atur tipe pegawai &amp; apakah jabatan perlu
-        lembaga.
+        Master jabatan untuk dropdown Data Guru/Pegawai. Atur tipe pegawai &amp; apakah jabatan
+        perlu lembaga.
       </p>
     </div>
 
@@ -194,7 +250,9 @@ const sorted = computed(() =>
       class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm space-y-3"
     >
       <h3 class="text-sm font-black text-[var(--text-primary)]">
-        <i :class="['fas', form.idx !== null ? 'fa-edit' : 'fa-plus-circle', 'text-teal-600 mr-1']"></i>
+        <i
+          :class="['fas', form.idx !== null ? 'fa-edit' : 'fa-plus-circle', 'text-teal-600 mr-1']"
+        ></i>
         {{ form.idx !== null ? 'Edit Jabatan' : 'Tambah Jabatan' }}
       </h3>
       <div>
@@ -218,13 +276,13 @@ const sorted = computed(() =>
               v-for="t in TIPE_PEGAWAI"
               :key="t.value"
               type="button"
-              @click="form.tipe_pegawai = t.value"
               :class="[
                 'px-2.5 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
                 form.tipe_pegawai === t.value
                   ? 'bg-teal-600 text-white border-teal-700'
                   : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-teal-900/30'
               ]"
+              @click="form.tipe_pegawai = t.value"
             >
               <i :class="['fas', t.icon, 'mr-1']"></i>{{ t.label }}
             </button>
@@ -239,34 +297,82 @@ const sorted = computed(() =>
               v-for="t in TIPE_LEMBAGA"
               :key="t.value"
               type="button"
-              @click="form.tipe_lembaga = t.value"
               :class="[
                 'px-2.5 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
                 form.tipe_lembaga === t.value
                   ? 'bg-cyan-600 text-white border-cyan-700'
                   : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-cyan-50 dark:hover:bg-cyan-900/30'
               ]"
+              @click="form.tipe_lembaga = t.value"
             >
               <i :class="['fas', t.icon, 'mr-1']"></i>{{ t.label }}
             </button>
           </div>
         </div>
       </div>
+      <!-- v.1.1.9: Unit/Lembaga tempat jabatan ini bertugas -->
+      <div>
+        <label class="text-[11px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
+          >Unit / Lembaga Tugas</label
+        >
+        <div
+          v-if="unitOptions.length === 0"
+          class="text-xs italic text-[var(--text-tertiary)] py-2"
+        >
+          Belum ada lembaga di Master Data › Lembaga.
+        </div>
+        <div v-else class="flex flex-wrap gap-1.5">
+          <button
+            v-for="u in unitOptions"
+            :key="u"
+            type="button"
+            :class="[
+              'px-2.5 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
+              unitDipilih(u)
+                ? 'bg-indigo-600 text-white border-indigo-700'
+                : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-default)] hover:bg-indigo-50 dark:hover:bg-indigo-900/30'
+            ]"
+            @click="toggleUnit(u)"
+          >
+            <i :class="['fas mr-1', unitDipilih(u) ? 'fa-check' : 'fa-building']"></i>{{ u }}
+          </button>
+        </div>
+        <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1.5">
+          <i class="fas fa-info-circle mr-1"></i>
+          <b v-if="form.units.length === 0">Tak ada yang dipilih = global</b>
+          <span v-if="form.units.length === 0">
+            — jabatan ini bebas di lembaga mana pun (untuk jabatan "Guru").</span
+          >
+          <span v-else-if="form.units.length === 1">
+            Lembaga guru/pegawai akan <b>terisi otomatis</b> ke {{ form.units[0] }} saat jabatan ini
+            dipilih.</span
+          >
+          <span v-else>
+            Pilihan lembaga guru/pegawai dibatasi ke {{ form.units.length }} unit ini.</span
+          >
+        </p>
+      </div>
       <div class="flex gap-2 pt-1">
         <button
           type="button"
-          @click="simpan"
           :disabled="saving"
           class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-2 rounded-lg text-xs disabled:opacity-50"
+          @click="simpan"
         >
-          <i :class="['fas', saving ? 'fa-spinner fa-spin' : form.idx !== null ? 'fa-save' : 'fa-plus', 'mr-1']"></i>
+          <i
+            :class="[
+              'fas',
+              saving ? 'fa-spinner fa-spin' : form.idx !== null ? 'fa-save' : 'fa-plus',
+              'mr-1'
+            ]"
+          ></i>
           {{ form.idx !== null ? 'Update' : 'Tambah' }}
         </button>
         <button
           v-if="form.idx !== null"
           type="button"
-          @click="resetForm"
           class="bg-[var(--bg-muted)] hover:bg-slate-300 dark:hover:bg-slate-600 text-[var(--text-secondary)] font-bold px-3 py-2 rounded-lg text-xs"
+          @click="resetForm"
         >
           Batal
         </button>
@@ -274,9 +380,7 @@ const sorted = computed(() =>
     </div>
 
     <!-- List -->
-    <div
-      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
-    >
+    <div class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-sm font-black text-[var(--text-primary)]">
           <i class="fas fa-list text-teal-600 mr-1"></i>Daftar Jabatan
@@ -285,7 +389,10 @@ const sorted = computed(() =>
           >{{ sorted.length }} jabatan</span
         >
       </div>
-      <div v-if="sorted.length === 0" class="text-center text-[var(--text-tertiary)] italic text-xs py-6">
+      <div
+        v-if="sorted.length === 0"
+        class="text-center text-[var(--text-tertiary)] italic text-xs py-6"
+      >
         <i class="fas fa-inbox text-3xl text-[var(--border-default)] block mb-2"></i>
         Belum ada jabatan. Tambah via form di atas.
       </div>
@@ -307,19 +414,31 @@ const sorted = computed(() =>
                 class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300"
                 >{{ labelLembaga(j.tipe_lembaga) }}</span
               >
+              <!-- v.1.1.9: unit tugas — kosong = global -->
+              <span
+                v-if="(j.units || []).length === 0"
+                class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
+                >Global</span
+              >
+              <span
+                v-for="u in j.units || []"
+                :key="j.nama + '-' + u"
+                class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300"
+                >{{ u }}</span
+              >
             </div>
           </div>
           <button
             type="button"
-            @click="editItem(items.indexOf(j))"
             class="text-[10px] text-cyan-600 hover:underline font-bold"
+            @click="editItem(items.indexOf(j))"
           >
             edit
           </button>
           <button
             type="button"
-            @click="hapus(items.indexOf(j))"
             class="text-[10px] text-rose-600 hover:underline font-bold"
+            @click="hapus(items.indexOf(j))"
           >
             hapus
           </button>

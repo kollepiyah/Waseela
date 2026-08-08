@@ -14,7 +14,9 @@
           </h1>
           <p class="text-xs text-[var(--text-secondary)] mt-0.5">
             No. Pendaftaran:
-            <span class="font-bold text-[var(--text-primary)]">{{ pendaftar.no_pendaftaran || '—' }}</span>
+            <span class="font-bold text-[var(--text-primary)]">{{
+              pendaftar.no_pendaftaran || '—'
+            }}</span>
             &middot; Tgl Daftar:
             <span class="font-bold text-[var(--text-primary)]">{{
               fmtTgl(pendaftar.tanggal_daftar || pendaftar.tgl_daftar)
@@ -32,22 +34,22 @@
           </span>
           <button
             v-if="pendaftar.status !== 'approved'"
-            @click="updateStatus('approved')"
             class="text-xs px-3 py-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold rounded-lg transition"
+            @click="updateStatus('approved')"
           >
             <i class="fas fa-check mr-1"></i>Approve
           </button>
           <button
             v-if="pendaftar.status !== 'rejected'"
-            @click="updateStatus('rejected')"
             class="text-xs px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg transition"
+            @click="updateStatus('rejected')"
           >
             <i class="fas fa-times mr-1"></i>Reject
           </button>
           <button
             v-if="pendaftar.status === 'approved' && pendaftar.status !== 'enrolled'"
-            @click="updateStatus('enrolled')"
             class="text-xs px-3 py-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold rounded-lg transition"
+            @click="updateStatus('enrolled')"
           >
             <i class="fas fa-user-plus mr-1"></i>Tandai Enrolled
           </button>
@@ -138,7 +140,9 @@
                 >
                   {{ item.type || 'text' }}
                 </span>
-                <p class="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wide">
+                <p
+                  class="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wide"
+                >
                   {{ item.label || item.key }}
                 </p>
               </div>
@@ -148,14 +152,14 @@
             </div>
             <div class="flex flex-col gap-1">
               <button
-                @click="openEditAcf(item)"
                 class="text-[10px] px-2 py-0.5 bg-cyan-100 hover:bg-cyan-200 text-cyan-700 font-bold rounded transition"
+                @click="openEditAcf(item)"
               >
                 <i class="fas fa-pen"></i>
               </button>
               <button
-                @click="deleteAcf(item.key)"
                 class="text-[10px] px-2 py-0.5 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold rounded transition"
+                @click="deleteAcf(item.key)"
               >
                 <i class="fas fa-trash"></i>
               </button>
@@ -164,8 +168,8 @@
         </div>
         <div class="mt-3 pt-3 border-t border-dashed border-[var(--border-subtle)]">
           <button
-            @click="openAddAcf"
             class="w-full text-xs px-3 py-2 bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold rounded-lg border border-dashed border-teal-300 transition"
+            @click="openAddAcf"
           >
             <i class="fas fa-plus mr-1"></i>Tambah Field
           </button>
@@ -187,9 +191,9 @@
             </p>
           </div>
           <button
-            @click="convertToSantri"
             :disabled="converting"
             class="text-xs px-4 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:bg-slate-300 text-white font-bold rounded-lg transition"
+            @click="convertToSantri"
           >
             <i class="fas fa-arrow-right-to-bracket mr-1"></i
             >{{ converting ? 'Memproses…' : 'Buat Santri' }}
@@ -258,14 +262,14 @@
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button
-            @click="acfModal.open = false"
             class="text-xs px-3 py-1.5 bg-[var(--bg-muted)] hover:bg-slate-200 text-[var(--text-primary)] font-bold rounded-lg"
+            @click="acfModal.open = false"
           >
             Batal
           </button>
           <button
-            @click="saveAcf"
             class="text-xs px-3 py-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold rounded-lg"
+            @click="saveAcf"
           >
             Simpan
           </button>
@@ -278,10 +282,10 @@
 <script setup>
 import { ref, computed, defineComponent, h, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { doc, onSnapshot } from 'firebase/firestore'
-import { db } from '@/services/firebase'
-import { updateOne, addOne, getAll } from '@/services/firestore'
+import { subscribeDoc, updateOne, addOne, getAll } from '@/services/db'
+import { provisionAkunSenyap } from '@/services/authSupabase' // K1-b: akun login ikut lahir
 import { nextNisForNew } from '@/utils/nisGenerator' // v.100 Batch14: NIS PSB = append (lanjut NNNN)
+import { statusTinggalDariPsb } from '@/utils/statusSantri' // Kyai 3-4 Agu: mahad/fullday ikut terbawa
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
@@ -324,24 +328,21 @@ const InfoRow = defineComponent({
   props: ['label', 'value'],
   setup(props) {
     return () =>
-      h(
-        'div',
-        { class: 'flex items-baseline gap-2 py-1 border-b border-[var(--border-subtle)]' },
-        [
-          h(
-            'span',
-            {
-              class: 'text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wide min-w-[120px]'
-            },
-            props.label + ':'
-          ),
-          h(
-            'span',
-            { class: 'text-sm text-slate-800 dark:text-slate-200 flex-1 break-words' },
-            props.value || '—'
-          )
-        ]
-      )
+      h('div', { class: 'flex items-baseline gap-2 py-1 border-b border-[var(--border-subtle)]' }, [
+        h(
+          'span',
+          {
+            class:
+              'text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wide min-w-[120px]'
+          },
+          props.label + ':'
+        ),
+        h(
+          'span',
+          { class: 'text-sm text-slate-800 dark:text-slate-200 flex-1 break-words' },
+          props.value || '—'
+        )
+      ])
   }
 })
 
@@ -350,31 +351,45 @@ const DocPreview = defineComponent({
   setup(props) {
     return () => {
       const isImg = props.url && /\.(png|jpe?g|webp|gif)$/i.test(props.url)
-      return h('div', { class: 'bg-[var(--bg-card-elevated)] rounded-xl p-3 border border-[var(--border-subtle)]' }, [
-        h('p', { class: 'text-[11px] font-bold uppercase text-[var(--text-secondary)] mb-2' }, props.label),
-        props.url
-          ? h('a', { href: props.url, target: '_blank', class: 'block' }, [
-              isImg
-                ? h('img', {
-                    src: props.url,
-                    class: 'w-full h-40 object-contain bg-[var(--bg-card)] rounded-lg'
-                  })
-                : h(
-                    'div',
-                    {
-                      class:
-                        'w-full h-40 flex items-center justify-center bg-[var(--bg-card)] rounded-lg text-teal-600'
-                    },
-                    [h('i', { class: 'fas fa-file-pdf text-4xl' })]
-                  ),
-              h(
+      return h(
+        'div',
+        {
+          class: 'bg-[var(--bg-card-elevated)] rounded-xl p-3 border border-[var(--border-subtle)]'
+        },
+        [
+          h(
+            'p',
+            { class: 'text-[11px] font-bold uppercase text-[var(--text-secondary)] mb-2' },
+            props.label
+          ),
+          props.url
+            ? h('a', { href: props.url, target: '_blank', class: 'block' }, [
+                isImg
+                  ? h('img', {
+                      src: props.url,
+                      class: 'w-full h-40 object-contain bg-[var(--bg-card)] rounded-lg'
+                    })
+                  : h(
+                      'div',
+                      {
+                        class:
+                          'w-full h-40 flex items-center justify-center bg-[var(--bg-card)] rounded-lg text-teal-600'
+                      },
+                      [h('i', { class: 'fas fa-file-pdf text-4xl' })]
+                    ),
+                h(
+                  'p',
+                  { class: 'text-[10px] text-teal-600 text-center mt-1 hover:underline' },
+                  'Klik untuk lihat full'
+                )
+              ])
+            : h(
                 'p',
-                { class: 'text-[10px] text-teal-600 text-center mt-1 hover:underline' },
-                'Klik untuk lihat full'
+                { class: 'text-xs text-[var(--text-tertiary)] italic text-center py-8' },
+                'Tidak ada file'
               )
-            ])
-          : h('p', { class: 'text-xs text-[var(--text-tertiary)] italic text-center py-8' }, 'Tidak ada file')
-      ])
+        ]
+      )
     }
   }
 })
@@ -530,10 +545,35 @@ async function convertToSantri() {
       wa: p.wa || p.wa_wali || p.telp_ayah || '',
       wa_wali: p.wa_wali || '',
       // Ortu — flat + nested (kompat ProfilSantri view + edit)
-      nama_ayah: p.nama_ayah || '', nik_ayah: p.nik_ayah || '', pekerjaan_ayah: p.pekerjaan_ayah || '', pendidikan_ayah: p.pendidikan_ayah || '', hp_ayah: p.hp_ayah || p.telp_ayah || '',
-      nama_ibu: p.nama_ibu || '', nik_ibu: p.nik_ibu || '', pekerjaan_ibu: p.pekerjaan_ibu || '', pendidikan_ibu: p.pendidikan_ibu || '', hp_ibu: p.hp_ibu || p.telp_ibu || '',
-      ayah: { nama: p.nama_ayah || '', nik: p.nik_ayah || '', pekerjaan: p.pekerjaan_ayah || '', pendidikan: p.pendidikan_ayah || '', telp: p.telp_ayah || p.hp_ayah || '' },
-      ibu: { nama: p.nama_ibu || '', nik: p.nik_ibu || '', pekerjaan: p.pekerjaan_ibu || '', pendidikan: p.pendidikan_ibu || '', telp: p.telp_ibu || p.hp_ibu || '' },
+      nama_ayah: p.nama_ayah || '',
+      nik_ayah: p.nik_ayah || '',
+      pekerjaan_ayah: p.pekerjaan_ayah || '',
+      pendidikan_ayah: p.pendidikan_ayah || '',
+      hp_ayah: p.hp_ayah || p.telp_ayah || '',
+      nama_ibu: p.nama_ibu || '',
+      nik_ibu: p.nik_ibu || '',
+      pekerjaan_ibu: p.pekerjaan_ibu || '',
+      pendidikan_ibu: p.pendidikan_ibu || '',
+      hp_ibu: p.hp_ibu || p.telp_ibu || '',
+      ayah: {
+        nama: p.nama_ayah || '',
+        nik: p.nik_ayah || '',
+        pekerjaan: p.pekerjaan_ayah || '',
+        pendidikan: p.pendidikan_ayah || '',
+        telp: p.telp_ayah || p.hp_ayah || ''
+      },
+      ibu: {
+        nama: p.nama_ibu || '',
+        nik: p.nik_ibu || '',
+        pekerjaan: p.pekerjaan_ibu || '',
+        pendidikan: p.pendidikan_ibu || '',
+        telp: p.telp_ibu || p.hp_ibu || ''
+      },
+      // Kyai 3-4 Agu: STATUS TINGGAL wajib ikut — dulu tak disalin, jadi SEMUA santri hasil
+      //   PSB jatuh 'non_mukim' padahal formulir PSB sudah menyimpan flag-nya. Aturannya
+      //   (+ alasan kenapa ini menyetir uang) di utils/statusSantri.statusTinggalDariPsb.
+      ...statusTinggalDariPsb(p),
+      tipe_santri: p.tipe_santri || '', // jejak pilihan asli di formulir PSB
       aktif: true,
       psb_id: docId.value,
       audit: {
@@ -547,9 +587,14 @@ async function convertToSantri() {
       try {
         const allSantri = await getAll('santri')
         payload.nis = nextNisForNew(allSantri, payload.tgl_lahir)
-      } catch (e) { /* gagal hitung → biarkan No. Induk kosong, bisa digenerate via impor */ }
+      } catch (e) {
+        /* gagal hitung → biarkan No. Induk kosong, bisa digenerate via impor */
+      }
     }
-    await addOne('santri', payload)
+    const _sidBaru = await addOne('santri', payload)
+    // K1-b: akun login lahir bersama datanya — sesudah No. Induk di atas ditetapkan
+    //   (kunci akun santri = No. Induk). Senyap: konversi tak boleh gagal gara-gara ini.
+    provisionAkunSenyap({ collection: 'santri', docId: _sidBaru })
     await updateOne('psb_pendaftaran', docId.value, {
       status: 'enrolled',
       enrolled_at: new Date().toISOString()
@@ -588,22 +633,15 @@ function fmtTgl(v) {
 
 onMounted(() => {
   if (!docId.value) return
-  unsubDoc = onSnapshot(
-    doc(db, 'psb_pendaftaran', docId.value),
-    (snap) => {
-      if (snap.exists()) {
-        pendaftar.value = { id: snap.id, ...snap.data() }
-      } else {
-        pendaftar.value = {}
-        toast.error('Pendaftar tidak ditemukan')
-      }
-      loading.value = false
-    },
-    (e) => {
-      toast.error('Gagal load: ' + (e.message || e))
-      loading.value = false
+  unsubDoc = subscribeDoc('psb_pendaftaran', docId.value, (d) => {
+    if (d) {
+      pendaftar.value = d
+    } else {
+      pendaftar.value = {}
+      toast.error('Pendaftar tidak ditemukan')
     }
-  )
+    loading.value = false
+  })
 })
 
 onUnmounted(() => {

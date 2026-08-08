@@ -2,122 +2,416 @@
   <!-- v.21.84.0527: Personal — data statistik pribadi guru/pegawai (kehadiran + bisyaroh) -->
   <div class="p-3 md:p-5 space-y-4">
     <!-- Header -->
-    <div v-if="!isDesktop" class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+    <div
+      v-if="!isDesktop"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
+    >
       <h1 class="text-base md:text-lg font-black">
         <i class="fas fa-id-badge text-teal-600 mr-2"></i>Personal
       </h1>
       <p class="text-xs text-[var(--text-secondary)] mt-0.5">
-        {{ auth.sesiAktif?.nama || '-' }} · {{ guru?.jabatan || auth.sesiAktif?.jabatan || 'Guru/Pegawai' }}
+        {{ auth.sesiAktif?.nama || '-' }} ·
+        {{ guru?.jabatan || auth.sesiAktif?.jabatan || 'Guru/Pegawai' }}
       </p>
     </div>
 
     <!-- Ringkasan stat pribadi -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-      <div class="bg-gradient-to-br from-emerald-500 to-teal-700 rounded-2xl p-4 text-white shadow-sm">
+      <div
+        class="bg-gradient-to-br from-emerald-500 to-teal-700 rounded-2xl p-4 text-white shadow-sm"
+      >
         <p class="text-[10px] uppercase font-black text-white/85">Bisyaroh Bulan Ini</p>
-        <p class="text-2xl font-black mt-1 !text-white">{{ fmtRp(slipBulanIni?.take_home || 0) }}</p>
-        <p class="text-[10px] text-white/80 mt-1">{{ slipBulanIni ? 'Sudah diterbitkan' : 'Belum diterbitkan' }}</p>
+        <p class="text-2xl font-black mt-1 !text-white">
+          {{ fmtRp(slipBulanIni?.take_home || 0) }}
+        </p>
+        <p class="text-[10px] text-white/80 mt-1">
+          {{ slipBulanIni ? 'Sudah diterbitkan' : 'Belum diterbitkan' }}
+        </p>
       </div>
       <div class="bg-gradient-to-br from-teal-600 to-teal-800 rounded-2xl p-4 text-white shadow-sm">
         <p class="text-[10px] uppercase font-black text-white/85">Lama Mengabdi</p>
         <p class="text-2xl font-black mt-1 !text-white">{{ lamaMengajar }}</p>
-        <p class="text-[10px] text-white/80 mt-1">Sejak {{ guru?.tanggal_tugas || '-' }}</p>
+        <p class="text-[10px] text-white/80 mt-1">Sejak {{ guru?.tanggal_mengabdi || '-' }}</p>
       </div>
     </div>
 
     <!-- Kehadiran Saya Bulan Ini -->
-    <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
-      <h3 class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2">
+    <div
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+    >
+      <h3
+        class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
+      >
         <i class="fas fa-clipboard-check text-emerald-600 mr-2"></i>Kehadiran — {{ bulanLabel }}
       </h3>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
-        <div class="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl py-3 border border-emerald-100 dark:border-emerald-800">
-          <p class="text-[9px] font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">Hadir</p>
-          <p class="text-2xl font-black text-emerald-700 dark:text-emerald-300 mt-1">{{ kehadiran.hadir }}</p>
+      <!-- v.1.2.3: 6 status (tepat waktu / terlambat / sakit / izin / cuti / alpa) -->
+      <div class="grid grid-cols-3 md:grid-cols-6 gap-2 text-center">
+        <div
+          class="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl py-3 border border-emerald-100 dark:border-emerald-800"
+        >
+          <p
+            class="text-[9px] font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-wider"
+          >
+            Tepat Waktu
+          </p>
+          <p class="text-2xl font-black text-emerald-700 dark:text-emerald-300 mt-1">
+            {{ kehadiran.tepat }}
+          </p>
         </div>
-        <div class="bg-cyan-50 dark:bg-cyan-900/20 rounded-xl py-3 border border-cyan-100 dark:border-cyan-800">
-          <p class="text-[9px] font-black text-cyan-700 dark:text-cyan-300 uppercase tracking-wider">Sakit</p>
-          <p class="text-2xl font-black text-cyan-700 dark:text-cyan-300 mt-1">{{ kehadiran.sakit }}</p>
+        <div
+          class="bg-amber-50 dark:bg-amber-900/20 rounded-xl py-3 border border-amber-100 dark:border-amber-800"
+        >
+          <p
+            class="text-[9px] font-black text-amber-700 dark:text-amber-300 uppercase tracking-wider"
+          >
+            Terlambat
+          </p>
+          <p class="text-2xl font-black text-amber-700 dark:text-amber-300 mt-1">
+            {{ kehadiran.terlambat }}
+          </p>
         </div>
-        <div class="bg-cyan-50 dark:bg-cyan-900/20 rounded-xl py-3 border border-cyan-100 dark:border-cyan-800">
-          <p class="text-[9px] font-black text-cyan-700 dark:text-cyan-300 uppercase tracking-wider">Izin</p>
-          <p class="text-2xl font-black text-cyan-700 dark:text-cyan-300 mt-1">{{ kehadiran.izin }}</p>
+        <div
+          class="bg-cyan-50 dark:bg-cyan-900/20 rounded-xl py-3 border border-cyan-100 dark:border-cyan-800"
+        >
+          <p
+            class="text-[9px] font-black text-cyan-700 dark:text-cyan-300 uppercase tracking-wider"
+          >
+            Sakit
+          </p>
+          <p class="text-2xl font-black text-cyan-700 dark:text-cyan-300 mt-1">
+            {{ kehadiran.sakit }}
+          </p>
         </div>
-        <div class="bg-rose-50 dark:bg-rose-900/20 rounded-xl py-3 border border-rose-100 dark:border-rose-800">
-          <p class="text-[9px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-wider">Alpa</p>
-          <p class="text-2xl font-black text-rose-700 dark:text-rose-300 mt-1">{{ kehadiran.alpa }}</p>
+        <div
+          class="bg-cyan-50 dark:bg-cyan-900/20 rounded-xl py-3 border border-cyan-100 dark:border-cyan-800"
+        >
+          <p
+            class="text-[9px] font-black text-cyan-700 dark:text-cyan-300 uppercase tracking-wider"
+          >
+            Izin
+          </p>
+          <p class="text-2xl font-black text-cyan-700 dark:text-cyan-300 mt-1">
+            {{ kehadiran.izin }}
+          </p>
+        </div>
+        <div
+          class="bg-violet-50 dark:bg-violet-900/20 rounded-xl py-3 border border-violet-100 dark:border-violet-800"
+        >
+          <p
+            class="text-[9px] font-black text-violet-700 dark:text-violet-300 uppercase tracking-wider"
+          >
+            Cuti
+          </p>
+          <p class="text-2xl font-black text-violet-700 dark:text-violet-300 mt-1">
+            {{ kehadiran.cuti }}
+          </p>
+        </div>
+        <div
+          class="bg-rose-50 dark:bg-rose-900/20 rounded-xl py-3 border border-rose-100 dark:border-rose-800"
+        >
+          <p
+            class="text-[9px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-wider"
+          >
+            Alpa
+          </p>
+          <p class="text-2xl font-black text-rose-700 dark:text-rose-300 mt-1">
+            {{ kehadiran.alpa }}
+          </p>
         </div>
       </div>
-      <p v-if="kehadiran.total === 0" class="text-[11px] text-[var(--text-tertiary)] italic text-center mt-3">
+      <!-- v.1.2.3: KPI ringkas absen pribadi -->
+      <div class="grid grid-cols-3 gap-2 mt-2 text-center">
+        <div class="bg-[var(--bg-muted)] rounded-xl py-2 border border-[var(--border-subtle)]">
+          <p class="text-[9px] font-black text-[var(--text-secondary)] uppercase tracking-wider">
+            Total Hadir
+          </p>
+          <p class="text-lg font-black text-[var(--text-primary)] mt-0.5">{{ kehadiran.hadir }}</p>
+        </div>
+        <div class="bg-[var(--bg-muted)] rounded-xl py-2 border border-[var(--border-subtle)]">
+          <p class="text-[9px] font-black text-[var(--text-secondary)] uppercase tracking-wider">
+            % Tepat Waktu
+          </p>
+          <p
+            :class="[
+              'text-lg font-black mt-0.5',
+              kehadiran.persenTepat >= 80
+                ? 'text-emerald-600'
+                : kehadiran.persenTepat >= 50
+                  ? 'text-amber-600'
+                  : 'text-rose-600'
+            ]"
+          >
+            {{ kehadiran.persenTepat }}%
+          </p>
+        </div>
+        <div class="bg-[var(--bg-muted)] rounded-xl py-2 border border-[var(--border-subtle)]">
+          <p class="text-[9px] font-black text-[var(--text-secondary)] uppercase tracking-wider">
+            % Kehadiran
+          </p>
+          <p class="text-lg font-black text-[var(--text-primary)] mt-0.5">
+            {{ kehadiran.persenHadir }}%
+          </p>
+        </div>
+      </div>
+      <p
+        v-if="kehadiran.belumPulang > 0"
+        class="text-[10px] text-amber-600 dark:text-amber-400 mt-2 text-center font-bold"
+      >
+        <i class="fas fa-triangle-exclamation mr-1"></i>{{ kehadiran.belumPulang }} kehadiran belum
+        absen pulang
+      </p>
+      <p
+        v-if="kehadiran.total === 0"
+        class="text-[11px] text-[var(--text-tertiary)] italic text-center mt-3"
+      >
         Belum ada data absensi bulan ini.
       </p>
+      <!-- v.1.2.3: grafik KPI kehadiran per bulan (judul tanpa kata "tren") -->
+      <div class="mt-4 pt-3 border-t border-[var(--border-subtle)]">
+        <h4
+          class="text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-widest mb-2"
+        >
+          <i class="fas fa-chart-line text-teal-600 mr-1.5"></i>Kehadiran per Bulan
+        </h4>
+        <div class="relative h-52">
+          <Line v-if="trenChartData" :data="trenChartData" :options="trenChartOptions" />
+          <div
+            v-else
+            class="absolute inset-0 flex flex-col items-center justify-center text-center text-[11px] text-[var(--text-tertiary)] italic px-4"
+          >
+            <i class="fas fa-chart-line text-2xl mb-2 opacity-40"></i>
+            Grafik muncul setelah ada data absensi minimal 2 bulan.
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- v.100d: Izin & Sakit (pengajuan mandiri) -->
-    <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
-      <div class="flex items-center justify-between mb-3 border-b border-[var(--border-subtle)] pb-2">
-        <h3 class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest">
-          <i class="fas fa-calendar-minus text-cyan-600 mr-2"></i>Izin &amp; Sakit
+    <div
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+    >
+      <div
+        class="flex items-center justify-between mb-3 border-b border-[var(--border-subtle)] pb-2"
+      >
+        <h3
+          class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest"
+        >
+          <i class="fas fa-calendar-minus text-cyan-600 mr-2"></i>Perizinan &amp; Cuti
         </h3>
-        <button @click="openIzinForm" class="text-[11px] font-bold bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-1.5 rounded-lg transition cursor-pointer">
+        <button
+          class="text-[11px] font-bold bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-1.5 rounded-lg transition cursor-pointer"
+          @click="openIzinForm"
+        >
           <i class="fas fa-plus mr-1"></i>Ajukan
         </button>
       </div>
-      <div v-if="myIzin.length === 0" class="text-[11px] text-[var(--text-tertiary)] italic text-center py-3">Belum ada pengajuan izin/sakit.</div>
+      <div
+        v-if="myIzin.length === 0"
+        class="text-[11px] text-[var(--text-tertiary)] italic text-center py-3"
+      >
+        Belum ada pengajuan izin / sakit / cuti.
+      </div>
       <div v-else class="space-y-2">
-        <div v-for="a in myIzin" :key="a.id" class="flex items-center justify-between gap-3 bg-[var(--bg-card-elevated)] rounded-xl p-2.5 border border-[var(--border-subtle)]">
+        <div
+          v-for="a in myIzin"
+          :key="a.id"
+          class="flex items-center justify-between gap-3 bg-[var(--bg-card-elevated)] rounded-xl p-2.5 border border-[var(--border-subtle)]"
+        >
           <div class="min-w-0">
-            <p class="text-sm font-bold text-[var(--text-primary)]">{{ jenisIzinLabel(a.jenis) }} · {{ rangeLabel(a) }}</p>
-            <p class="text-[10px] text-[var(--text-secondary)]">Shift {{ shiftsLabel(a.shifts) }}<span v-if="a.keterangan"> · {{ a.keterangan }}</span></p>
-            <p v-if="a.catatan_putus" class="text-[10px] text-[var(--text-tertiary)] italic">{{ a.catatan_putus }}</p>
+            <p class="text-sm font-bold text-[var(--text-primary)]">
+              {{ jenisIzinLabel(a.jenis)
+              }}<span v-if="a.jenis === 'cuti' && a.kategori" class="text-violet-600">
+                ({{ cutiKatNama(a.kategori) }})</span
+              >
+              · {{ rangeLabel(a) }}
+            </p>
+            <p class="text-[10px] text-[var(--text-secondary)]">
+              Shift {{ shiftsLabel(a.shifts)
+              }}<span v-if="a.keterangan"> · {{ a.keterangan }}</span>
+            </p>
+            <a
+              v-if="a.lampiran_url"
+              :href="a.lampiran_url"
+              target="_blank"
+              rel="noopener"
+              class="text-[10px] font-bold text-cyan-600 hover:underline"
+              ><i class="fas fa-paperclip mr-0.5"></i>Lihat lampiran</a
+            >
+            <p v-if="a.catatan_putus" class="text-[10px] text-[var(--text-tertiary)] italic">
+              {{ a.catatan_putus }}
+            </p>
           </div>
           <div class="flex flex-col items-end gap-1 flex-shrink-0">
-            <span :class="['text-[10px] font-black px-2 py-0.5 rounded-full', statusIzinClass(a.status)]">{{ statusIzinLabel(a.status) }}</span>
-            <button v-if="a.status === 'diajukan'" @click="batalIzin(a)" class="text-[10px] font-bold text-rose-600 hover:underline">Batalkan</button>
+            <span
+              :class="[
+                'text-[10px] font-black px-2 py-0.5 rounded-full',
+                statusIzinClass(a.status)
+              ]"
+              >{{ statusIzinLabel(a.status) }}</span
+            >
+            <button
+              v-if="a.status === 'diajukan'"
+              class="text-[10px] font-bold text-rose-600 hover:underline"
+              @click="batalIzin(a)"
+            >
+              Batalkan
+            </button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- v.100d: Persetujuan Izin & Sakit (Kepala/PJ/admin) -->
-    <div v-if="izinIsApprover" class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
-      <h3 class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2">
-        <i class="fas fa-user-check text-emerald-600 mr-2"></i>Persetujuan Izin &amp; Sakit
-        <span v-if="izinAntrian.length" class="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[10px] align-middle">{{ izinAntrian.length }}</span>
+    <div
+      v-if="izinIsApprover"
+      class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+    >
+      <h3
+        class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
+      >
+        <i class="fas fa-user-check text-emerald-600 mr-2"></i>Persetujuan Perizinan &amp; Cuti
+        <span
+          v-if="izinAntrian.length"
+          class="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[10px] align-middle"
+          >{{ izinAntrian.length }}</span
+        >
       </h3>
-      <div v-if="izinAntrian.length === 0" class="text-[11px] text-[var(--text-tertiary)] italic text-center py-2">Tak ada pengajuan menunggu.</div>
+      <div
+        v-if="izinAntrian.length === 0"
+        class="text-[11px] text-[var(--text-tertiary)] italic text-center py-2"
+      >
+        Tak ada pengajuan menunggu.
+      </div>
       <div v-else class="space-y-2">
-        <div v-for="a in izinAntrian" :key="a.id" class="bg-[var(--bg-card-elevated)] rounded-xl p-2.5 border border-[var(--border-subtle)]">
-          <p class="text-sm font-bold text-[var(--text-primary)]">{{ a.guru_nama }} <span class="text-[10px] font-normal text-[var(--text-secondary)]">· {{ a.lembaga || '-' }}</span></p>
-          <p class="text-[11px] text-[var(--text-secondary)]">{{ jenisIzinLabel(a.jenis) }} · {{ rangeLabel(a) }} · Shift {{ shiftsLabel(a.shifts) }}</p>
-          <p v-if="a.keterangan" class="text-[10px] text-[var(--text-tertiary)] italic">{{ a.keterangan }}</p>
+        <div
+          v-for="a in izinAntrian"
+          :key="a.id"
+          class="bg-[var(--bg-card-elevated)] rounded-xl p-2.5 border border-[var(--border-subtle)]"
+        >
+          <p class="text-sm font-bold text-[var(--text-primary)]">
+            {{ a.guru_nama }}
+            <span class="text-[10px] font-normal text-[var(--text-secondary)]"
+              >· {{ a.lembaga || '-' }}</span
+            >
+          </p>
+          <p class="text-[11px] text-[var(--text-secondary)]">
+            {{ jenisIzinLabel(a.jenis)
+            }}<span v-if="a.jenis === 'cuti' && a.kategori" class="text-violet-600">
+              ({{ cutiKatNama(a.kategori) }})</span
+            >
+            · {{ rangeLabel(a) }} · Shift {{ shiftsLabel(a.shifts) }}
+          </p>
+          <p
+            v-if="cutiSisa(a) && cutiSisa(a).sisa !== null"
+            class="text-[10px] font-bold"
+            :class="cutiSisa(a).sisa <= 0 ? 'text-rose-600' : 'text-[var(--text-secondary)]'"
+          >
+            <i class="fas fa-info-circle mr-0.5"></i>Sisa kuota: {{ cutiSisa(a).sisa }} /
+            {{ cutiSisa(a).kuota }} hari
+          </p>
+          <p v-if="a.keterangan" class="text-[10px] text-[var(--text-tertiary)] italic">
+            {{ a.keterangan }}
+          </p>
+          <a
+            v-if="a.lampiran_url"
+            :href="a.lampiran_url"
+            target="_blank"
+            rel="noopener"
+            class="text-[10px] font-bold text-cyan-600 hover:underline"
+            ><i class="fas fa-paperclip mr-0.5"></i>Lihat lampiran</a
+          >
           <div class="flex gap-2 mt-2">
-            <button @click="setujuiIzin(a)" :disabled="izinBusyId === a.id" class="flex-1 text-[11px] font-black bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg"><i class="fas fa-check mr-1"></i>Setujui</button>
-            <button @click="tolakIzin(a)" :disabled="izinBusyId === a.id" class="text-[11px] font-black bg-[var(--bg-muted)] text-rose-600 border border-[var(--border-subtle)] px-3 py-1.5 rounded-lg"><i class="fas fa-times mr-1"></i>Tolak</button>
+            <button
+              :disabled="izinBusyId === a.id"
+              class="flex-1 text-[11px] font-black bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg"
+              @click="setujuiIzin(a)"
+            >
+              <i class="fas fa-check mr-1"></i>Setujui
+            </button>
+            <button
+              :disabled="izinBusyId === a.id"
+              class="text-[11px] font-black bg-[var(--bg-muted)] text-rose-600 border border-[var(--border-subtle)] px-3 py-1.5 rounded-lg"
+              @click="tolakIzin(a)"
+            >
+              <i class="fas fa-times mr-1"></i>Tolak
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pemulihan: pengajuan sudah disetujui tapi belum ada baris absensi yang tertulis
+           (korban bug tanggal-mundur s/d 5 Agu 2026). Blok ini hilang sendiri kalau kosong. -->
+      <div
+        v-if="izinPerluTerap.length"
+        class="mt-3 pt-3 border-t border-dashed border-amber-400/60"
+      >
+        <p class="text-[11px] font-black text-amber-700 dark:text-amber-500 mb-2">
+          <i class="fas fa-triangle-exclamation mr-1"></i>Sudah disetujui, absensinya belum terisi
+          ({{ izinPerluTerap.length }})
+        </p>
+        <div class="space-y-2">
+          <div
+            v-for="a in izinPerluTerap"
+            :key="'terap-' + a.id"
+            class="flex items-center justify-between gap-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl p-2.5 border border-amber-200 dark:border-amber-900"
+          >
+            <div class="min-w-0">
+              <p class="text-[13px] font-bold text-[var(--text-primary)] truncate">
+                {{ a.guru_nama }}
+              </p>
+              <p class="text-[10px] text-[var(--text-secondary)]">
+                {{ jenisIzinLabel(a.jenis) }} · {{ rangeLabel(a) }} · Shift
+                {{ shiftsLabel(a.shifts) }}
+              </p>
+            </div>
+            <button
+              :disabled="izinBusyId === a.id"
+              class="text-[10px] font-black bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white px-2.5 py-1.5 rounded-lg flex-shrink-0"
+              @click="terapkanUlangIzin(a)"
+            >
+              <i class="fas fa-rotate-right mr-1"></i>Terapkan
+            </button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Riwayat Slip Bisyaroh -->
-    <div class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden">
+    <div
+      class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
+    >
       <div class="px-4 py-3 border-b border-[var(--border-subtle)]">
         <h3 class="text-sm font-black text-[var(--text-primary)]">
           <i class="fas fa-history text-teal-600 mr-1.5"></i>Riwayat Slip Bisyaroh {{ tahunIni }}
         </h3>
       </div>
-      <div v-if="slipTahunIni.length === 0" class="p-8 text-center text-sm text-[var(--text-secondary)] italic">
+      <div
+        v-if="slipTahunIni.length === 0"
+        class="p-8 text-center text-sm text-[var(--text-secondary)] italic"
+      >
         Belum ada slip bisyaroh.
       </div>
       <div v-else class="divide-y divide-[var(--border-subtle)]">
-        <div v-for="g in slipTahunIni" :key="g.id" class="p-3 flex items-center justify-between gap-3">
+        <div
+          v-for="g in slipTahunIni"
+          :key="g.id"
+          class="p-3 flex items-center justify-between gap-3"
+        >
           <div class="min-w-0">
             <p class="text-sm font-bold text-[var(--text-primary)]">{{ g.periode }}</p>
-            <p class="text-[10px] text-[var(--text-secondary)]">{{ g.lembaga || '-' }} · {{ g.jabatan || '-' }}</p>
+            <p class="text-[10px] text-[var(--text-secondary)]">
+              {{ g.lembaga || '-' }} · {{ g.jabatan || '-' }}
+            </p>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
-            <p class="text-sm font-black text-emerald-700 dark:text-emerald-300">{{ fmtRp(g.take_home || 0) }}</p>
-            <button @click="openSlip(g)" class="w-8 h-8 rounded-lg bg-teal-100 hover:bg-teal-200 dark:bg-teal-900/40 dark:hover:bg-teal-900/60 text-teal-700 dark:text-teal-300 flex items-center justify-center transition cursor-pointer" title="Lihat detail slip">
+            <p class="text-sm font-black text-emerald-700 dark:text-emerald-300">
+              {{ fmtRp(g.take_home || 0) }}
+            </p>
+            <button
+              class="w-8 h-8 rounded-lg bg-teal-100 hover:bg-teal-200 dark:bg-teal-900/40 dark:hover:bg-teal-900/60 text-teal-700 dark:text-teal-300 flex items-center justify-center transition cursor-pointer"
+              title="Lihat detail slip"
+              @click="openSlip(g)"
+            >
               <i class="fas fa-eye text-xs"></i>
             </button>
           </div>
@@ -126,104 +420,273 @@
     </div>
 
     <!-- MODAL DETAIL SLIP BISYAROH -->
-    <div v-if="slipOpen" class="fixed inset-0 z-50 bg-slate-900/70 flex items-center justify-center p-4 backdrop-blur-sm" @click.self="slipOpen = false">
-      <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div
+      v-if="slipOpen"
+      class="fixed inset-0 z-50 bg-slate-900/70 flex items-center justify-center p-4 backdrop-blur-sm"
+      @click.self="slipOpen = false"
+    >
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+      >
         <div class="bg-gradient-to-br from-emerald-500 to-teal-700 p-5 text-white">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-[10px] uppercase font-black text-white/85 tracking-wider">Slip Bisyaroh</p>
+              <p class="text-[10px] uppercase font-black text-white/85 tracking-wider">
+                Slip Bisyaroh
+              </p>
               <h3 class="text-lg font-black !text-white mt-0.5">{{ slipDetail?.periode }}</h3>
             </div>
-            <button @click="slipOpen = false" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition cursor-pointer">
+            <button
+              class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition cursor-pointer"
+              @click="slipOpen = false"
+            >
               <i class="fas fa-times"></i>
             </button>
           </div>
-          <p class="text-xs text-white/90 mt-2">{{ slipDetail?.guru_nama || auth.sesiAktif?.nama }}</p>
-          <p class="text-[11px] text-white/80">{{ slipDetail?.lembaga || '-' }} · {{ slipDetail?.jabatan || '-' }}</p>
+          <p class="text-xs text-white/90 mt-2">
+            {{ slipDetail?.guru_nama || auth.sesiAktif?.nama }}
+          </p>
+          <p class="text-[11px] text-white/80">
+            {{ slipDetail?.lembaga || '-' }} · {{ slipDetail?.jabatan || '-' }}
+          </p>
         </div>
         <div class="p-5 space-y-3">
           <div>
-            <p class="text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-wider mb-2">Rincian</p>
+            <p
+              class="text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-wider mb-2"
+            >
+              Rincian
+            </p>
             <div v-if="slipLineItems.length > 0" class="space-y-1.5">
-              <div v-for="(li, i) in slipLineItems" :key="i" class="flex items-center justify-between text-sm">
-                <span class="text-[var(--text-secondary)]">{{ li.label || 'Bisyaroh' }}<span v-if="li.lembaga && li.lembaga !== '-'" class="text-[var(--text-tertiary)]"> · {{ li.lembaga }}</span></span>
-                <span class="font-bold text-[var(--text-primary)]">{{ fmtRp(li.nominal || 0) }}</span>
+              <div
+                v-for="(li, i) in slipLineItems"
+                :key="i"
+                class="flex items-center justify-between text-sm"
+              >
+                <span class="text-[var(--text-secondary)]"
+                  >{{ li.label || 'Bisyaroh'
+                  }}<span
+                    v-if="li.lembaga && li.lembaga !== '-'"
+                    class="text-[var(--text-tertiary)]"
+                  >
+                    · {{ li.lembaga }}</span
+                  ></span
+                >
+                <span class="font-bold text-[var(--text-primary)]">{{
+                  fmtRp(li.nominal || 0)
+                }}</span>
               </div>
             </div>
             <div v-else class="space-y-1.5">
               <div v-if="slipDetail?.bisyaroh_pokok" class="flex justify-between text-sm">
                 <span class="text-[var(--text-secondary)]">Bisyaroh Pokok</span>
-                <span class="font-bold text-[var(--text-primary)]">{{ fmtRp(slipDetail.bisyaroh_pokok) }}</span>
+                <span class="font-bold text-[var(--text-primary)]">{{
+                  fmtRp(slipDetail.bisyaroh_pokok)
+                }}</span>
               </div>
               <div v-if="slipDetail?.bisyaroh_sekolah" class="flex justify-between text-sm">
                 <span class="text-[var(--text-secondary)]">Bisyaroh Sekolah</span>
-                <span class="font-bold text-[var(--text-primary)]">{{ fmtRp(slipDetail.bisyaroh_sekolah) }}</span>
+                <span class="font-bold text-[var(--text-primary)]">{{
+                  fmtRp(slipDetail.bisyaroh_sekolah)
+                }}</span>
               </div>
               <div v-if="slipDetail?.bisyaroh_tambahan" class="flex justify-between text-sm">
                 <span class="text-[var(--text-secondary)]">Bisyaroh Tambahan</span>
-                <span class="font-bold text-[var(--text-primary)]">{{ fmtRp(slipDetail.bisyaroh_tambahan) }}</span>
+                <span class="font-bold text-[var(--text-primary)]">{{
+                  fmtRp(slipDetail.bisyaroh_tambahan)
+                }}</span>
               </div>
             </div>
           </div>
           <div class="border-t border-[var(--border-subtle)] pt-3 space-y-1.5">
             <div class="flex justify-between text-sm">
               <span class="text-[var(--text-secondary)]">Total Pemasukan</span>
-              <span class="font-bold text-[var(--text-primary)]">{{ fmtRp(slipDetail?.total_pemasukan || slipDetail?.take_home || 0) }}</span>
+              <span class="font-bold text-[var(--text-primary)]">{{
+                fmtRp(slipDetail?.total_pemasukan || slipDetail?.take_home || 0)
+              }}</span>
             </div>
             <div v-if="slipDetail?.total_potongan" class="flex justify-between text-sm">
               <span class="text-rose-600 dark:text-rose-400">Potongan</span>
-              <span class="font-bold text-rose-600 dark:text-rose-400">- {{ fmtRp(slipDetail.total_potongan) }}</span>
+              <span class="font-bold text-rose-600 dark:text-rose-400"
+                >- {{ fmtRp(slipDetail.total_potongan) }}</span
+              >
             </div>
           </div>
-          <div class="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 flex justify-between items-center border border-emerald-100 dark:border-emerald-800">
-            <span class="text-sm font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-wide">Take Home</span>
-            <span class="text-lg font-black text-emerald-700 dark:text-emerald-300">{{ fmtRp(slipDetail?.take_home || 0) }}</span>
+          <div
+            class="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 flex justify-between items-center border border-emerald-100 dark:border-emerald-800"
+          >
+            <span
+              class="text-sm font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-wide"
+              >Take Home</span
+            >
+            <span class="text-lg font-black text-emerald-700 dark:text-emerald-300">{{
+              fmtRp(slipDetail?.take_home || 0)
+            }}</span>
           </div>
         </div>
       </div>
     </div>
 
     <!-- v.100d: Modal Ajukan Izin/Sakit -->
-    <div v-if="izinFormOpen" class="fixed inset-0 z-50 bg-slate-900/70 flex items-center justify-center p-4 backdrop-blur-sm" @click.self="izinFormOpen = false">
-      <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-sm w-full max-h-[90vh] overflow-y-auto">
+    <div
+      v-if="izinFormOpen"
+      class="fixed inset-0 z-50 bg-slate-900/70 flex items-center justify-center p-4 backdrop-blur-sm"
+      @click.self="izinFormOpen = false"
+    >
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-sm w-full max-h-[90vh] overflow-y-auto"
+      >
         <div class="p-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
-          <h3 class="text-sm font-black text-[var(--text-primary)]"><i class="fas fa-calendar-minus text-cyan-600 mr-1.5"></i>Ajukan Izin / Sakit</h3>
-          <button @click="izinFormOpen = false" class="text-[var(--text-tertiary)] hover:text-rose-600"><i class="fas fa-times"></i></button>
+          <h3 class="text-sm font-black text-[var(--text-primary)]">
+            <i class="fas fa-calendar-minus text-cyan-600 mr-1.5"></i>Ajukan Izin / Sakit / Cuti
+          </h3>
+          <button
+            class="text-[var(--text-tertiary)] hover:text-rose-600"
+            @click="izinFormOpen = false"
+          >
+            <i class="fas fa-times"></i>
+          </button>
         </div>
         <div class="p-4 space-y-3 text-sm">
           <div>
-            <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1">Jenis</label>
-            <select v-model="izinForm.jenis" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500">
+            <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1"
+              >Jenis</label
+            >
+            <select
+              v-model="izinForm.jenis"
+              class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500"
+            >
               <option value="izin">Izin</option>
               <option value="sakit">Sakit</option>
+              <option value="cuti">Cuti</option>
             </select>
+          </div>
+          <!-- Kategori cuti + sisa kuota (hanya jenis cuti) -->
+          <div v-if="izinForm.jenis === 'cuti'">
+            <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1"
+              >Kategori Cuti</label
+            >
+            <select
+              v-model="izinForm.kategori"
+              class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500"
+            >
+              <option value="">— Pilih kategori —</option>
+              <option v-for="k in cutiKategori" :key="k.id" :value="k.id">{{ k.nama }}</option>
+            </select>
+            <p v-if="!cutiKategori.length" class="text-[10px] text-amber-600 italic mt-1">
+              <i class="fas fa-exclamation-triangle mr-1"></i>Belum ada kategori cuti — hubungi
+              admin untuk mengaturnya.
+            </p>
+            <p
+              v-else-if="izinKuota"
+              class="text-[10px] mt-1"
+              :class="izinOverKuota ? 'text-rose-600 font-bold' : 'text-[var(--text-secondary)]'"
+            >
+              <i class="fas fa-info-circle mr-1"></i>
+              <template v-if="izinKuota.sisa === null">Kategori ini tanpa batas kuota.</template>
+              <template v-else
+                >Sisa kuota: <b>{{ izinKuota.sisa }}</b> / {{ izinKuota.kuota }} hari · diajukan
+                {{ izinJumlahHari }} hari<span v-if="izinOverKuota">
+                  — melebihi sisa</span
+                ></template
+              >
+            </p>
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1">Mulai</label>
-              <input type="date" v-model="izinForm.tgl_mulai" class="w-full px-2.5 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500" />
+              <label
+                class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1"
+                >Mulai</label
+              >
+              <input
+                v-model="izinForm.tgl_mulai"
+                type="date"
+                class="w-full px-2.5 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500"
+              />
             </div>
             <div>
-              <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1">Selesai</label>
-              <input type="date" v-model="izinForm.tgl_selesai" :min="izinForm.tgl_mulai" class="w-full px-2.5 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500" />
+              <label
+                class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1"
+                >Selesai</label
+              >
+              <input
+                v-model="izinForm.tgl_selesai"
+                type="date"
+                :min="izinForm.tgl_mulai"
+                class="w-full px-2.5 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500"
+              />
             </div>
           </div>
           <div>
-            <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1">Shift</label>
+            <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1"
+              >Shift</label
+            >
             <div class="flex flex-wrap gap-2">
-              <button v-for="sh in ['pagi', 'sore', 'sekolah']" :key="sh" type="button" @click="toggleIzinShift(sh)" :class="['px-3 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer', izinForm.shifts.includes(sh) ? 'bg-cyan-600 text-white border-cyan-600' : 'bg-[var(--bg-card-elevated)] text-[var(--text-secondary)] border-[var(--border-default)]']">
-                {{ sh.charAt(0).toUpperCase() + sh.slice(1) }}
+              <button
+                v-for="sh in izinShiftOptions"
+                :key="sh.id"
+                type="button"
+                :class="[
+                  'px-3 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
+                  izinForm.shifts.includes(sh.id)
+                    ? 'bg-cyan-600 text-white border-cyan-600'
+                    : 'bg-[var(--bg-card-elevated)] text-[var(--text-secondary)] border-[var(--border-default)]'
+                ]"
+                @click="toggleIzinShift(sh.id)"
+              >
+                {{ sh.label }}
               </button>
+              <span
+                v-if="!izinShiftOptions.length"
+                class="text-[11px] text-[var(--text-tertiary)] italic"
+                >Belum ada shift pada data guru.</span
+              >
             </div>
           </div>
           <div>
-            <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1">Keterangan</label>
-            <textarea v-model="izinForm.keterangan" rows="2" class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500 resize-none"></textarea>
+            <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1"
+              >Keterangan</label
+            >
+            <textarea
+              v-model="izinForm.keterangan"
+              rows="2"
+              class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+            ></textarea>
+          </div>
+          <!-- Lampiran opsional (surat dokter / keterangan) -->
+          <div>
+            <label class="block text-[10px] font-black uppercase text-[var(--text-secondary)] mb-1"
+              >Lampiran (opsional)</label
+            >
+            <input
+              type="file"
+              accept="image/*,application/pdf"
+              class="block w-full text-[11px] text-[var(--text-secondary)] file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-cyan-50 file:text-cyan-700 cursor-pointer"
+              @change="onPickLampiran"
+            />
+            <p v-if="izinForm.lampiran_name" class="text-[10px] text-emerald-600 mt-1">
+              <i class="fas fa-paperclip mr-1"></i>{{ izinForm.lampiran_name }}
+            </p>
+            <p class="text-[10px] text-[var(--text-tertiary)] italic mt-0.5">
+              Foto/PDF, maks 2 MB (mis. surat dokter / keterangan).
+            </p>
           </div>
         </div>
         <div class="p-4 border-t border-[var(--border-subtle)] flex justify-end gap-2">
-          <button @click="izinFormOpen = false" class="px-4 py-2 text-xs font-bold rounded-lg bg-[var(--bg-muted)] text-[var(--text-secondary)]">Batal</button>
-          <button @click="submitIzin" :disabled="izinBusy" class="px-4 py-2 text-xs font-black rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white disabled:opacity-50"><i :class="['fas', izinBusy ? 'fa-spinner fa-spin' : 'fa-paper-plane', 'mr-1']"></i>Kirim</button>
+          <button
+            class="px-4 py-2 text-xs font-bold rounded-lg bg-[var(--bg-muted)] text-[var(--text-secondary)]"
+            @click="izinFormOpen = false"
+          >
+            Batal
+          </button>
+          <button
+            :disabled="izinBusy"
+            class="px-4 py-2 text-xs font-black rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white disabled:opacity-50"
+            @click="submitIzin"
+          >
+            <i :class="['fas', izinBusy ? 'fa-spinner fa-spin' : 'fa-paper-plane', 'mr-1']"></i
+            >Kirim
+          </button>
         </div>
       </div>
     </div>
@@ -233,9 +696,15 @@
       v-if="supervisiList.length > 0"
       class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
     >
-      <div class="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between">
-        <h3 class="text-sm font-black"><i class="fas fa-clipboard-check text-cyan-600 mr-1.5"></i>Catatan Supervisi</h3>
-        <span class="text-[10px] text-[var(--text-tertiary)] font-bold">{{ supervisiList.length }} catatan</span>
+      <div
+        class="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between"
+      >
+        <h3 class="text-sm font-black">
+          <i class="fas fa-clipboard-check text-cyan-600 mr-1.5"></i>Catatan Supervisi
+        </h3>
+        <span class="text-[10px] text-[var(--text-tertiary)] font-bold"
+          >{{ supervisiList.length }} catatan</span
+        >
       </div>
       <div class="divide-y divide-slate-100 dark:divide-slate-700 max-h-[60vh] overflow-y-auto">
         <div v-for="s in supervisiList" :key="s.id" class="p-3 md:p-4">
@@ -245,32 +714,69 @@
               <p class="text-[10px] text-[var(--text-secondary)] mt-0.5">
                 <i :class="['fas mr-1', s.target_type === 'guru' ? 'fa-user' : 'fa-school']"></i>
                 {{ s.target_type === 'guru' ? 'Untuk Anda' : `Lembaga ${s.target_nama}` }}
-                <span class="text-[var(--text-tertiary)] ml-1.5">· dari {{ s.created_by_nama }} · {{ fmtTglSup(s.createdAt) }}</span>
+                <span class="text-[var(--text-tertiary)] ml-1.5"
+                  >· dari {{ s.created_by_nama }} · {{ fmtTglSup(s.createdAt) }}</span
+                >
               </p>
             </div>
             <div class="flex flex-col items-end gap-1">
-              <span :class="['text-[9px] font-black uppercase px-2 py-0.5 rounded', supPrioritasClass(s.prioritas)]">{{ s.prioritas || 'sedang' }}</span>
-              <span :class="['text-[9px] font-black uppercase px-2 py-0.5 rounded', supStatusClass(s.status)]">{{ s.status || 'open' }}</span>
+              <span
+                :class="[
+                  'text-[9px] font-black uppercase px-2 py-0.5 rounded',
+                  supPrioritasClass(s.prioritas)
+                ]"
+                >{{ s.prioritas || 'sedang' }}</span
+              >
+              <span
+                :class="[
+                  'text-[9px] font-black uppercase px-2 py-0.5 rounded',
+                  supStatusClass(s.status)
+                ]"
+                >{{ s.status || 'open' }}</span
+              >
             </div>
           </div>
           <p class="text-xs mt-2 whitespace-pre-line">{{ s.catatan }}</p>
-          <p v-if="s.rekomendasi" class="text-xs text-cyan-700 dark:text-cyan-300 mt-1 italic whitespace-pre-line">
+          <p
+            v-if="s.rekomendasi"
+            class="text-xs text-cyan-700 dark:text-cyan-300 mt-1 italic whitespace-pre-line"
+          >
             <i class="fas fa-lightbulb mr-1"></i>{{ s.rekomendasi }}
           </p>
-          <div v-if="s.respon_target" class="bg-[var(--bg-card-elevated)] rounded-lg p-2 mt-2 border-l-4 border-emerald-400">
-            <p class="text-[9px] font-bold text-emerald-700 uppercase">Tanggapan ({{ fmtTglSup(s.responded_at) }})</p>
+          <div
+            v-if="s.respon_target"
+            class="bg-[var(--bg-card-elevated)] rounded-lg p-2 mt-2 border-l-4 border-emerald-400"
+          >
+            <p class="text-[9px] font-bold text-emerald-700 uppercase">
+              Tanggapan ({{ fmtTglSup(s.responded_at) }})
+            </p>
             <p class="text-xs whitespace-pre-line">{{ s.respon_target }}</p>
           </div>
           <div v-if="s.status !== 'selesai'" class="mt-2 space-y-2">
-            <textarea v-model="responText[s.id]" rows="2" class="w-full px-2 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500 resize-none"></textarea>
+            <textarea
+              v-model="responText[s.id]"
+              rows="2"
+              class="w-full px-2 py-1.5 text-xs rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+            ></textarea>
             <div class="flex gap-2 flex-wrap">
-              <button v-if="(s.status || 'open') === 'open'" @click="updateSupervisiStatus(s, 'in_progress')" class="text-[10px] font-bold bg-cyan-100 text-cyan-700 px-2.5 py-1 rounded-lg hover:bg-cyan-200">
+              <button
+                v-if="(s.status || 'open') === 'open'"
+                class="text-[10px] font-bold bg-cyan-100 text-cyan-700 px-2.5 py-1 rounded-lg hover:bg-cyan-200"
+                @click="updateSupervisiStatus(s, 'in_progress')"
+              >
                 <i class="fas fa-play mr-1"></i>Tandai Diproses
               </button>
-              <button @click="updateSupervisiStatus(s, 'selesai')" class="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-lg hover:bg-emerald-200">
+              <button
+                class="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-lg hover:bg-emerald-200"
+                @click="updateSupervisiStatus(s, 'selesai')"
+              >
                 <i class="fas fa-check mr-1"></i>Tandai Selesai
               </button>
-              <button v-if="(responText[s.id] || '').trim()" @click="kirimRespon(s)" class="text-[10px] font-bold bg-cyan-600 text-white px-2.5 py-1 rounded-lg hover:bg-cyan-700">
+              <button
+                v-if="(responText[s.id] || '').trim()"
+                class="text-[10px] font-bold bg-cyan-600 text-white px-2.5 py-1 rounded-lg hover:bg-cyan-700"
+                @click="kirimRespon(s)"
+              >
                 <i class="fas fa-paper-plane mr-1"></i>Kirim Tanggapan
               </button>
             </div>
@@ -283,24 +789,62 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
-import { subscribeColl } from '@/services/firestore'
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+// v.F6e: adapter Supabase (serverTimestamp = shim ISO string).
+import { subscribeColl, queryColl, getOne, mergeOne, serverTimestamp } from '@/services/db'
+import { uploadBase64 } from '@/services/storage'
 import { useAuthStore } from '@/stores/auth'
-import { fmtRp, hitungLamaMengajar } from '@/utils/format'
+import { fmtRp, hitungLamaMengajar, todayJakarta } from '@/utils/format'
 // v.21.110.0527: catatan supervisi
 import { useToast } from '@/composables/useToast'
 import { isKepalaLembaga } from '@/utils/roleScope'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { useIzinGuru } from '@/composables/useIzinGuru' // v.100d: izin/sakit mandiri
+import { useSettingsStore } from '@/stores/settings'
+import { shiftsForGuru } from '@/utils/shiftDerive'
+import { shiftLabelOf } from '@/utils/shiftMaster'
+import { buildLiburScope, liburKenaLembaga } from '@/utils/liburScope' // v.1.2.3: alpa hormati libur per lembaga
+import { canonLembaga } from '@/composables/useLembaga'
+// v.1.2.3: grafik kehadiran per bulan (KPI pribadi)
+import { Line } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  PointElement,
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  Filler
+} from 'chart.js'
+ChartJS.register(
+  Title,
+  Tooltip,
+  Legend,
+  PointElement,
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  Filler
+)
 
 const auth = useAuthStore()
+const settingsStore = useSettingsStore()
+// v.1.1.x: shift picker izin/cuti ikut shift MILIK guru (termasuk shift custom),
+//   bukan lagi hardcode pagi/sore/sekolah.
+const izinShiftOptions = computed(() => {
+  const s = settingsStore.settings || {}
+  const g = guru.value || auth.sesiAktif || {}
+  return [...shiftsForGuru(g, s)].map((id) => ({ id, label: shiftLabelOf(s, id) }))
+})
 const { isElectron: isDesktop } = useDesktopShell()
 const guru = ref(null)
 const slipRaw = ref([])
 const absensiGuru = ref([])
+const kegiatanRaw = ref([]) // v.1.2.3: utk hitung alpa (hormati libur kalender per lembaga)
 let unsubSlip = null
 let unsubAbsensi = null
+let unsubKegiatan = null
 // v.21.110.0527
 const toast = useToast()
 const supervisiRaw = ref([])
@@ -309,13 +853,30 @@ let unsubSupervisi = null
 
 const now = new Date()
 const tahunIni = now.getFullYear()
-const NAMA_BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+const NAMA_BULAN = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember'
+]
 const bulanLabel = `${NAMA_BULAN[now.getMonth()]} ${tahunIni}`
 
-const lamaMengajar = computed(() => hitungLamaMengajar(guru.value?.tanggal_tugas))
+// Kyai 7 Agu 2026: masa pengabdian dari "Tgl. Tugas" (`tanggal_mengabdi`) — bukan
+//   `tanggal_tugas` yang kini berlabel "Tgl. Syahadah".
+const lamaMengajar = computed(() => hitungLamaMengajar(guru.value?.tanggal_mengabdi))
 
 // === Bisyaroh ===
-const slipMine = computed(() => slipRaw.value.filter((g) => String(g.guru_id) === String(auth.sesiAktif?.id)))
+const slipMine = computed(() =>
+  slipRaw.value.filter((g) => String(g.guru_id) === String(auth.sesiAktif?.id))
+)
 const slipTahunIni = computed(() => {
   return slipMine.value
     .filter((g) => String(g.periode || '').startsWith(String(tahunIni)))
@@ -325,24 +886,170 @@ const slipBulanIni = computed(() => {
   const periode = `${tahunIni}-${String(now.getMonth() + 1).padStart(2, '0')}`
   return slipTahunIni.value.find((g) => g.periode === periode)
 })
-const totalTahunIni = computed(() => slipTahunIni.value.reduce((s, g) => s + (Number(g.take_home) || 0), 0))
+const totalTahunIni = computed(() =>
+  slipTahunIni.value.reduce((s, g) => s + (Number(g.take_home) || 0), 0)
+)
 
 // === Kehadiran bulan ini ===
 const kehadiran = computed(() => {
   const id = String(auth.sesiAktif?.id || '')
   const prefix = `${tahunIni}-${String(now.getMonth() + 1).padStart(2, '0')}-`
-  let hadir = 0, sakit = 0, izin = 0, alpa = 0
+  // v.1.2.3: pisah TEPAT WAKTU vs TERLAMBAT (dulu 'terlambat' tak masuk bucket mana pun →
+  //   hilang) + tambah cuti & belum pulang + KPI (% tepat waktu, % kehadiran).
+  let tepat = 0,
+    terlambat = 0,
+    sakit = 0,
+    izin = 0,
+    cuti = 0,
+    belumPulang = 0
+  // v.1.2.3: alpa TAK disimpan sebagai baris (= TIDAK ADA baris di hari kerja), jadi
+  //   TAK bisa dihitung per-baris. `filled` = slot (tanggal+shift) yang punya baris apa pun.
+  const filled = new Set()
   for (const row of absensiGuru.value) {
     if (!String(row.tanggal || '').startsWith(prefix)) continue
     if (String(row.guru_id || row.guruId || '') !== id) continue
     const st = String(row.status || '').toLowerCase()
-    if (st === 'hadir' || st === 'masuk') hadir++
+    const sh = String(row.shift || '').toLowerCase()
+    filled.add(String(row.tanggal).slice(0, 10) + '|' + sh)
+    if (st === 'hadir' || st === 'masuk') tepat++
+    else if (st === 'terlambat') terlambat++
     else if (st === 'sakit') sakit++
     else if (st === 'izin') izin++
-    else if (st === 'alpa' || st === 'alpha') alpa++
+    else if (st === 'cuti') cuti++
+    if (
+      (st === 'hadir' || st === 'masuk' || st === 'terlambat') &&
+      !String(row.jam_pulang || '').trim()
+    )
+      belumPulang++
   }
-  return { hadir, sakit, izin, alpa, total: hadir + sakit + izin + alpa }
+  // Alpa = slot hari kerja (Sen–Sab, non-libur, s/d hari ini) milik shift guru yang TAK
+  //   ada barisnya. Hormati libur manual global + libur kalender per lembaga shift.
+  let alpa = 0
+  const g = guru.value
+  if (g) {
+    const s = settingsStore.settings || {}
+    const shifts = [...shiftsForGuru(g, s)]
+    const liburGlobal = new Set(Array.isArray(s.hariLibur) ? s.hariLibur.map(String) : [])
+    const liburMap = buildLiburScope(kegiatanRaw.value)
+    // WIB: toISOString() memakai UTC → jam 00:00–06:59 "hari ini" terbaca hari
+    //   SEBELUMNYA, jadi slot hari ini luput dihitung (Alpa hilang/telat muncul).
+    const todayIso = todayJakarta()
+    const y = tahunIni
+    const mo = now.getMonth() + 1
+    const days = new Date(y, mo, 0).getDate()
+    for (let d = 1; d <= days; d++) {
+      const iso = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+      if (iso > todayIso) break // hari depan belum terjadi
+      const dow = new Date(y, mo - 1, d).getDay()
+      if (dow === 0) continue // Ahad libur mingguan
+      if (liburGlobal.has(iso)) continue // libur manual pondok (semua lembaga)
+      for (const sh of shifts) {
+        const key = String(sh).toLowerCase()
+        const lem =
+          key === 'sekolah' ? g.lembaga_sekolah || g.lembaga : g.lembaga || g.lembaga_sekolah
+        if (liburKenaLembaga(liburMap, iso, canonLembaga(lem || ''))) continue // libur lembaga shift
+        if (!filled.has(iso + '|' + key)) alpa++
+      }
+    }
+  }
+  const hadir = tepat + terlambat
+  const total = hadir + sakit + izin + cuti + alpa
+  return {
+    tepat,
+    terlambat,
+    hadir,
+    sakit,
+    izin,
+    cuti,
+    alpa,
+    belumPulang,
+    total,
+    persenTepat: hadir > 0 ? Math.round((tepat / hadir) * 100) : 0,
+    persenHadir: total > 0 ? Math.round((hadir / total) * 100) : 0
+  }
 })
+
+// v.1.2.3: KPI kehadiran per bulan (grafik) — % tepat waktu & % kehadiran, 8 bln terakhir.
+const trenKehadiran = computed(() => {
+  const id = String(auth.sesiAktif?.id || '')
+  const byMonth = {}
+  for (const row of absensiGuru.value) {
+    if (String(row.guru_id || row.guruId || '') !== id) continue
+    const p = String(row.tanggal || '').slice(0, 7)
+    if (!/^\d{4}-\d{2}$/.test(p)) continue
+    const st = String(row.status || '').toLowerCase()
+    if (!byMonth[p]) byMonth[p] = { tepat: 0, terlambat: 0, lain: 0 }
+    const b = byMonth[p]
+    if (st === 'hadir' || st === 'masuk') b.tepat++
+    else if (st === 'terlambat') b.terlambat++
+    else if (['sakit', 'izin', 'cuti', 'alpa', 'alpha'].includes(st)) b.lain++
+  }
+  return Object.keys(byMonth)
+    .sort()
+    .slice(-8)
+    .map((p) => {
+      const b = byMonth[p]
+      const hadir = b.tepat + b.terlambat
+      const total = hadir + b.lain
+      const [y, m] = p.split('-')
+      return {
+        label: `${NAMA_BULAN[Number(m) - 1].slice(0, 3)} ${y.slice(2)}`,
+        persenTepat: hadir > 0 ? Math.round((b.tepat / hadir) * 100) : 0,
+        persenHadir: total > 0 ? Math.round((hadir / total) * 100) : 0
+      }
+    })
+})
+
+const trenChartData = computed(() => {
+  const s = trenKehadiran.value
+  if (s.length < 2) return null
+  return {
+    labels: s.map((x) => x.label),
+    datasets: [
+      {
+        label: '% Tepat Waktu',
+        data: s.map((x) => x.persenTepat),
+        borderColor: '#0F6E56',
+        backgroundColor: 'rgba(29,158,117,0.14)',
+        borderWidth: 2,
+        tension: 0.35,
+        fill: true,
+        pointRadius: 3,
+        pointBackgroundColor: '#0F6E56'
+      },
+      {
+        label: '% Kehadiran',
+        data: s.map((x) => x.persenHadir),
+        borderColor: '#0891b2',
+        backgroundColor: 'rgba(8,145,178,0.08)',
+        borderWidth: 2,
+        borderDash: [5, 4],
+        tension: 0.35,
+        fill: false,
+        pointRadius: 3,
+        pointBackgroundColor: '#0891b2'
+      }
+    ]
+  }
+})
+
+const trenChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: true, labels: { boxWidth: 10, font: { size: 10 } } } },
+  scales: {
+    x: {
+      ticks: { autoSkip: false, maxRotation: 45, font: { size: 9 } },
+      grid: { display: false }
+    },
+    y: {
+      min: 0,
+      max: 100,
+      ticks: { stepSize: 25, font: { size: 9 }, callback: (v) => v + '%' },
+      grid: { color: 'rgba(136,135,128,0.15)' }
+    }
+  }
+}
 
 // === Detail slip modal ===
 const slipOpen = ref(false)
@@ -357,28 +1064,73 @@ function openSlip(g) {
 }
 
 onMounted(async () => {
-  unsubSlip = subscribeColl('keuangan_gaji', (docs) => { slipRaw.value = docs || [] })
-  unsubAbsensi = subscribeColl('absensi_shift_guru', (docs) => { absensiGuru.value = docs || [] })
+  // v.1.2.8 PERF (HP low-end): dua tabel di bawah dulu ditarik PENUH — seluruh slip
+  //   bisyaroh dan seluruh absensi shift SEMUA guru — padahal halaman ini cuma
+  //   menampilkan milik yang login (slipMine & kehadiran/tren memfilter guru_id
+  //   sesudahnya). Filternya sekarang di server, lewat kolom riil `guru_id`.
+  //   CATATAN: absensiGuru karenanya BUKAN lagi sumber sah untuk guru LAIN — jalur
+  //   persetujuan izin mengambil absensi guru pengaju secara terpisah (lihat
+  //   ambilAbsensiGuru), sebab kalau ia diberi daftar kosong, penjaga "sudah hadir"
+  //   tak jalan dan baris HADIR guru lain bisa tertimpa menjadi izin.
+  const meId = String(auth.sesiAktif?.id || '')
+  const milikku = [['guru_id', '==', meId]]
+  unsubSlip = subscribeColl(
+    'keuangan_gaji',
+    (docs) => {
+      slipRaw.value = docs || []
+    },
+    milikku
+  )
+  unsubAbsensi = subscribeColl(
+    'absensi_shift_guru',
+    (docs) => {
+      absensiGuru.value = docs || []
+    },
+    milikku
+  )
   // v.21.110.0527: subscribe supervisi
-  unsubSupervisi = subscribeColl('supervisi_catatan', (docs) => { supervisiRaw.value = docs || [] })
+  unsubSupervisi = subscribeColl('supervisi_catatan', (docs) => {
+    supervisiRaw.value = docs || []
+  })
+  unsubKegiatan = subscribeColl('kegiatan', (docs) => {
+    kegiatanRaw.value = docs || []
+  })
   try {
-    const snap = await getDoc(doc(db, 'guru', String(auth.sesiAktif?.id)))
-    guru.value = snap.exists() ? snap.data() : null
+    guru.value = await getOne('guru', String(auth.sesiAktif?.id))
   } catch (e) {
     // silent
   }
 })
 onUnmounted(() => {
-  if (unsubSlip) { try { unsubSlip() } catch (e) {} }
-  if (unsubAbsensi) { try { unsubAbsensi() } catch (e) {} }
-  if (unsubSupervisi) { try { unsubSupervisi() } catch (e) {} }
+  if (unsubSlip) {
+    try {
+      unsubSlip()
+    } catch (e) {}
+  }
+  if (unsubAbsensi) {
+    try {
+      unsubAbsensi()
+    } catch (e) {}
+  }
+  if (unsubSupervisi) {
+    try {
+      unsubSupervisi()
+    } catch (e) {}
+  }
+  if (unsubKegiatan) {
+    try {
+      unsubKegiatan()
+    } catch (e) {}
+  }
 })
 
 // v.21.110.0527: catatan supervisi yg dialamatkan ke saya
 const supervisiList = computed(() => {
   const me = String(auth.sesiAktif?.id || '')
   const myLembaga = String(guru.value?.lembaga || auth.sesiAktif?.lembaga || '').toLowerCase()
-  const myLembagaSekolah = String(guru.value?.lembaga_sekolah || auth.sesiAktif?.lembaga_sekolah || '').toLowerCase()
+  const myLembagaSekolah = String(
+    guru.value?.lembaga_sekolah || auth.sesiAktif?.lembaga_sekolah || ''
+  ).toLowerCase()
   const isKepala = isKepalaLembaga({ ...(guru.value || {}), ...(auth.sesiAktif || {}) })
   return [...(supervisiRaw.value || [])]
     .filter((c) => {
@@ -393,9 +1145,12 @@ const supervisiList = computed(() => {
       return false
     })
     .sort((a, b) => {
-      const ta = a.createdAt?.seconds || 0
-      const tb = b.createdAt?.seconds || 0
-      return tb - ta
+      // v.F6e: createdAt kini ISO string (Supabase); dukung legacy Firestore {seconds}.
+      const ep = (c) =>
+        c && typeof c === 'object' && c.seconds != null
+          ? Number(c.seconds) * 1000
+          : new Date(c || 0).getTime() || 0
+      return ep(b.createdAt) - ep(a.createdAt)
     })
 })
 
@@ -405,7 +1160,9 @@ function fmtTglSup(ts) {
     const d = ts.toDate ? ts.toDate() : new Date(ts.seconds * 1000 || ts)
     if (isNaN(d.getTime())) return '-'
     return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
-  } catch { return '-' }
+  } catch {
+    return '-'
+  }
 }
 function supPrioritasClass(p) {
   if (p === 'tinggi') return 'bg-rose-100 text-rose-700'
@@ -420,10 +1177,10 @@ function supStatusClass(s) {
 
 async function updateSupervisiStatus(s, newStatus) {
   try {
-    await setDoc(doc(db, 'supervisi_catatan', String(s.id)), {
+    await mergeOne('supervisi_catatan', String(s.id), {
       status: newStatus,
       updatedAt: serverTimestamp()
-    }, { merge: true })
+    })
     toast.success(newStatus === 'selesai' ? 'Catatan ditandai selesai' : 'Status diperbarui')
   } catch (e) {
     toast.error('Gagal: ' + (e.message || e))
@@ -434,12 +1191,12 @@ async function kirimRespon(s) {
   const txt = String(responText[s.id] || '').trim()
   if (!txt) return
   try {
-    await setDoc(doc(db, 'supervisi_catatan', String(s.id)), {
+    await mergeOne('supervisi_catatan', String(s.id), {
       respon_target: txt,
       responded_at: serverTimestamp(),
-      status: (s.status === 'selesai') ? 'selesai' : 'in_progress',
+      status: s.status === 'selesai' ? 'selesai' : 'in_progress',
       updatedAt: serverTimestamp()
-    }, { merge: true })
+    })
     responText[s.id] = ''
     toast.success('Tanggapan terkirim')
   } catch (e) {
@@ -449,57 +1206,251 @@ async function kirimRespon(s) {
 
 // ===== v.100d: Izin/Sakit mandiri =====
 const {
-  myIzin, antrian: izinAntrian, isApprover: izinIsApprover,
-  ajukan: ajukanIzin, batal: batalIzinReq, tolak: tolakIzinReq, setujui: setujuiIzinReq
+  myIzin,
+  antrian: izinAntrian,
+  riwayat: izinRiwayat,
+  isApprover: izinIsApprover,
+  cutiKategori,
+  kuotaCuti,
+  ajukan: ajukanIzin,
+  batal: batalIzinReq,
+  tolak: tolakIzinReq,
+  setujui: setujuiIzinReq,
+  terapkanUlang: terapkanUlangReq
 } = useIzinGuru()
 
+// Pemulihan bug tanggal-mundur (s/d 5 Agu 2026): pengajuan berstatus DISETUJUI tapi
+//   nol baris absensi tertulis (n_absensi 0 / belum ada) — barisnya jatuh ke hari yang
+//   salah, atau dilewati karena hari sebelumnya sudah "hadir". Daftar ini muncul hanya
+//   bila memang ada korbannya, dan hilang sendiri setelah diterapkan ulang.
+const izinPerluTerap = computed(() =>
+  (izinRiwayat.value || []).filter(
+    (a) => a.status === 'disetujui' && Number(a.n_absensi || 0) === 0
+  )
+)
+
 const izinFormOpen = ref(false)
-const izinForm = reactive({ jenis: 'izin', tgl_mulai: '', tgl_selesai: '', shifts: [], keterangan: '' })
+const izinForm = reactive({
+  jenis: 'izin',
+  kategori: '',
+  tgl_mulai: '',
+  tgl_selesai: '',
+  shifts: [],
+  keterangan: '',
+  lampiran_dataUrl: '',
+  lampiran_isPdf: false,
+  lampiran_name: ''
+})
 const izinBusy = ref(false)
 const izinBusyId = ref(null)
 
 function openIzinForm() {
-  const t = new Date().toISOString().slice(0, 10)
-  izinForm.jenis = 'izin'; izinForm.tgl_mulai = t; izinForm.tgl_selesai = t; izinForm.shifts = []; izinForm.keterangan = ''
+  // WIB, bukan UTC — kalau tidak, form yang dibuka dini hari terisi tanggal KEMARIN.
+  const t = todayJakarta()
+  izinForm.jenis = 'izin'
+  izinForm.kategori = ''
+  izinForm.tgl_mulai = t
+  izinForm.tgl_selesai = t
+  izinForm.shifts = []
+  izinForm.keterangan = ''
+  izinForm.lampiran_dataUrl = ''
+  izinForm.lampiran_isPdf = false
+  izinForm.lampiran_name = ''
   izinFormOpen.value = true
+}
+
+// nama kategori cuti dari id (untuk tampilan)
+function cutiKatNama(id) {
+  const k = cutiKategori.value.find((x) => String(x.id) === String(id))
+  return k ? k.nama : id || '-'
+}
+// kuota cuti satu pengajuan (untuk approver) — { kuota, terpakai, sisa } atau null
+function cutiSisa(a) {
+  if (a.jenis !== 'cuti' || !a.kategori) return null
+  return kuotaCuti(String(a.guru_id || ''), a.kategori, new Date().getFullYear())
+}
+// sisa kuota kategori terpilih (untuk pengaju = dirinya sendiri)
+const izinKuota = computed(() => {
+  if (izinForm.jenis !== 'cuti' || !izinForm.kategori) return null
+  const gid = String(auth.sesiAktif?.id || '')
+  return kuotaCuti(gid, izinForm.kategori, new Date().getFullYear())
+})
+// perkiraan jumlah hari yang diajukan (untuk cek over-kuota)
+const izinJumlahHari = computed(() => {
+  if (!izinForm.tgl_mulai) return 0
+  const s = new Date(izinForm.tgl_mulai + 'T00:00:00')
+  const e = new Date((izinForm.tgl_selesai || izinForm.tgl_mulai) + 'T00:00:00')
+  if (isNaN(s) || isNaN(e) || e < s) return 1
+  return Math.min(60, Math.round((e - s) / 86400000) + 1)
+})
+const izinOverKuota = computed(
+  () =>
+    izinKuota.value && izinKuota.value.sisa !== null && izinJumlahHari.value > izinKuota.value.sisa
+)
+
+function onPickLampiran(ev) {
+  const file = ev.target.files?.[0]
+  if (!file) return
+  if (file.size > 2 * 1024 * 1024) {
+    toast.error('Lampiran maks 2 MB.')
+    ev.target.value = ''
+    return
+  }
+  const isPdf = file.type === 'application/pdf'
+  if (!file.type.startsWith('image/') && !isPdf) {
+    toast.error('Lampiran harus JPG / PNG / PDF.')
+    ev.target.value = ''
+    return
+  }
+  const reader = new FileReader()
+  reader.onload = () => {
+    izinForm.lampiran_dataUrl = String(reader.result || '')
+    izinForm.lampiran_isPdf = isPdf
+    izinForm.lampiran_name = file.name
+  }
+  reader.readAsDataURL(file)
 }
 function toggleIzinShift(sh) {
   const i = izinForm.shifts.indexOf(sh)
-  if (i >= 0) izinForm.shifts.splice(i, 1); else izinForm.shifts.push(sh)
+  if (i >= 0) izinForm.shifts.splice(i, 1)
+  else izinForm.shifts.push(sh)
 }
 async function submitIzin() {
-  if (!izinForm.tgl_mulai) { toast.warning('Pilih tanggal mulai.'); return }
-  if (!izinForm.shifts.length) { toast.warning('Pilih minimal satu shift.'); return }
-  if (izinForm.tgl_selesai && izinForm.tgl_selesai < izinForm.tgl_mulai) { toast.warning('Tanggal selesai sebelum mulai.'); return }
+  if (!izinForm.tgl_mulai) {
+    toast.warning('Pilih tanggal mulai.')
+    return
+  }
+  if (izinForm.jenis === 'cuti' && cutiKategori.value.length && !izinForm.kategori) {
+    toast.warning('Pilih kategori cuti.')
+    return
+  }
+  if (!izinForm.shifts.length) {
+    toast.warning('Pilih minimal satu shift.')
+    return
+  }
+  if (izinForm.tgl_selesai && izinForm.tgl_selesai < izinForm.tgl_mulai) {
+    toast.warning('Tanggal selesai sebelum mulai.')
+    return
+  }
+  // Over-kuota = peringatan (tetap boleh diajukan; super_admin yang putuskan).
+  if (izinOverKuota.value) {
+    toast.warning(
+      `Melebihi sisa kuota (${izinKuota.value.sisa} hari). Pengajuan tetap dikirim untuk ditinjau.`
+    )
+  }
   izinBusy.value = true
   try {
-    await ajukanIzin({ ...izinForm })
+    let lampiran_url = ''
+    if (izinForm.lampiran_dataUrl) {
+      const ext = izinForm.lampiran_isPdf ? 'pdf' : 'jpg'
+      lampiran_url = await uploadBase64(
+        `izin_lampiran/izin_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`,
+        izinForm.lampiran_dataUrl,
+        izinForm.lampiran_isPdf ? 'application/pdf' : 'image/jpeg'
+      )
+    }
+    await ajukanIzin({
+      jenis: izinForm.jenis,
+      kategori: izinForm.kategori,
+      tgl_mulai: izinForm.tgl_mulai,
+      tgl_selesai: izinForm.tgl_selesai,
+      shifts: izinForm.shifts,
+      keterangan: izinForm.keterangan,
+      lampiran_url
+    })
     toast.success('Pengajuan terkirim, menunggu persetujuan.')
     izinFormOpen.value = false
-  } catch (e) { toast.error('Gagal: ' + (e.message || e)) } finally { izinBusy.value = false }
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  } finally {
+    izinBusy.value = false
+  }
 }
 async function batalIzin(a) {
   if (!confirm(`Batalkan pengajuan ${jenisIzinLabel(a.jenis)} ${rangeLabel(a)}?`)) return
-  try { await batalIzinReq(a.id); toast.success('Pengajuan dibatalkan.') } catch (e) { toast.error('Gagal: ' + (e.message || e)) }
+  try {
+    await batalIzinReq(a.id)
+    toast.success('Pengajuan dibatalkan.')
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  }
+}
+// Absensi milik GURU PENGAJU (bukan yang login). Wajib diambil terpisah: langganan
+//   `absensiGuru` kini disaring ke guru yang login, dan tanpa daftar yang benar
+//   penjaga "hari ini sudah hadir" tak jalan — baris HADIR guru pengaju akan
+//   tertimpa menjadi izin. Satu query kecil per persetujuan, bukan tabel penuh.
+async function ambilAbsensiGuru(guruId) {
+  const id = String(guruId || '')
+  if (!id) return []
+  if (id === String(auth.sesiAktif?.id || '')) return absensiGuru.value
+  try {
+    return await queryColl('absensi_shift_guru', [['guru_id', '==', id]])
+  } catch (e) {
+    // Gagal ambil = JANGAN lanjut menulis; lebih baik batal daripada menimpa "hadir".
+    throw new Error('Gagal membaca absensi guru tsb: ' + (e.message || e))
+  }
 }
 async function setujuiIzin(a) {
   izinBusyId.value = a.id
   try {
-    const r = await setujuiIzinReq(a, absensiGuru.value)
-    toast.success(`Disetujui — ${r.written} absensi terisi${r.skipped ? `, ${r.skipped} dilewati (sudah hadir)` : ''}.`)
-  } catch (e) { toast.error('Gagal: ' + (e.message || e)) } finally { izinBusyId.value = null }
+    const r = await setujuiIzinReq(a, await ambilAbsensiGuru(a.guru_id))
+    toast.success(
+      `Disetujui — ${r.written} absensi terisi${r.skipped ? `, ${r.skipped} dilewati (sudah hadir)` : ''}.`
+    )
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  } finally {
+    izinBusyId.value = null
+  }
+}
+async function terapkanUlangIzin(a) {
+  izinBusyId.value = a.id
+  try {
+    const r = await terapkanUlangReq(a, await ambilAbsensiGuru(a.guru_id))
+    if (r.written)
+      toast.success(
+        `${r.written} absensi terisi${r.skipped ? `, ${r.skipped} dilewati (sudah hadir)` : ''}.`
+      )
+    else
+      toast.info(
+        `Tak ada yang perlu diisi — ${r.skipped} hari sudah tercatat hadir/terlambat pada shift itu.`
+      )
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  } finally {
+    izinBusyId.value = null
+  }
 }
 async function tolakIzin(a) {
   izinBusyId.value = a.id
-  try { await tolakIzinReq(a); toast.success('Pengajuan ditolak.') } catch (e) { toast.error('Gagal: ' + (e.message || e)) } finally { izinBusyId.value = null }
+  try {
+    await tolakIzinReq(a)
+    toast.success('Pengajuan ditolak.')
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  } finally {
+    izinBusyId.value = null
+  }
 }
-function jenisIzinLabel(j) { return j === 'sakit' ? 'Sakit' : 'Izin' }
+function jenisIzinLabel(j) {
+  return j === 'sakit' ? 'Sakit' : j === 'cuti' ? 'Cuti' : 'Izin'
+}
 function statusIzinClass(s) {
   if (s === 'disetujui') return 'bg-emerald-100 text-emerald-700'
   if (s === 'ditolak') return 'bg-rose-100 text-rose-700'
   return 'bg-amber-100 text-amber-700'
 }
-function statusIzinLabel(s) { return s === 'disetujui' ? 'Disetujui' : s === 'ditolak' ? 'Ditolak' : 'Menunggu' }
-function shiftsLabel(arr) { return (Array.isArray(arr) ? arr : []).map((x) => String(x).charAt(0).toUpperCase() + String(x).slice(1)).join(', ') }
-function rangeLabel(a) { return a.tgl_selesai && a.tgl_selesai !== a.tgl_mulai ? `${a.tgl_mulai} – ${a.tgl_selesai}` : a.tgl_mulai }
+function statusIzinLabel(s) {
+  return s === 'disetujui' ? 'Disetujui' : s === 'ditolak' ? 'Ditolak' : 'Menunggu'
+}
+function shiftsLabel(arr) {
+  return (Array.isArray(arr) ? arr : [])
+    .map((x) => String(x).charAt(0).toUpperCase() + String(x).slice(1))
+    .join(', ')
+}
+function rangeLabel(a) {
+  return a.tgl_selesai && a.tgl_selesai !== a.tgl_mulai
+    ? `${a.tgl_mulai} – ${a.tgl_selesai}`
+    : a.tgl_mulai
+}
 </script>

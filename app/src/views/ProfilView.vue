@@ -17,8 +17,8 @@
       <p class="text-sm font-bold text-rose-800 mb-2">Gagal memuat profil</p>
       <p class="text-xs text-rose-600">{{ error }}</p>
       <button
-        @click="loadProfil"
         class="mt-3 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-lg cursor-pointer"
+        @click="loadProfil"
       >
         <i class="fas fa-redo mr-1"></i>Coba Lagi
       </button>
@@ -28,10 +28,14 @@
     <ProfilAdmin v-else-if="isBuiltInAdmin && !guru && !santri" />
 
     <!-- Role: Guru (atau guru yang promoted super_admin / admin_keuangan) -->
-    <ProfilGuru v-else-if="guru" :guru="guru" />
+    <ProfilGuru v-else-if="guru" :guru="guru" @updated="onProfilUpdated('guru', $event)" />
 
     <!-- Role: Santri -->
-    <ProfilSantri v-else-if="role === 'santri' && santri" :santri="santri" />
+    <ProfilSantri
+      v-else-if="role === 'santri' && santri"
+      :santri="santri"
+      @updated="onProfilUpdated('santri', $event)"
+    />
 
     <!-- Fallback: no data found for this user -->
     <div
@@ -50,7 +54,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { getOne } from '@/services/firestore'
+import { getOne } from '@/services/db'
 import ProfilAdmin from './profil/ProfilAdmin.vue'
 import ProfilGuru from './profil/ProfilGuru.vue'
 import ProfilSantri from './profil/ProfilSantri.vue'
@@ -59,14 +63,34 @@ const auth = useAuthStore()
 const sesi = computed(() => auth.sesiAktif)
 const role = computed(() => sesi.value?.role || null)
 // v.20.11.0526: built-in admin = id 'admin' DAN auth_method 'admin-builtin' (bukan guru promoted super_admin)
-const isBuiltInAdmin = computed(() =>
-  sesi.value?.id === 'admin' || sesi.value?.auth_method === 'admin-builtin'
+const isBuiltInAdmin = computed(
+  () => sesi.value?.id === 'admin' || sesi.value?.auth_method === 'admin-builtin'
 )
 
 const guru = ref(null)
 const santri = ref(null)
 const loading = ref(true)
 const error = ref(null)
+
+/**
+ * v.1.2.2 (audit 23 Jul 2026) — terima patch dari ProfilPengaturanSaya, yang
+ * meneruskannya lewat ProfilGuru/ProfilSantri. Dipakai supaya foto profil BESAR
+ * ikut berubah seketika tanpa refresh.
+ *
+ * View inilah PEMILIK objek guru/santri (diisi getOne di loadProfil), jadi di
+ * sinilah tempat yang sah mengubahnya. Sebelumnya ProfilPengaturanSaya menulis
+ * langsung ke props.entity — mutasi prop yang kebetulan jalan karena objeknya
+ * by-reference, tapi rapuh dan dilarang vue/no-mutating-props.
+ *
+ * Objeknya DIGANTI (bukan diubah field-nya) supaya pembaca yang memegang
+ * referensi lama ikut ter-render ulang. Patch kosong/undefined diabaikan —
+ * 'updated' juga dipancarkan oleh aksi lain yang tak membawa muatan.
+ */
+function onProfilUpdated(tipe, patch) {
+  if (!patch || typeof patch !== 'object') return
+  const target = tipe === 'guru' ? guru : santri
+  if (target.value) target.value = { ...target.value, ...patch }
+}
 
 async function loadProfil() {
   loading.value = true
@@ -85,7 +109,13 @@ async function loadProfil() {
     }
     // v.20.11.0526: kalau ada firebase_uid atau id !== 'admin' → ini guru/santri (termasuk super_admin promoted)
     // Cek source dari sesi data — kalau punya field guru/jabatan = guru
-    const isGuru = s.role === 'guru' || s.guru || s.jabatan || s.role_sistem === 'super_admin' || s.role_sistem === 'admin' || s.role_sistem === 'admin_keuangan'
+    const isGuru =
+      s.role === 'guru' ||
+      s.guru ||
+      s.jabatan ||
+      s.role_sistem === 'super_admin' ||
+      s.role_sistem === 'admin' ||
+      s.role_sistem === 'admin_keuangan'
     if (isGuru) {
       const g = await getOne('guru', String(s.id))
       if (g) guru.value = g
@@ -101,7 +131,7 @@ async function loadProfil() {
     error.value = `Role "${s.role}" belum didukung di halaman profil`
   } catch (e) {
     error.value = e.message || String(e)
-    // eslint-disable-next-line no-console
+
     console.error('[ProfilView] load error:', e)
   } finally {
     loading.value = false

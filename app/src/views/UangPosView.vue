@@ -39,6 +39,28 @@
             >
               <i class="fas fa-plus-circle"></i>Input Manual
             </button>
+            <button
+              aria-label="Cetak laporan PDF"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
+              @click="cetakLaporan()"
+            >
+              <i class="fas fa-file-pdf"></i>Cetak Laporan
+            </button>
+            <!-- v.1.2.6 (Kyai): berkas TERPISAH per cara bayar (pengecekan manual harian) -->
+            <button
+              aria-label="Cetak laporan transaksi tunai PDF"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition cursor-pointer"
+              @click="cetakLaporan('Tunai')"
+            >
+              <i class="fas fa-money-bill"></i>PDF Tunai
+            </button>
+            <button
+              aria-label="Cetak laporan transaksi transfer PDF"
+              class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition cursor-pointer"
+              @click="cetakLaporan('Transfer')"
+            >
+              <i class="fas fa-building-columns"></i>PDF Transfer
+            </button>
           </div>
         </div>
         <!-- Stats row -->
@@ -130,6 +152,58 @@
                     class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
                   />
                 </div>
+                <!-- v.1.2.6 (Kyai): cara bayar. Tanpa ini semua entri manual pos
+                     tersimpul 'Tunai' (metodeBayar.js), jadi PDF Transfer selalu kosong
+                     untuk transaksi yang dicatat dari halaman ini. -->
+                <div>
+                  <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
+                    >Cara Bayar *</label
+                  >
+                  <div class="grid grid-cols-2 gap-2">
+                    <button
+                      v-for="m in METODE_OPTS"
+                      :key="`met_${m}`"
+                      type="button"
+                      :class="[
+                        'px-3 py-2 text-xs font-black rounded-lg border-2',
+                        inputForm.metode === m
+                          ? 'bg-cyan-600 text-white border-cyan-700'
+                          : 'bg-[var(--bg-card)] text-cyan-700 border-cyan-300'
+                      ]"
+                      @click="inputForm.metode = m"
+                    >
+                      <i
+                        :class="[
+                          'fas',
+                          m === 'Transfer' ? 'fa-building-columns' : 'fa-money-bill',
+                          'mr-1'
+                        ]"
+                      ></i
+                      >{{ m }}
+                    </button>
+                  </div>
+                </div>
+                <!-- v.1.2.6 (Kyai): kas per lembaga. Kategori pos ini teks bebas, jadi
+                     lembaganya ditunjuk di sini (mis. beli buku SDI → kas SDI). -->
+                <div>
+                  <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
+                    >Masuk Kas Lembaga</label
+                  >
+                  <select
+                    v-model="inputForm.lembaga"
+                    class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
+                  >
+                    <option value="">Kas Induk / Yayasan</option>
+                    <option
+                      v-for="o in lembagaOpsi"
+                      :key="`kas_${o.nama}`"
+                      :value="o.nama"
+                      :title="o.ket"
+                    >
+                      {{ o.nama }}{{ o.ket ? ` — ${o.ket}` : '' }}
+                    </option>
+                  </select>
+                </div>
                 <div>
                   <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
                     >Keterangan *</label
@@ -182,7 +256,7 @@
       <div
         class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
       >
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
           <select
             v-model.number="selectedYear"
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
@@ -195,6 +269,30 @@
           >
             <option :value="0">Semua bulan</option>
             <option v-for="(b, i) in BULAN" :key="b" :value="i + 1">{{ b }}</option>
+          </select>
+          <!-- v.1.2.6 (Kyai): filter HARIAN — dasar laporan kas harian per pos. -->
+          <select
+            v-model.number="selectedDay"
+            :disabled="selectedMonth === 0"
+            :title="selectedMonth === 0 ? 'Pilih bulan dulu' : 'Filter per tanggal'"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none disabled:opacity-50"
+          >
+            <option :value="0">Semua tgl</option>
+            <option v-for="d in 31" :key="d" :value="d">{{ d }}</option>
+          </select>
+          <!-- v.1.2.6 (Kyai): filter kas lembaga -->
+          <select
+            v-model="filterLembaga"
+            class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
+          >
+            <option value="">Semua lembaga</option>
+            <option
+              v-for="o in rekapLembaga"
+              :key="`fl_${o.kunci || 'induk'}`"
+              :value="o.kunci || KAS_INDUK"
+            >
+              {{ o.lembaga || 'Kas Induk' }} ({{ o.jumlah }})
+            </option>
           </select>
           <select
             v-model="filterTipe"
@@ -210,6 +308,38 @@
             placeholder="Cari keterangan..."
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
           />
+        </div>
+        <!-- v.1.2.6 (Kyai): kas tiap lembaga sendiri-sendiri. Klik = saring ke lembaga itu. -->
+        <div v-if="rekapLembaga.length > 1" class="mt-3">
+          <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1.5">
+            <i class="fas fa-sitemap mr-1"></i>{{ pageTitle }} per lembaga
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            <button
+              v-for="o in rekapLembaga"
+              :key="`kl_${o.kunci || 'induk'}`"
+              type="button"
+              :class="[
+                'text-left p-2.5 rounded-xl border transition',
+                filterLembaga === (o.kunci || KAS_INDUK)
+                  ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/30'
+                  : 'border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] hover:border-cyan-300'
+              ]"
+              @click="
+                filterLembaga = filterLembaga === (o.kunci || KAS_INDUK) ? '' : o.kunci || KAS_INDUK
+              "
+            >
+              <p class="text-[11px] font-black text-[var(--text-primary)] truncate">
+                {{ o.lembaga || 'Kas Induk / Yayasan' }}
+              </p>
+              <p class="text-sm font-black text-cyan-700 dark:text-cyan-300 mt-0.5">
+                {{ fmtRp(o.saldo) }}
+              </p>
+              <p class="text-[10px] text-[var(--text-secondary)] mt-0.5">
+                masuk {{ fmtRp(o.masuk) }} · keluar {{ fmtRp(o.keluar) }} · {{ o.jumlah }} trx
+              </p>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -326,14 +456,29 @@ import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
 import { useRoute } from 'vue-router'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
-import { subscribeColl, setOne, deleteOne, serverTimestamp } from '@/services/firestore'
+import { subscribeColl, subscribeDoc, setOne, deleteOne, serverTimestamp } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { useGedungScope } from '@/composables/useGedungScope'
 import { useToast } from '@/composables/useToast'
-import { fmtRp, formatTanggal as formatTgl } from '@/utils/format'
+import { fmtRp, formatTanggal as formatTgl, todayJakarta } from '@/utils/format'
 import { isSuperAdmin } from '@/utils/roleScope'
+import { useSettingsStore } from '@/stores/settings'
+// v.1.2.6 (Kyai): laporan PDF harian per lembaga + berkas terpisah tunai/transfer.
+//   Pakai pembangun yang sudah dipakai Buku Induk & struk — TIDAK menambah pustaka.
+import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
+import { metodeTransaksi, METODE_OPTS } from '@/utils/metodeBayar'
+// v.1.2.6 (Kyai): kas per lembaga — resolver & rekap di utils/kasLembaga (sumber tunggal)
+import {
+  petaKasLembaga,
+  opsiKasLembaga,
+  kasLembagaBaris,
+  ringkasKasLembaga,
+  arahNominal,
+  kunciLembaga
+} from '@/utils/kasLembaga'
 
 const route = useRoute()
+const settingsStore = useSettingsStore()
 const toast = useToast()
 const auth = useAuthStore()
 const isAdmin = computed(() => isSuperAdmin(auth.sesiAktif))
@@ -374,15 +519,22 @@ let unsub = null
 
 const selectedYear = ref(new Date().getFullYear())
 const selectedMonth = ref(new Date().getMonth() + 1) // 0 = semua bulan
+const selectedDay = ref(0) // v.1.2.6: 0 = semua tanggal (laporan harian)
 const filterTipe = ref('')
+// v.1.2.6: kas lembaga. Nilainya KUNCI ternormalisasi (kunciLembaga), bukan nama
+//   mentah — sekolah kustom ditulis campur ("Kelas Baca"). '' = semua lembaga.
+const filterLembaga = ref('')
 const search = ref('')
 
 const modalInputOpen = ref(false)
 const savingInput = ref(false)
 const inputForm = reactive({
-  tanggal: new Date().toISOString().slice(0, 10),
+  // WIB, bukan UTC — transaksi dini hari tak lagi tercatat di tanggal kemarin.
+  tanggal: todayJakarta(),
   tipe: 'masuk',
+  metode: 'Tunai', // v.1.2.6: cara bayar (dasar PDF tunai vs transfer)
   kategori: '',
+  lembaga: '', // v.1.2.6: kas lembaga tujuan ('' = Kas Induk/Yayasan)
   keterangan: '',
   nominal: 0
 })
@@ -397,15 +549,29 @@ const isFullAccess = computed(() => {
   )
 })
 
-const filtered = computed(() => {
+// v.1.2.6 (Kyai): kas per lembaga — resolver tunggal di utils/kasLembaga. Baris LAMA
+//   tanpa tag `lembaga` diturunkan dari kategorinya; tak ada data yang ditulis ulang.
+const petaKas = computed(() => petaKasLembaga(settingsStore.settings?.keuTagihanJenis || []))
+function kasLembagaDari(b) {
+  return kasLembagaBaris(b, petaKas.value)
+}
+// Sentinel "Kas Induk": kuncinya '' dan itu sudah dipakai "Semua lembaga".
+const KAS_INDUK = '__induk__'
+
+// Semua penyaring KECUALI lembaga — dasar rekap & opsi filter lembaga, supaya
+//   pilihannya tak lenyap begitu satu lembaga dipilih.
+const tanpaLembaga = computed(() => {
   // Hanya baris ber-pos ini
   let list = bukuRaw.value.filter((b) => String(b.pos || '') === posKey.value)
   // Scope Gedung (ikut Buku Induk)
   if (gedungScoped.value) list = list.filter(allowRow)
-  // Tahun / bulan
+  // Tahun / bulan (+ v.1.2.6: tanggal, utk laporan harian)
   if (selectedMonth.value > 0) {
     const ym = `${selectedYear.value}-${String(selectedMonth.value).padStart(2, '0')}`
-    list = list.filter((b) => String(b.tanggal || '').substring(0, 7) === ym)
+    const tgl = selectedDay.value > 0 ? `${ym}-${String(selectedDay.value).padStart(2, '0')}` : ''
+    list = tgl
+      ? list.filter((b) => String(b.tanggal || '').substring(0, 10) === tgl)
+      : list.filter((b) => String(b.tanggal || '').substring(0, 7) === ym)
   } else {
     list = list.filter((b) => String(b.tanggal || '').startsWith(String(selectedYear.value)))
   }
@@ -430,10 +596,30 @@ const filtered = computed(() => {
           .includes(kw)
     )
   }
-  return list.sort(
-    (a, b) =>
-      (b.tanggal || '').localeCompare(a.tanggal || '') || (b.id || '').localeCompare(a.id || '')
-  )
+  return list
+})
+
+// Rekap kas per lembaga — kartu ringkasan + daftar opsi filter lembaga.
+const rekapLembaga = computed(() => ringkasKasLembaga(tanpaLembaga.value, kasLembagaDari))
+// Nama lembaga yang sedang disaring — judul & nama berkas laporan. '' = semua lembaga.
+const labelLembagaAktif = computed(() => {
+  if (!filterLembaga.value) return ''
+  if (filterLembaga.value === KAS_INDUK) return 'Kas Induk'
+  return rekapLembaga.value.find((o) => o.kunci === filterLembaga.value)?.lembaga || ''
+})
+
+const filtered = computed(() => {
+  let list = tanpaLembaga.value
+  if (filterLembaga.value) {
+    const target = filterLembaga.value === KAS_INDUK ? '' : filterLembaga.value
+    list = list.filter((b) => kunciLembaga(kasLembagaDari(b)) === target)
+  }
+  return list
+    .slice()
+    .sort(
+      (a, b) =>
+        (b.tanggal || '').localeCompare(a.tanggal || '') || (b.id || '').localeCompare(a.id || '')
+    )
 })
 
 const stats = computed(() => {
@@ -451,15 +637,112 @@ const years = computed(() => {
   return [now - 2, now - 1, now, now + 1]
 })
 
+// v.1.2.6 (Kyai): laporan PDF pos ini. `metodeOnly` = 'Tunai' | 'Transfer' menghasilkan
+//   BERKAS TERSENDIRI berisi metode itu saja (pengecekan manual harian). Judul & nama
+//   berkas ikut tanggal + lembaga yang sedang disaring. Baris SUBTOTAL per cara bayar
+//   dan TOTAL ditambahkan di akhir — bentuknya sama dengan laporan Buku Induk.
+async function cetakLaporan(metodeOnly = '') {
+  try {
+    const semua = filtered.value || []
+    const list = metodeOnly ? semua.filter((b) => metodeTransaksi(b) === metodeOnly) : semua
+    if (!list.length) {
+      toast.warning(
+        metodeOnly
+          ? `Tidak ada transaksi ${metodeOnly} pada filter ini.`
+          : 'Tidak ada transaksi pada filter ini.'
+      )
+      return
+    }
+    const sub = { Tunai: { masuk: 0, keluar: 0 }, Transfer: { masuk: 0, keluar: 0 } }
+    let totMasuk = 0,
+      totKeluar = 0
+    const rows = list.map((b, i) => {
+      const { masuk, keluar } = arahNominal(b)
+      const met = metodeTransaksi(b)
+      if (sub[met]) {
+        sub[met].masuk += masuk
+        sub[met].keluar += keluar
+      }
+      totMasuk += masuk
+      totKeluar += keluar
+      return {
+        no: i + 1,
+        tanggal: b.tanggal ? formatTgl(b.tanggal) : '',
+        keterangan: b.keterangan || '',
+        kategori: b.kategori || '',
+        lembaga: kasLembagaDari(b) || 'Kas Induk',
+        metode: met,
+        masuk: masuk ? fmtRp(masuk) : '',
+        keluar: keluar ? fmtRp(keluar) : ''
+      }
+    })
+    const barisJumlah = (label, masuk, keluar) => ({
+      no: '',
+      tanggal: '',
+      keterangan: label,
+      kategori: '',
+      lembaga: '',
+      metode: '',
+      masuk: masuk ? fmtRp(masuk) : '',
+      keluar: keluar ? fmtRp(keluar) : ''
+    })
+    for (const m of METODE_OPTS) {
+      if (!sub[m] || (sub[m].masuk === 0 && sub[m].keluar === 0)) continue
+      rows.push(barisJumlah(`SUBTOTAL ${m.toUpperCase()}`, sub[m].masuk, sub[m].keluar))
+    }
+    rows.push(barisJumlah(`TOTAL (${list.length} transaksi)`, totMasuk, totKeluar))
+
+    const bagian = [`${getBulanLabel(selectedMonth.value)} ${selectedYear.value}`]
+    if (labelLembagaAktif.value) bagian.push(labelLembagaAktif.value)
+    if (metodeOnly) bagian.push(metodeOnly.toUpperCase())
+    const slug = [
+      posKey.value,
+      String(selectedYear.value),
+      selectedMonth.value > 0 ? String(selectedMonth.value).padStart(2, '0') : '',
+      selectedDay.value > 0 ? String(selectedDay.value).padStart(2, '0') : '',
+      labelLembagaAktif.value.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      metodeOnly.toLowerCase()
+    ]
+      .filter(Boolean)
+      .join('-')
+    await buildListPdf({
+      kind: 'umum',
+      orientation: 'l',
+      format: 'a4',
+      kop: buildKopFromSettings(settingsStore.settings || {}),
+      title: `${pageTitle.value.toUpperCase()} — ${bagian.join(' — ')}`,
+      columns: [
+        { key: 'no', header: 'No', width: 12 },
+        { key: 'tanggal', header: 'Tanggal', width: 26 },
+        { key: 'keterangan', header: 'Keterangan', width: 66 },
+        { key: 'kategori', header: 'Kategori', width: 32 },
+        { key: 'lembaga', header: 'Kas Lembaga', width: 30 },
+        { key: 'metode', header: 'Cara Bayar', width: 24 },
+        { key: 'masuk', header: 'Masuk', width: 30 },
+        { key: 'keluar', header: 'Keluar', width: 30 }
+      ],
+      rows,
+      filename: `${slug}.pdf`
+    })
+    toast.success(metodeOnly ? `PDF ${metodeOnly} berhasil dibuat` : 'PDF laporan berhasil dibuat')
+  } catch (e) {
+    toast.error('Gagal cetak: ' + (e?.message || e))
+  }
+}
+
 function getBulanLabel(m) {
   if (m === 0) return 'Sepanjang tahun'
-  return BULAN[m - 1] || '-'
+  const b = BULAN[m - 1] || '-'
+  // v.1.2.6: tanggal ikut tampil kalau filter harian dipakai
+  return selectedDay.value > 0 ? `${selectedDay.value} ${b}` : b
 }
 
 function bukaModalInput() {
-  inputForm.tanggal = new Date().toISOString().slice(0, 10)
+  inputForm.tanggal = todayJakarta()
   inputForm.tipe = 'masuk'
+  inputForm.metode = 'Tunai'
   inputForm.kategori = ''
+  inputForm.lembaga = ''
   inputForm.keterangan = ''
   inputForm.nominal = 0
   modalInputOpen.value = true
@@ -481,7 +764,10 @@ async function simpanInputManual() {
       id,
       tanggal: inputForm.tanggal,
       tipe: inputForm.tipe,
+      metode: inputForm.metode || 'Tunai',
       kategori: inputForm.kategori.trim() || pageTitle.value,
+      // v.1.2.6 (Kyai): kas lembaga tujuan; '' = Kas Induk/Yayasan
+      lembaga: String(inputForm.lembaga || '').trim(),
       keterangan: inputForm.keterangan.trim(),
       nominal: Number(inputForm.nominal) || 0,
       sumber: 'manual',
@@ -521,16 +807,28 @@ async function hapusRow(b) {
   }
 }
 
+// v.1.2.6 (Kyai): daftar lembaga untuk pilihan "Masuk Kas Lembaga". subscribeDoc
+//   langsung (1 baris master) — useLembaga() ikut memuat guru + santri penuh.
+const lembagaRaw = ref([])
+let unsubLembaga = null
+// Kyai 4 Agu: pilihan kas = baris master + kas yang BUKAN lembaga (TPQ payung, Fullday,
+//   Ma'had) — sumber tunggal di utils/kasLembaga, sama dengan dialog Jenis Pembayaran.
+const lembagaOpsi = computed(() => opsiKasLembaga(lembagaRaw.value, inputForm.lembaga || ''))
+
 onMounted(() => {
   unsub = subscribeColl('keuangan_buku_induk', (docs) => {
     bukuRaw.value = docs
     loading.value = false
   })
+  unsubLembaga = subscribeDoc('master', 'lembaga', (doc) => {
+    lembagaRaw.value = Array.isArray(doc?.list) ? doc.list : []
+  })
 })
 onUnmounted(() => {
-  if (unsub) {
+  for (const fn of [unsub, unsubLembaga]) {
+    if (!fn) continue
     try {
-      unsub()
+      fn()
     } catch (e) {}
   }
 })
@@ -539,6 +837,12 @@ onUnmounted(() => {
 const { isElectron: isDesktop } = useDesktopShell()
 definePageActions(() => {
   if (!isFullAccess.value) return []
-  return [{ label: 'Input Manual', icon: 'plus', primary: true, on: () => bukaModalInput() }]
+  return [
+    { label: 'Input Manual', icon: 'plus', primary: true, on: () => bukaModalInput() },
+    { label: 'Cetak Laporan', icon: 'printer', on: () => cetakLaporan() },
+    // v.1.2.6 (Kyai): berkas terpisah per cara bayar (pengecekan manual harian)
+    { label: 'PDF Tunai', icon: 'printer', on: () => cetakLaporan('Tunai') },
+    { label: 'PDF Transfer', icon: 'printer', on: () => cetakLaporan('Transfer') }
+  ]
 })
 </script>

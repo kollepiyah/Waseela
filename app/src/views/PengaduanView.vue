@@ -279,7 +279,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { subscribeColl, setOne, mergeOne, deleteOne, serverTimestamp } from '@/services/firestore'
+import { subscribeColl, setOne, mergeOne, deleteOne, serverTimestamp } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'

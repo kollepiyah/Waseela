@@ -4,27 +4,27 @@
       <component :is="Component" />
     </transition>
   </router-view>
-  <PrinterSettingsModal />
+  <!-- AUDIT AGU 2026 (P8b): dipasang HANYA saat pengaturan printer benar-benar dibuka.
+       Dulu di-impor statis di sini, dan rantainya (escpImage -> strukBuilder -> pdfBuilder
+       + gambar kop muassis 33 kB) ikut chunk boot yang dibayar SEMUA pengguna — padahal
+       hanya kasir yang memakainya. -->
+  <component :is="PrinterModal" v-if="PrinterModal" ref="printerModalRef" />
   <!-- v.90.0626: ToastStack di-mount GLOBAL (sebelumnya tak pernah dipasang -> toast tak muncul) -->
   <ToastStack />
-  <!-- WASEELA: gate demo (calon pelanggan pilih fitur sebelum login) — hanya di build demo -->
-  <DemoFeaturePanel v-if="IS_DEMO" />
 </template>
 
 <script setup>
-import { watch, onMounted } from 'vue'
+import { watch, onMounted, onBeforeUnmount, nextTick, ref, shallowRef } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
 import { useUiStore } from '@/stores/ui'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
-import PrinterSettingsModal from '@/components/PrinterSettingsModal.vue'
 import ToastStack from '@/components/ui/ToastStack.vue'
-// WASEELA: panel demo (gated IS_DEMO — no-op di build tenant asli)
-import DemoFeaturePanel from '@/components/demo/DemoFeaturePanel.vue'
-import { IS_DEMO } from '@/composables/useDemo'
 // v.95.0626: FCM push — daftarkan saat user login (native saja)
 import { useAuthStore } from '@/stores/auth'
 import { usePushNotifications } from '@/composables/usePushNotifications'
+// v.1.2.8: tawaran unduh pembaruan APK (aplikasi Android saja)
+import { useAndroidUpdate } from '@/composables/useAndroidUpdate'
 
 // v.20.74.1.0526: BUGFIX — App.vue jangan panggil ui.initDarkFromStorage/auth.bindLiveSesi/settings.bindSettings.
 // main.js sudah handle init. App.vue cuma watch theme color + appTitle.
@@ -83,7 +83,6 @@ async function setupNativeIntegration() {
     ;[600, 1400, 2200, 3200].forEach((ms) => setTimeout(applyStatusBar, ms))
     watch(() => ui.isDark, applyStatusBar)
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.warn('[StatusBar] plugin tidak tersedia:', e?.message || e)
   }
 
@@ -138,12 +137,44 @@ async function setupNativeIntegration() {
       router.replace('/dashboard')
     })
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.warn('[BackButton] plugin tidak tersedia:', e?.message || e)
   }
 }
 
 onMounted(setupNativeIntegration)
+
+// v.1.2.8: tawarkan pembaruan APK di aplikasi Android (Kyai: "supaya tidak nunggu lama
+//   dari playstore"). Sengaja ditunda beberapa detik supaya tak berebut dengan boot, dan
+//   diam-diam gagal kalau jaringan/berkasnya tak ada. Lihat useAndroidUpdate.
+onMounted(() => {
+  try {
+    useAndroidUpdate().cekOtomatis()
+  } catch (e) {
+    /* cek pembaruan tak boleh mengganggu app */
+  }
+})
+
+// --- Pengaturan printer: dipasang saat diminta saja (P8b) --------------------
+// Pembukanya = event window 'waseela:open-printer-settings' (PosSantriView +
+// PengaturanKeuanganView). Event PERTAMA tiba sebelum modalnya ada, jadi
+// diteruskan lewat show() yang di-expose; event berikutnya ditangani listener
+// milik modal itu sendiri.
+const PrinterModal = shallowRef(null)
+const printerModalRef = ref(null)
+async function bukaPengaturanPrinter() {
+  if (PrinterModal.value) return // sudah terpasang -> modalnya menangani sendiri
+  try {
+    PrinterModal.value = (await import('@/components/PrinterSettingsModal.vue')).default
+    await nextTick()
+    printerModalRef.value?.show?.()
+  } catch (e) {
+    console.warn('[App] gagal memuat pengaturan printer:', e?.message || e)
+  }
+}
+onMounted(() => window.addEventListener('waseela:open-printer-settings', bukaPengaturanPrinter))
+onBeforeUnmount(() =>
+  window.removeEventListener('waseela:open-printer-settings', bukaPengaturanPrinter)
+)
 </script>
 
 <style>

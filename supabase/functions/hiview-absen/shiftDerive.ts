@@ -1,0 +1,206 @@
+// shiftDerive (Edge) — PORT VERBATIM dari app/src/utils/shiftDerive.js.
+// Aturan shift = MILIK APLIKASI (master shift di settings, lihat shiftMaster.ts); mesin
+// cuma kirim timestamp. Dipakai Edge Function hiview-absen agar derivasi shift IDENTIK
+// dengan app + fp_sync.py. Bila shiftDerive.js berubah, SINKRONKAN file ini.
+
+import { normHHMM, shiftList, type ShiftItem, type SettingsLike } from './shiftMaster.ts'
+
+export type { SettingsLike }
+export { normHHMM }
+
+export interface GuruLike {
+  tipe_pegawai?: string
+  shift?: string
+  shift_pegawai?: string
+  shift_ids?: string[]
+  lembaga_sekolah?: string
+  [k: string]: unknown
+}
+
+// Shift mana yang berlaku utk seorang guru/pegawai.
+//   Sumber utama : g.shift_ids[] — pilihan EKSPLISIT, satu daftar untuk guru & pegawai.
+//   Data lama    : tanpa shift_ids → diturunkan dari tipe_pegawai + shift/shift_pegawai.
+// Shift yang sudah dihapus dari master otomatis gugur (di-filter ke daftar master).
+export function shiftsForGuru(g: GuruLike, settings: SettingsLike): Set<string> {
+  const list = shiftList(settings)
+  const ids = Array.isArray(g?.shift_ids) ? g.shift_ids.map(String).filter(Boolean) : null
+  if (ids && ids.length > 0) {
+    return new Set(list.filter((sh) => ids.includes(sh.id)).map((sh) => sh.id))
+  }
+  return shiftsForGuruLegacy(g, list)
+}
+
+// Derivasi data LAMA (belum punya shift_ids). Meniru aturan v.99 PERSIS supaya absensi
+// guru yang belum disunting tidak berubah. Hanya mengenali 5 shift bawaan.
+function shiftsForGuruLegacy(g: GuruLike, list: ShiftItem[]): Set<string> {
+  const punya = (id: string) => list.some((x) => x.id === id)
+  const tipe = String(g?.tipe_pegawai || 'guru')
+    .toLowerCase()
+    .trim()
+  const hasPegawai = tipe.includes('pegawai')
+  const hasGuru = !hasPegawai || tipe.includes('guru')
+  const shiftField = String(g?.shift || 'pagi_sore').toLowerCase()
+  const hasSekolah = !!(g?.lembaga_sekolah && String(g.lembaga_sekolah).trim())
+  const set = new Set<string>()
+  if (hasGuru && shiftField.includes('pagi') && punya('pagi')) set.add('pagi')
+  if (hasGuru && shiftField.includes('sore') && punya('sore')) set.add('sore')
+  if (hasGuru && hasSekolah && punya('sekolah')) set.add('sekolah')
+  if (hasPegawai) {
+    const sp = String((hasGuru ? g?.shift_pegawai : g?.shift) || 'pagi_sore').toLowerCase()
+    if (sp.includes('pagi') && punya('pegawai_pagi')) set.add('pegawai_pagi')
+    if (sp.includes('sore') && punya('pegawai_sore')) set.add('pegawai_sore')
+  }
+  return set
+}
+
+interface WindowShift {
+  mulai: string
+  terlambat: string
+  selesai: string
+  tolAwal: number
+  tolTelat: number
+}
+
+// Window jam 1 shift dari daftar master yang sudah dinormalisasi.
+// Toleransi ikut sumber jamnya: shift yang menumpang jam fallback juga menumpang
+// toleransinya, supaya "Pegawai Pagi" tak perlu disetel dua kali.
+function windowFrom(id: string, list: ShiftItem[]): WindowShift {
+  const kosong: WindowShift = { mulai: '', terlambat: '', selesai: '', tolAwal: 0, tolTelat: 0 }
+  const sh = list.find((x) => x.id === String(id || ''))
+  if (!sh) return kosong
+  const pakai = (x: ShiftItem): WindowShift => ({
+    mulai: x.mulai,
+    terlambat: x.terlambat,
+    selesai: x.selesai,
+    tolAwal: x.toleransi_awal || 0,
+    tolTelat: x.toleransi_telat || 0
+  })
+  // Jam dikosongkan → ikut shift fallback (pegawai → jam guru pagi/sore).
+  if (!sh.mulai && !sh.terlambat && sh.fallback) {
+    const f = list.find((x) => x.id === sh.fallback)
+    if (f) return pakai(f)
+  }
+  return pakai(sh)
+}
+
+// Geser 'HH:MM' sebanyak n menit, DIJEPIT di 00:00..23:59. Sengaja tak melipat ke
+// hari lain: scan 23:40 tak boleh tiba-tiba jadi shift pagi keesokan harinya.
+function geserHHMM(hhmm: string, menit: number): string {
+  const t = normHHMM(hhmm)
+  if (!t) return ''
+  const total = Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5)) + Number(menit || 0)
+  const jepit = Math.max(0, Math.min(23 * 60 + 59, total))
+  const p = (n: number) => String(n).padStart(2, '0')
+  return p(Math.floor(jepit / 60)) + ':' + p(jepit % 60)
+}
+
+// Window jam shift dari settings; jam pegawai kosong → fallback ke jam guru.
+export function shiftWindow(
+  shift: string,
+  settings: SettingsLike
+): { mulai: string; terlambat: string; selesai: string } {
+  return windowFrom(shift, shiftList(settings))
+}
+
+// Batas terlambat ('HH:MM'): pakai 'terlambat', else 'mulai'. '' bila tak ada.
+export function shiftBatas(shift: string, settings: SettingsLike): string {
+  const w = shiftWindow(shift, settings)
+  return w.terlambat || w.mulai || ''
+}
+
+// Derive shift utk jam scan 'HH:MM' + guru + settings. return id shift atau
+// null (di luar semua window milik guru). Overlap → menang `urutan` terkecil.
+//
+// DUA LINTASAN (Kyai, 6 Agu 2026). Lintasan 1 = window INTI `mulai..selesai`, persis
+// perilaku lama; lintasan 2 baru mencoba window yang dilebarkan toleransi. Urutannya
+// penting: selama sebuah scan masih jatuh di window inti shift mana pun, toleransi
+// shift lain TIDAK boleh merebutnya — jadi menyetel toleransi tak pernah memindahkan
+// absen yang selama ini sudah benar.
+export function deriveShift(hhmm: string, g: GuruLike, settings: SettingsLike): string | null {
+  const t = normHHMM(hhmm)
+  if (!t) return null
+  const list = shiftList(settings) // sudah terurut `urutan`
+  const milik = shiftsForGuru(g, settings)
+  const punyaWindow: { id: string; w: WindowShift }[] = []
+  for (const sh of list) {
+    if (!milik.has(sh.id)) continue
+    const w = windowFrom(sh.id, list)
+    if (!w.mulai || !w.selesai) continue
+    if (w.mulai <= t && t <= w.selesai) return sh.id
+    punyaWindow.push({ id: sh.id, w })
+  }
+  for (const { id, w } of punyaWindow) {
+    if (!w.tolAwal && !w.tolTelat) continue
+    const dari = w.tolAwal ? geserHHMM(w.mulai, -w.tolAwal) : w.mulai
+    const sampai = w.tolTelat ? geserHHMM(w.selesai, w.tolTelat) : w.selesai
+    if (dari <= t && t <= sampai) return id
+  }
+  return null
+}
+
+// Status hadir/terlambat dari jam scan vs batas shift.
+export function statusFor(hhmm: string, shift: string, settings: SettingsLike): string {
+  const t = normHHMM(hhmm)
+  const batas = shiftBatas(shift, settings)
+  return batas && t && t > batas ? 'terlambat' : 'hadir'
+}
+
+// ── ABSEN PULANG ─────────────────────────────────────────────────────────────
+// Jeda minimum masuk → pulang (menit). Penjaga anti scan-dobel: mesin kerap
+// merekam 2 verifikasi berdekatan saat masuk; tanpa jeda ini scan kedua langsung
+// tercatat sebagai jam pulang. Tak ada shift aplikasi yang lebih pendek dari ini.
+export const MIN_JEDA_PULANG_MENIT = 30
+
+// Baris hadir tanpa jam (input manual) — dianggap "sudah lama masuk" supaya tetap
+// bisa menerima jam pulang, tapi kalah dari baris yang punya jam scan sungguhan.
+const TANPA_JAM = -1
+
+function menitOf(hhmm: string): number | null {
+  const t = normHHMM(hhmm)
+  if (!t) return null
+  return Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5))
+}
+
+export interface BarisMasuk {
+  shift: string
+  jam: string
+  status: string
+}
+
+/**
+ * Shift mana yang DITINGGALKAN oleh sebuah scan pulang.
+ *
+ * Window masuk sebuah shift membentang `mulai`..`selesai` (supaya yang datang telat
+ * tetap tercatat hadir), jadi scan pulang yang terjadi SEBELUM shift bubar masih
+ * jatuh di dalam window-nya sendiri. Dulu scan seperti itu dibuang (kalah dari scan
+ * terawal) → baris tetap "belum pulang" padahal gurunya sudah ceklok. (Kyai, 22 Jul 2026)
+ *
+ * Aturan sekarang: pulang menempel ke shift yang PALING BELAKANGAN dimasuki dan jam
+ * masuknya sudah lewat ≥ MIN_JEDA_PULANG_MENIT. Jam `selesai` shift TIDAK lagi jadi
+ * syarat — pulang lebih awal pun tercatat. Hasil >1 hanya bila beberapa shift punya
+ * jam masuk identik (baris gabungan) — memang ditinggalkan bersamaan.
+ */
+export function pilihShiftPulang(
+  hhmm: string,
+  barisMasuk: BarisMasuk[],
+  settings: SettingsLike
+): string[] {
+  const t = menitOf(hhmm)
+  if (t == null) return []
+  const list = shiftList(settings)
+  const kandidat: { shift: string; masuk: number }[] = []
+  for (const b of barisMasuk || []) {
+    const sh = String(b?.shift || '').toLowerCase()
+    if (!sh || !list.some((x) => x.id === sh)) continue
+    const st = String(b?.status || 'hadir').toLowerCase()
+    if (st !== 'hadir' && st !== 'terlambat') continue // izin/sakit/cuti tak punya pulang
+    const jam = String(b?.jam || '').trim()
+    const masuk = jam ? menitOf(jam) : TANPA_JAM
+    if (masuk == null) continue
+    if (t - masuk < MIN_JEDA_PULANG_MENIT) continue // scan dobel / scan sebelum masuk
+    kandidat.push({ shift: sh, masuk })
+  }
+  if (!kandidat.length) return []
+  const terakhir = Math.max(...kandidat.map((k) => k.masuk))
+  return [...new Set(kandidat.filter((k) => k.masuk === terakhir).map((k) => k.shift))]
+}

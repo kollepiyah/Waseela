@@ -98,7 +98,7 @@
               <i class="fas fa-info-circle mr-2"></i>Informasi
             </h3>
             <p class="text-xs text-[var(--text-primary)] leading-relaxed">
-              Akun ini adalah <b>Administrator utama</b> portal ini. Hanya satu akun ini yang
+              Akun ini adalah <b>Administrator utama</b> {{ BRAND.appName }}. Hanya satu akun ini yang
               memiliki akses penuh ke semua modul, termasuk Master Data, Keuangan, dan Audit Log.
             </p>
             <p
@@ -129,6 +129,7 @@
 import { computed } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
 import ProfilPengaturanSaya from './ProfilPengaturanSaya.vue'
+import { BRAND } from '@/config/brand'
 
 // v.100f: foto admin disimpan di settings/web.adminFoto (admin tak punya dok guru/santri)
 const settings = useSettingsStore()

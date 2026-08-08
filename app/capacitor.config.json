@@ -1,5 +1,5 @@
 {
-  "appId": "id.waseela.demo",
+  "appId": "id.waseela.app",
   "appName": "Waseela",
   "webDir": "dist",
   "bundledWebRuntime": false,
@@ -39,10 +39,11 @@
       "smallIcon": "ic_stat_waseela",
       "iconColor": "#0F766E"
     },
-    "FirebaseAuthentication": {
-      "skipNativeAuth": true,
-      "providers": [
-        "google.com"
+    "PushNotifications": {
+      "presentationOptions": [
+        "badge",
+        "sound",
+        "alert"
       ]
     }
   },

@@ -14,17 +14,17 @@
       style="padding-top: calc(2rem + env(safe-area-inset-top))"
     >
       <button
-        @click="ui.closeSidebar()"
         class="md:hidden absolute top-4 right-4 text-slate-500 hover:text-slate-700 dark:text-white/70 dark:hover:text-white text-xl"
         style="top: calc(1rem + env(safe-area-inset-top))"
         aria-label="Tutup sidebar"
+        @click="ui.closeSidebar()"
       >
         <i class="fas fa-times"></i>
       </button>
       <img
         :src="logoUrl"
         class="w-24 h-24 object-contain drop-shadow-md hover:scale-105 transition-transform"
-        alt="Logo Lembaga"
+        alt="Logo lembaga"
         @error="onLogoError"
       />
       <div class="text-center w-full mt-1">
@@ -60,7 +60,6 @@
         <button
           v-for="m in items"
           :key="m.path"
-          @click="handleClick(m)"
           :class="[
             'menu-item w-full text-left px-3 py-2.5 rounded-lg transition-colors flex items-center gap-3 font-semibold text-[14px] border-l-[3px]',
             isActive(m.path)
@@ -73,6 +72,7 @@
             !m.available ? 'opacity-55' : ''
           ]"
           :title="m.available ? '' : 'Halaman ini masih di versi lama, akan dimigrasi'"
+          @click="handleClick(m)"
         >
           <i
             :class="[
@@ -100,16 +100,19 @@
       class="px-4 py-4 text-center bg-emerald-50/60 dark:bg-black/20 border-t border-emerald-100 dark:border-white/10"
       style="padding-bottom: calc(1rem + env(safe-area-inset-bottom))"
     >
-      <p class="text-[10px] leading-relaxed text-slate-400 dark:text-slate-500 font-medium">
-        © {{ new Date().getFullYear() }} BAKAFRAWI PROJECT<br />All Rights Reserved
+      <p class="text-[9px] text-slate-500 dark:text-slate-400 font-bold tracking-widest uppercase">
+        © {{ new Date().getFullYear() }} {{ BRAND.copyrightName }}
+      </p>
+      <p class="text-[9px] text-teal-600 dark:text-teal-400 font-bold tracking-widest mt-0.5">
+        {{ BRAND.version }}
       </p>
     </div>
   </aside>
 
   <div
     v-if="ui.sidebarOpen"
-    @click="ui.closeSidebar()"
     class="md:hidden fixed inset-0 bg-slate-900/50 z-40 backdrop-blur-sm"
+    @click="ui.closeSidebar()"
   ></div>
 </template>
 
@@ -121,6 +124,7 @@ import { useUiStore } from '@/stores/ui'
 import { useMenus } from '@/composables/useMenus'
 import { useToast } from '@/composables/useToast'
 import { masehiToHijri, getKalibrasi } from '@/utils/hijri'
+import { BRAND } from '@/config/brand'
 
 const settings = useSettingsStore()
 const ui = useUiStore()
@@ -152,7 +156,7 @@ const namaFull = computed(() => {
   const raw =
     settings.settings?.txtSidebarTitle ||
     settings.settings?.kopLine1 ||
-    'Waseela'
+    BRAND.kopLine1
   return toTitleCase(raw)
 })
 const namaLine1 = computed(() => {

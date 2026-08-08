@@ -5,7 +5,7 @@
         <i class="fas fa-circle-question text-[var(--color-primary)]"></i> Pusat Bantuan
       </h1>
       <p class="text-sm text-[var(--text-secondary)] mt-1">
-        Panduan, informasi, dan kontak {{ appName }}.
+        Panduan, informasi, dan kontak {{ BRAND.appName }}.
       </p>
     </div>
 
@@ -50,8 +50,8 @@
       <div v-if="isSuperAdmin" class="flex justify-end">
         <button
           v-if="!editPanduan"
-          @click="mulaiEditPanduan"
           class="text-xs font-bold text-[var(--color-primary)] hover:underline"
+          @click="mulaiEditPanduan"
         >
           <i class="fas fa-pen mr-1"></i>Edit Panduan
         </button>
@@ -68,9 +68,9 @@
               class="flex-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none"
             />
             <button
-              @click="hapusPanduan(i)"
               class="text-rose-600 hover:text-rose-700 px-2"
               title="Hapus"
+              @click="hapusPanduan(i)"
             >
               <i class="fas fa-trash"></i>
             </button>
@@ -83,26 +83,26 @@
         </div>
         <div class="flex gap-2 flex-wrap">
           <button
-            @click="tambahPanduan"
             class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--bg-muted)]"
+            @click="tambahPanduan"
           >
             <i class="fas fa-plus mr-1"></i>Tambah
           </button>
           <button
-            @click="simpanPanduan"
             class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--color-primary)] text-white"
+            @click="simpanPanduan"
           >
             <i class="fas fa-save mr-1"></i>Simpan
           </button>
           <button
-            @click="resetPanduan"
             class="text-xs font-bold px-3 py-2 rounded-lg bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+            @click="resetPanduan"
           >
             Reset bawaan
           </button>
           <button
-            @click="editPanduan = false"
             class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--bg-muted)]"
+            @click="editPanduan = false"
           >
             Tutup
           </button>
@@ -143,8 +143,8 @@
       <div v-if="isSuperAdmin" class="flex justify-end">
         <button
           v-if="!editFaq"
-          @click="mulaiEditFaq"
           class="text-xs font-bold text-[var(--color-primary)] hover:underline"
+          @click="mulaiEditFaq"
         >
           <i class="fas fa-pen mr-1"></i>Edit FAQ
         </button>
@@ -161,9 +161,9 @@
               class="flex-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] outline-none"
             />
             <button
-              @click="hapusFaq(i)"
               class="text-rose-600 hover:text-rose-700 px-2"
               title="Hapus"
+              @click="hapusFaq(i)"
             >
               <i class="fas fa-trash"></i>
             </button>
@@ -176,26 +176,26 @@
         </div>
         <div class="flex gap-2 flex-wrap">
           <button
-            @click="tambahFaq"
             class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--bg-muted)]"
+            @click="tambahFaq"
           >
             <i class="fas fa-plus mr-1"></i>Tambah
           </button>
           <button
-            @click="simpanFaq"
             class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--color-primary)] text-white"
+            @click="simpanFaq"
           >
             <i class="fas fa-save mr-1"></i>Simpan
           </button>
           <button
-            @click="resetFaq"
             class="text-xs font-bold px-3 py-2 rounded-lg bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+            @click="resetFaq"
           >
             Reset bawaan
           </button>
           <button
-            @click="editFaq = false"
             class="text-xs font-bold px-3 py-2 rounded-lg bg-[var(--bg-muted)]"
+            @click="editFaq = false"
           >
             Tutup
           </button>
@@ -240,7 +240,7 @@
           />
           <div>
             <div class="text-lg font-black text-[var(--text-primary)]">
-              {{ appName }} — {{ platformName }}
+              {{ BRAND.appName }} — {{ platformName }}
             </div>
             <div class="text-sm text-[var(--text-secondary)]">
               Sistem Manajemen {{ lembagaName }}
@@ -263,7 +263,9 @@
           </div>
           <div class="flex justify-between border-b border-[var(--border-subtle)] py-2">
             <span class="text-[var(--text-secondary)]">Hak Cipta</span
-            ><span class="font-semibold">© {{ new Date().getFullYear() }} BAKAFRAWI PROJECT · All Rights Reserved</span>
+            ><span class="font-semibold"
+              >© {{ new Date().getFullYear() }} {{ BRAND.copyrightName }}</span
+            >
           </div>
           <div class="flex justify-between border-b border-[var(--border-subtle)] py-2">
             <span class="text-[var(--text-secondary)]">Author</span
@@ -273,9 +275,56 @@
             <span class="text-[var(--text-secondary)]">Kontak</span
             ><span class="font-semibold">WA: {{ AUTHOR.wa }}</span>
           </div>
-          <div class="flex justify-between border-b border-[var(--border-subtle)] py-2">
+          <div
+            v-if="AUTHOR.org && AUTHOR.org !== AUTHOR.nama"
+            class="flex justify-between border-b border-[var(--border-subtle)] py-2"
+          >
             <span class="text-[var(--text-secondary)]">Organization</span
             ><span class="font-semibold">{{ AUTHOR.org }}</span>
+          </div>
+        </div>
+
+        <!-- v.1.2.8 (Kyai 5 Agu 2026): jalur pembaruan di luar Play Store. Peninjauan
+             Play makan waktu berhari-hari, sedang perbaikan sering perlu hari itu juga.
+             Di aplikasi Android tombolnya = cek pembaruan; di web = unduh APK. -->
+        <div class="mt-5 pt-4 border-t border-[var(--border-subtle)]">
+          <p class="text-sm font-bold text-[var(--text-primary)] mb-1">
+            <i class="fab fa-android text-emerald-600 mr-1"></i>Aplikasi Android
+          </p>
+          <p class="text-xs text-[var(--text-secondary)] leading-relaxed mb-3">
+            Pembaruan lewat Play Store perlu menunggu peninjauan. Berkas APK di bawah berisi versi
+            terbaru yang bisa dipasang langsung.
+            <template v-if="!isAndroid">
+              Setelah terunduh, buka berkasnya untuk memasang — Android akan meminta izin memasang
+              dari sumber ini sekali saja.
+            </template>
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-if="bisaCekApk"
+              class="text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg transition cursor-pointer disabled:opacity-50"
+              :disabled="cekApkBusy"
+              @click="cekPembaruanApk"
+            >
+              <i class="fas fa-rotate mr-1" :class="{ 'fa-spin': cekApkBusy }"></i>
+              {{ cekApkBusy ? 'Memeriksa…' : 'Cek Pembaruan' }}
+            </button>
+            <a
+              v-else
+              :href="APK_URL"
+              rel="noopener"
+              class="text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg transition"
+            >
+              <i class="fas fa-download mr-1"></i>Unduh APK
+            </a>
+            <a
+              :href="APK_RILIS_URL"
+              target="_blank"
+              rel="noopener"
+              class="text-xs font-bold bg-[var(--bg-muted)] text-[var(--text-primary)] border border-[var(--border-subtle)] px-3 py-2 rounded-lg transition"
+            >
+              <i class="fas fa-list-ul mr-1"></i>Semua versi
+            </a>
           </div>
         </div>
       </div>
@@ -328,8 +377,8 @@
             <i class="fas fa-headset text-[var(--color-primary)] mr-2"></i>Hubungi Admin
           </h3>
           <button
-            @click="showKontakModal = false"
             class="text-[var(--text-tertiary)] hover:text-rose-500 text-xl"
+            @click="showKontakModal = false"
           >
             <i class="fas fa-times"></i>
           </button>
@@ -344,7 +393,12 @@
             </div>
             <div>
               <div class="text-base font-black text-[var(--text-primary)]">{{ AUTHOR.nama }}</div>
-              <div class="text-xs text-[var(--text-secondary)]">{{ AUTHOR.org }}</div>
+              <div
+                v-if="AUTHOR.org && AUTHOR.org !== AUTHOR.nama"
+                class="text-xs text-[var(--text-secondary)]"
+              >
+                {{ AUTHOR.org }}
+              </div>
             </div>
           </div>
           <a
@@ -355,8 +409,8 @@
           >
           <button
             v-if="isSuperAdmin"
-            @click="mulaiEditKontak"
             class="w-full text-xs font-bold text-[var(--color-primary)] hover:underline"
+            @click="mulaiEditKontak"
           >
             <i class="fas fa-pen mr-1"></i>Edit kontak admin
           </button>
@@ -394,14 +448,14 @@
           </div>
           <div class="flex gap-2 justify-end pt-1">
             <button
-              @click="editKontak = false"
               class="px-3 py-2 text-xs font-bold rounded-lg bg-[var(--bg-muted)]"
+              @click="editKontak = false"
             >
               Batal
             </button>
             <button
-              @click="simpanKontak"
               class="px-3 py-2 text-xs font-bold rounded-lg bg-[var(--color-primary)] text-white"
+              @click="simpanKontak"
             >
               <i class="fas fa-save mr-1"></i>Simpan
             </button>
@@ -415,12 +469,14 @@
 <script setup>
 import { ref, computed, watch, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { setDoc, doc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { mergeOne } from '@/services/db'
 import { useSettingsStore } from '@/stores/settings'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useDesktopShell } from '@/composables/useDesktopShell'
+import { useAndroidUpdate } from '@/composables/useAndroidUpdate'
+import { urlApk } from '@/utils/unduhan'
+import { BRAND } from '@/config/brand'
 
 const route = useRoute()
 const router = useRouter()
@@ -431,7 +487,11 @@ const auth = useAuthStore()
 const isSuperAdmin = computed(() => auth.sesiAktif?.role_sistem === 'super_admin')
 
 // v.99: kontak admin dari settings (editable/ACF) — fallback ke default.
-const DEFAULT_AUTHOR = { nama: 'Rahman Fanani', wa: '085331172477', org: 'Bakafrawi Project' }
+// v.1.3.0 (Kyai, 6 Agu 2026): Author = nama PROYEK, bukan nama orang — sejalan
+//   dengan "Powered By Bakafrawi Project" di layar login. Baris Organization jadi
+//   kembar karenanya, jadi ia hanya ditampilkan bila memang BERBEDA dari Author
+//   (mis. lembaga lain mengisi adminNama/adminOrg sendiri lewat Pengaturan Web).
+const DEFAULT_AUTHOR = { nama: 'Bakafrawi Project', wa: '085331172477', org: 'Bakafrawi Project' }
 const AUTHOR = computed(() => ({
   nama: settings.settings?.adminNama || DEFAULT_AUTHOR.nama,
   wa: settings.settings?.adminWa || DEFAULT_AUTHOR.wa,
@@ -461,8 +521,8 @@ function mulaiEditKontak() {
   editKontak.value = true
 }
 async function _saveSettings(patch) {
-  await setDoc(doc(db, 'settings', 'general'), patch, { merge: true })
-  await setDoc(doc(db, 'settings', 'web'), patch, { merge: true })
+  await mergeOne('settings', 'general', patch)
+  await mergeOne('settings', 'web', patch)
 }
 async function simpanKontak() {
   try {
@@ -492,9 +552,26 @@ const isAndroid = (() => {
     return false
   }
 })()
+// v.1.2.8: jalur pembaruan di luar Play Store. Tautan diarahkan ke rilis GitHub yang
+//   sama dengan feed pembaruan desktop; sumber versinya /app-version.json (ikut deploy
+//   web). Di aplikasi Android tombolnya jadi "Cek Pembaruan" (lebih tepat daripada
+//   mengunduh buta — app tahu versinya sendiri).
+// v.1.2.9: satu sumber nama berkas rilis — lihat utils/unduhan.js
+const APK_URL = urlApk()
+const APK_RILIS_URL = BRAND.releaseRepo + '/releases'
+const androidUpdate = useAndroidUpdate()
+const bisaCekApk = androidUpdate.tersedia()
+const cekApkBusy = ref(false)
+async function cekPembaruanApk() {
+  cekApkBusy.value = true
+  try {
+    await androidUpdate.cek(true)
+  } finally {
+    cekApkBusy.value = false
+  }
+}
+
 const platformName = computed(() => (isElectron.value ? 'Desktop' : isAndroid ? 'Android' : 'Web'))
-// WASEELA white-label: nama produk dari settings (seed tenant.config), bukan hardcode nama produk.
-const appName = computed(() => settings.settings?.txtAppName || settings.settings?.appTitle || 'Waseela')
 const platformDetail = computed(() =>
   isElectron.value ? 'Windows (Electron)' : isAndroid ? 'Android (aplikasi)' : 'Web (Browser / PWA)'
 )
@@ -507,9 +584,9 @@ const introText = computed(() =>
 )
 
 const lembagaName = computed(
-  () => settings.settings?.namaLembaga || 'Waseela'
+  () => settings.settings?.namaLembaga || BRAND.namaLembaga
 )
-const version = computed(() => settings.settings?.appVersion || 'v.108.0626')
+const version = computed(() => settings.settings?.appVersion || BRAND.version)
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
 
 const sections = [
@@ -747,31 +824,97 @@ async function resetFaq() {
   }
 }
 
+// ⚠️ DAFTAR MANUAL — tidak terhubung ke CHANGELOG.md, jadi ia TIDAK ikut naik saat
+//   versi dibump. Sempat tertinggal jauh (isinya berhenti di v.98 Juni 2026 sementara
+//   aplikasi sudah v.1.2.9). Kalau menambah rilis, tulis untuk PEMBACA PONDOK: apa yang
+//   berubah di layar mereka, bukan nama fungsi. Cukup beberapa rilis terakhir —
+//   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
 const rilis = [
   {
-    versi: 'v.98',
-    tgl: 'Juni 2026',
+    versi: 'v.1.3.4',
+    tgl: 'Agustus 2026',
     items: [
-      'Antarmuka desktop bergaya Ribbon (Office/Windows 11).',
-      'Dasbor Home: statistik pendidikan + keuangan.',
-      'Tema gelap konsisten (palet slate).',
-      'Filter lembaga (Qiraati + Sekolah) jadi dropdown di Data Santri & Guru.',
-      'Pusat Bantuan kini tersedia di web & Android.',
-      'Perapian tanda tangan rapor & info kontak admin.'
+      'Alat "Rapikan Tagihan Gabungan" di Pengaturan Keuangan: menemukan tagihan ngaji yang sudah termasuk di syahriyah sekolah/pondok tapi masih tercatat belum bayar, lalu menghapusnya setelah diperiksa.',
+      'Generate Tagihan Khusus menampilkan pratinjau sasaran — sebaran per lembaga, total rupiah, dan daftar nama — sebelum tagihan benar-benar terbit.',
+      'Simulasi Pemasukan menampilkan berapa tagihan yang digabung beserta nilai komponen di dalamnya.'
     ]
   },
   {
-    versi: 'v.97',
-    tgl: 'Juni 2026',
-    items: ['Bisyaroh metode BMT/Cash + ekspor Laporan BMT.', 'Integrasi VA BMT PETA (kerangka).']
+    versi: 'v.1.3.3',
+    tgl: 'Agustus 2026',
+    items: [
+      'Kepala lembaga tak lagi menerima bisyaroh pokok guru di lembaga yang ia pimpin; jam mengajarnya tetap dibayar per JP.',
+      'Kepala yang juga mengaji tetap menerima bisyaroh pokok guru di lembaga ngajinya.',
+      'Simulasi Bisyaroh bisa diekspor ke PDF — rekap per jenis sekaligus rincian per orang.',
+      'Simulasi Pemasukan Bulanan di Pengaturan Keuangan: perkiraan uang masuk sebulan dari jenis bulanan saja.'
+    ]
   },
   {
-    versi: 'v.95',
-    tgl: 'Juni 2026',
+    versi: 'v.1.3.2',
+    tgl: 'Agustus 2026',
     items: [
-      'Generate tagihan khusus/infaq.',
-      'FCM push notification (Android).',
-      'Struk dot-matrix 9.5×11 (ESC/P raster).'
+      'Bisyaroh sekolah bisa dihitung per JP per BULAN (JP/minggu × tarif, dipotong sesuai kehadiran) — pilih cara hitung "× JP/minggu (bulanan)" di Jenis Bisyaroh.',
+      'Guru yang mengajar di lebih dari satu sekolah kini terbayar untuk semuanya; cukup tambahkan barisnya di menu Beban Mengajar.',
+      'Jabatan Tambahan boleh lebih dari satu, jadi yang merangkap tiga jabatan tertampung.',
+      'Simulasi Plafon kini ikut menghitung tunjangan.'
+    ]
+  },
+  {
+    versi: 'v.1.3.1',
+    tgl: 'Agustus 2026',
+    items: [
+      'Tunjangan bisyaroh kini berkategori seperti Jenis Bisyaroh: tunjangan jabatan (mis. Kepala Lembaga), tunjangan pengabdian yang dikali tahun mengabdi, tunjangan khusus masa kerja tertentu, dan tunjangan berprestasi bagi yang tepat waktu.',
+      'Data guru: "Tanggal Tugas" kini bernama "Tgl. Syahadah" dan boleh dikosongkan; ada field baru "Tgl. Tugas" sebagai dasar masa pengabdian.',
+      'Simulasi Plafon Bisyaroh kini juga merinci per guru/pegawai.',
+      'POS: tagihan bulanan tak lagi terdampar di daftar Nonbulanan.'
+    ]
+  },
+  {
+    versi: 'v.1.3.0',
+    tgl: 'Agustus 2026',
+    items: [
+      'Simulasi Plafon Bisyaroh — coba nominal sebelum diputuskan, tak ada yang disimpan.',
+      'Input Absensi Harian bisa memilih tanggal, termasuk hari yang sudah lewat (super admin).',
+      'Kolom Saldo di Buku Induk tak lagi menabrak kolom Keluar.'
+    ]
+  },
+  {
+    versi: 'v.1.2.9',
+    tgl: 'Agustus 2026',
+    items: [
+      'Toleransi scan per shift — guru yang datang lebih awal tak lagi terbaca alpa.',
+      'Tab "Jejak Mesin" di Absensi Guru: bukti scan sampai atau tidak ke server.',
+      'Kolom Saldo di laporan Buku Induk kini mengikuti penyaring yang diekspor.',
+      "Uang Saku menampilkan seluruh santri ma'had, tanpa lewat Input Mutasi dulu.",
+      'Login tak lagi gagal karena salah memilih tab Santri/Wali vs Guru/Pegawai.',
+      'Tombol unduh aplikasi Desktop diperbaiki (sempat membuka halaman kosong).'
+    ]
+  },
+  {
+    versi: 'v.1.2.8',
+    tgl: 'Agustus 2026',
+    items: [
+      'Perizinan yang disetujui tak lagi luput dari absensi.',
+      'Tampilan tak lagi terlihat "ke-zoom" di HP dengan ukuran font besar.',
+      'Pembaruan aplikasi Android bisa diunduh langsung tanpa menunggu Play Store.',
+      'Ekspor PDF harian untuk Tabungan.'
+    ]
+  },
+  {
+    versi: 'v.1.2.7',
+    tgl: 'Agustus 2026',
+    items: [
+      'Syahriyah gabungan: ngaji menempel ke syahriyah sekolah/pondok, tak tertagih dua kali.',
+      'Kas per lembaga di Buku Induk, Uang Pos, dan Tabungan.',
+      'Laporan PDF harian per lembaga, berkas tunai dan transfer terpisah.'
+    ]
+  },
+  {
+    versi: 'v.1.2.6',
+    tgl: 'Juli 2026',
+    items: [
+      "Jenis pembayaran bisa ditargetkan ke status santri (Non-mukim / Ma'had / Fullday).",
+      'Admin keuangan yang merangkap guru kini melihat kelasnya sendiri di menu Pendidikan.'
     ]
   }
 ]

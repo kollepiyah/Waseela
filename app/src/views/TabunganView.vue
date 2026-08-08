@@ -6,7 +6,9 @@
       class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-rose-300 text-center"
     >
       <i class="fas fa-lock text-rose-300 text-4xl mb-3"></i>
-      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Akses Keuangan terbatas</p>
+      <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">
+        Akses Keuangan terbatas
+      </p>
     </div>
 
     <!-- =================== MODE SANTRI =================== -->
@@ -57,7 +59,9 @@
           class="p-10 border-t-2 border-dashed border-[var(--border-subtle)] text-center"
         >
           <i class="fas fa-inbox text-[var(--text-tertiary)] text-3xl mb-2"></i>
-          <p class="text-sm text-[var(--text-secondary)] italic">Belum ada mutasi {{ pageTitle.toLowerCase() }}.</p>
+          <p class="text-sm text-[var(--text-secondary)] italic">
+            Belum ada mutasi {{ pageTitle.toLowerCase() }}.
+          </p>
         </div>
         <div v-else class="overflow-x-auto">
           <table class="w-full text-sm">
@@ -94,6 +98,12 @@
                   >
                     {{ m.jenis || m.tipe || '-' }}
                   </span>
+                  <span
+                    v-if="m.sumber === 'bmt_va'"
+                    class="ml-1 inline-block text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700"
+                    title="Top-up via Virtual Account BMT"
+                    ><i class="fas fa-credit-card"></i> VA</span
+                  >
                 </td>
                 <td
                   :class="[
@@ -108,9 +118,7 @@
                 >
                   {{ fmtRp(m.saldo_after || m.saldo) }}
                 </td>
-                <td
-                  class="px-4 py-2.5 text-xs text-[var(--text-secondary)] truncate max-w-[200px]"
-                >
+                <td class="px-4 py-2.5 text-xs text-[var(--text-secondary)] truncate max-w-[200px]">
                   {{ m.catatan || '-' }}
                 </td>
               </tr>
@@ -131,7 +139,9 @@
             <h1 class="text-base md:text-lg font-black text-[var(--text-primary)]">
               <i class="fas fa-wallet text-emerald-500 mr-2"></i>{{ pageTitle }}
             </h1>
-            <p class="text-xs text-[var(--text-secondary)] mt-0.5">Saldo {{ pageTitle.toLowerCase() }} santri{{ isUangSaku ? " ma'had" : '' }}</p>
+            <p class="text-xs text-[var(--text-secondary)] mt-0.5">
+              Saldo {{ pageTitle.toLowerCase() }} santri{{ isUangSaku ? " ma'had" : '' }}
+            </p>
           </div>
           <div class="flex flex-wrap gap-2 items-center">
             <div
@@ -142,180 +152,496 @@
               </span>
             </div>
             <template v-if="!isDesktop">
-            <button @click="exportPdf" title="Ekspor PDF rekap saldo" class="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"><i class="fas fa-file-pdf mr-1"></i>PDF</button>
-            <button @click="downloadTemplate" title="Unduh template XLSX" class="bg-slate-600 hover:bg-slate-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"><i class="fas fa-file-download mr-1"></i>Template</button>
-            <button @click="triggerImport" :disabled="importingTab" title="Impor mutasi dari XLSX" class="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"><i :class="['fas mr-1', importingTab ? 'fa-spinner fa-spin' : 'fa-file-upload']"></i>Impor</button>
+              <button
+                title="Ekspor PDF rekap saldo"
+                class="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+                @click="exportPdf"
+              >
+                <i class="fas fa-file-pdf mr-1"></i>PDF
+              </button>
+              <button
+                title="Unduh template XLSX"
+                class="bg-slate-600 hover:bg-slate-700 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+                @click="downloadTemplate"
+              >
+                <i class="fas fa-file-download mr-1"></i>Template
+              </button>
+              <button
+                :disabled="importingTab"
+                title="Impor mutasi dari XLSX"
+                class="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+                @click="triggerImport"
+              >
+                <i :class="['fas mr-1', importingTab ? 'fa-spinner fa-spin' : 'fa-file-upload']"></i
+                >Impor
+              </button>
             </template>
-            <input ref="importInput" type="file" accept=".xlsx,.xls" class="hidden" @change="importXlsx" />
+            <input
+              ref="importInput"
+              type="file"
+              accept=".xlsx,.xls"
+              class="hidden"
+              @change="importXlsx"
+            />
             <template v-if="!isDesktop">
-            <button
-              @click="openModal()"
-              class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
-            >
-              <i class="fas fa-plus mr-1"></i>Input Mutasi
-            </button>
+              <button
+                class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-black px-3 py-1.5 rounded-full shadow"
+                @click="openModal()"
+              >
+                <i class="fas fa-plus mr-1"></i>Input Mutasi
+              </button>
             </template>
           </div>
         </div>
       </div>
 
-      <!-- Search -->
+      <!-- Kyai, 5 Agu 2026: "mutasi tabungan jadikan sub menu saja supaya tidak
+           scroll ke bawah dulu jauh"): Semua Mutasi dulu duduk DI BAWAH seluruh daftar
+           santri, jadi menutup kas harian berarti menggulir melewati ratusan baris tiap
+           kali. Kini dua area itu jadi tab — polanya sama dengan Pengaturan Keuangan.
+           Tab hanya muncul bagi yang memang boleh membuka panel mutasi. -->
       <div
-        class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
+        v-if="bolehSemuaMutasi"
+        class="flex gap-1.5 overflow-x-auto hide-scrollbar -mx-1 px-1 pb-0.5"
       >
-        <div class="relative">
-          <i
-            class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"
-          ></i>
-          <input
-            v-model="search"
-            type="text"
-            placeholder="Cari nama..."
-            class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
-          />
-        </div>
-      </div>
-
-      <!-- Empty / loading states -->
-      <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center">
-        <i class="fas fa-spinner fa-spin text-emerald-500 text-3xl mb-3"></i>
-        <p class="text-sm text-[var(--text-secondary)] font-bold">Memuat...</p>
-      </div>
-      <div
-        v-else-if="filteredItems.length === 0"
-        class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
-      >
-        <i class="fas fa-wallet text-[var(--text-tertiary)] text-4xl mb-3"></i>
-        <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">Tidak ada {{ pageTitle.toLowerCase() }}</p>
-      </div>
-
-      <!-- Orphan banner -->
-      <div
-        v-if="orphanStats.count > 0"
-        class="bg-rose-50 border border-rose-200 rounded-xl p-3 mb-2"
-      >
-        <div class="flex items-center justify-between gap-2 flex-wrap">
-          <p class="text-xs font-bold text-rose-800">
-            <i class="fas fa-exclamation-triangle mr-1"></i>
-            {{ orphanStats.count }} mutasi orphan (santri_id tidak ada di koleksi santri) &mdash;
-            {{ fmtRp(orphanStats.totalSaldo) }}
-          </p>
-          <div class="flex gap-1.5 flex-wrap">
-            <button
-              @click="dumpOrphan"
-              class="text-[11px] font-bold text-rose-700 bg-[var(--bg-card)] border border-rose-300 px-2 py-1 rounded hover:bg-rose-100 cursor-pointer"
-            >
-              <i class="fas fa-terminal mr-1"></i>Dump console
-            </button>
-            <button
-              v-if="isFullAccess"
-              @click="cleanupOrphan"
-              :disabled="orphanCleaning"
-              class="text-[11px] font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 px-2 py-1 rounded cursor-pointer"
-            >
-              <i :class="['fas', orphanCleaning ? 'fa-spinner fa-spin' : 'fa-broom', 'mr-1']"></i>
-              {{ orphanCleaning ? 'Membersihkan...' : 'Hapus Mutasi Orphan' }}
-            </button>
-          </div>
-        </div>
-        <p class="text-[10px] text-rose-600 mt-1.5">
-          <i class="fas fa-info-circle mr-1"></i>
-          Mutasi orphan = transaksi yang santri-nya sudah dihapus dari data santri. "Hapus Mutasi
-          Orphan" akan menghapus permanen seluruh record `{{ COLL }}` dengan santri_id
-          tersebut.
-        </p>
-      </div>
-
-      <!-- List santri -->
-      <div v-if="!loading && filteredItems.length > 0" class="space-y-2">
-        <div
-          v-for="t in filteredItems"
-          :key="t.santri_id"
-          class="bg-[var(--bg-card)] rounded-xl p-3 border border-emerald-200 dark:border-emerald-700 shadow-sm"
+        <button
+          v-for="tb in TAB_ADMIN"
+          :key="tb.id"
+          type="button"
+          :class="[
+            'shrink-0 h-9 px-3.5 inline-flex items-center gap-1.5 rounded-xl text-xs font-bold transition',
+            tabAdmin === tb.id
+              ? 'bg-[var(--color-primary)] text-white shadow-sm'
+              : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:bg-[var(--bg-card-elevated)]'
+          ]"
+          @click="tabAdmin = tb.id"
         >
-          <div class="flex items-center gap-3">
-            <div
-              class="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 flex items-center justify-center"
-            >
-              <i class="fas fa-user-graduate"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-bold text-[var(--text-primary)] truncate">
-                {{
-                  getNamaSantri(t.santri_id) !== '(unknown)'
-                    ? getNamaSantri(t.santri_id)
-                    : t.nama_cache || `(orphan ID: ${t.santri_id})`
-                }}
-              </p>
-              <p class="text-[10px] text-[var(--text-secondary)]">
-                {{ t.terakhir_update ? `Update: ${fmtTgl(t.terakhir_update)}` : '' }}
-              </p>
-            </div>
-            <p class="text-base font-black text-emerald-700 dark:text-emerald-400 mr-2">
-              {{ fmtRp(t.saldo) }}
+          <i :class="['fas', tb.icon]"></i>{{ tb.t }}
+        </button>
+      </div>
+
+      <template v-if="tabSaldoAktif">
+        <!-- Search -->
+        <div
+          class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
+        >
+          <div class="relative">
+            <i
+              class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm"
+            ></i>
+            <input
+              v-model="search"
+              type="text"
+              placeholder="Cari nama..."
+              class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
+            />
+          </div>
+        </div>
+
+        <!-- Empty / loading states -->
+        <div v-if="loading" class="bg-[var(--bg-card)] rounded-2xl p-10 text-center">
+          <i class="fas fa-spinner fa-spin text-emerald-500 text-3xl mb-3"></i>
+          <p class="text-sm text-[var(--text-secondary)] font-bold">Memuat...</p>
+        </div>
+        <div
+          v-else-if="filteredItems.length === 0"
+          class="bg-[var(--bg-card)] rounded-2xl p-10 border border-dashed border-[var(--border-default)] text-center"
+        >
+          <i class="fas fa-wallet text-[var(--text-tertiary)] text-4xl mb-3"></i>
+          <p class="text-sm font-bold text-slate-700 dark:text-[var(--text-tertiary)]">
+            Tidak ada {{ pageTitle.toLowerCase() }}
+          </p>
+        </div>
+
+        <!-- Orphan banner -->
+        <div
+          v-if="orphanStats.count > 0"
+          class="bg-rose-50 border border-rose-200 rounded-xl p-3 mb-2"
+        >
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <p class="text-xs font-bold text-rose-800">
+              <i class="fas fa-exclamation-triangle mr-1"></i>
+              {{ orphanStats.count }} mutasi orphan (santri_id tidak ada di koleksi santri) &mdash;
+              {{ fmtRp(orphanStats.totalSaldo) }}
             </p>
-            <div class="flex gap-1">
+            <div class="flex gap-1.5 flex-wrap">
               <button
-                @click="openModal(t.santri_id, 'setor')"
-                class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-[10px] font-black px-2 py-1 rounded"
-                title="Setor"
+                class="text-[11px] font-bold text-rose-700 bg-[var(--bg-card)] border border-rose-300 px-2 py-1 rounded hover:bg-rose-100 cursor-pointer"
+                @click="dumpOrphan"
               >
-                <i class="fas fa-plus"></i>
+                <i class="fas fa-terminal mr-1"></i>Dump console
               </button>
               <button
-                @click="openModal(t.santri_id, 'tarik')"
-                class="bg-rose-100 hover:bg-rose-200 text-rose-700 text-[10px] font-black px-2 py-1 rounded"
-                title="Tarik"
+                v-if="isFullAccess"
+                :disabled="orphanCleaning"
+                class="text-[11px] font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 px-2 py-1 rounded cursor-pointer"
+                @click="cleanupOrphan"
               >
-                <i class="fas fa-minus"></i>
+                <i :class="['fas', orphanCleaning ? 'fa-spinner fa-spin' : 'fa-broom', 'mr-1']"></i>
+                {{ orphanCleaning ? 'Membersihkan...' : 'Hapus Mutasi Orphan' }}
               </button>
             </div>
           </div>
+          <p class="text-[10px] text-rose-600 mt-1.5">
+            <i class="fas fa-info-circle mr-1"></i>
+            Mutasi orphan = transaksi yang santri-nya sudah dihapus dari data santri. "Hapus Mutasi
+            Orphan" akan menghapus permanen seluruh record `{{ COLL }}` dengan santri_id tersebut.
+          </p>
         </div>
-      </div>
+
+        <!-- List santri -->
+        <div v-if="!loading && filteredItems.length > 0" class="space-y-2">
+          <div
+            v-for="t in filteredItems"
+            :key="t.santri_id"
+            :class="[
+              'rounded-xl p-3 border shadow-sm cursor-pointer transition bg-[var(--bg-card)]',
+              selectedSantriId === String(t.santri_id)
+                ? 'border-emerald-500 ring-2 ring-emerald-400'
+                : 'border-emerald-200 dark:border-emerald-700 hover:border-emerald-400'
+            ]"
+            @click="selectSantri(t.santri_id)"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                class="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 flex items-center justify-center"
+              >
+                <i class="fas fa-user-graduate"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-bold text-[var(--text-primary)] truncate">
+                  {{
+                    getNamaSantri(t.santri_id) !== '(unknown)'
+                      ? getNamaSantri(t.santri_id)
+                      : t.nama_cache || `(orphan ID: ${t.santri_id})`
+                  }}
+                </p>
+                <p class="text-[10px] text-[var(--text-secondary)]">
+                  {{ t.terakhir_update ? `Update: ${fmtTgl(t.terakhir_update)}` : '' }}
+                </p>
+              </div>
+              <!-- Saldo 0 diredupkan: di Uang Saku seluruh santri ma'had ikut tampil,
+                   jadi yang benar-benar punya uang harus tetap menonjol. -->
+              <p
+                :class="[
+                  'text-base font-black mr-2',
+                  Number(t.saldo) || 0
+                    ? 'text-emerald-700 dark:text-emerald-400'
+                    : 'text-[var(--text-tertiary)] font-bold'
+                ]"
+              >
+                {{ fmtRp(t.saldo) }}
+              </p>
+              <div class="flex gap-1">
+                <button
+                  class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-[10px] font-black px-2 py-1 rounded"
+                  title="Setor"
+                  @click.stop="openModal(t.santri_id, 'setor')"
+                >
+                  <i class="fas fa-plus"></i>
+                </button>
+                <button
+                  class="bg-rose-100 hover:bg-rose-200 text-rose-700 text-[10px] font-black px-2 py-1 rounded"
+                  title="Tarik"
+                  @click.stop="openModal(t.santri_id, 'tarik')"
+                >
+                  <i class="fas fa-minus"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- v.1.1.x: Buku Besar per santri (master-detail gaya Braja) -->
+        <div
+          v-if="selectedSantriId && selectedSantri"
+          class="bg-[var(--bg-card)] rounded-2xl border border-emerald-200 dark:border-emerald-700 shadow-sm overflow-hidden"
+        >
+          <div
+            class="px-4 md:px-5 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between flex-wrap gap-2"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                class="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 flex items-center justify-center"
+              >
+                <i class="fas fa-book"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-black text-[var(--text-primary)]">
+                  {{
+                    getNamaSantri(selectedSantriId) !== '(unknown)'
+                      ? getNamaSantri(selectedSantriId)
+                      : selectedSantri.nama
+                  }}
+                </h3>
+                <p class="text-[10px] text-[var(--text-secondary)]">
+                  <span v-if="selectedSantri.nis">NIS {{ selectedSantri.nis }} · </span
+                  >{{ selectedSantri.lembaga || ''
+                  }}<span v-if="selectedSantri.kelas"> / {{ selectedSantri.kelas }}</span>
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <div
+                class="px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 text-xs"
+              >
+                <span class="text-[10px] text-[var(--text-secondary)] font-bold mr-1">Saldo</span>
+                <span class="text-emerald-700 dark:text-emerald-300 font-black">{{
+                  fmtRp(ledgerTotals.saldo)
+                }}</span>
+              </div>
+              <button
+                class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-3 py-1.5 rounded-lg"
+                @click="openModal(selectedSantriId, 'setor')"
+              >
+                <i class="fas fa-plus mr-1"></i>Setor
+              </button>
+              <button
+                class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-black px-3 py-1.5 rounded-lg"
+                @click="openModal(selectedSantriId, 'tarik')"
+              >
+                <i class="fas fa-minus mr-1"></i>Tarik
+              </button>
+              <button
+                class="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] px-2 py-1.5"
+                title="Tutup"
+                @click="selectedSantriId = ''"
+              >
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+          <div
+            v-if="ledgerMutasi.length === 0"
+            class="p-8 text-center text-xs text-[var(--text-tertiary)] italic"
+          >
+            Belum ada transaksi {{ pageTitle.toLowerCase() }} untuk santri ini.
+          </div>
+          <div v-else class="overflow-x-auto">
+            <table class="w-full text-sm min-w-[680px]">
+              <thead
+                class="bg-[var(--bg-card-elevated)] text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-wider"
+              >
+                <tr>
+                  <th class="px-3 py-2 text-left w-10">No</th>
+                  <th class="px-3 py-2 text-left">Tanggal</th>
+                  <th class="px-3 py-2 text-left">Keterangan</th>
+                  <th class="px-3 py-2 text-left">Petugas</th>
+                  <th class="px-3 py-2 text-right">Setoran</th>
+                  <th class="px-3 py-2 text-right">Penarikan</th>
+                  <th class="px-3 py-2 text-right">Saldo</th>
+                  <th class="px-3 py-2 w-12"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="m in ledgerMutasi"
+                  :key="m.id"
+                  class="border-t border-[var(--border-subtle)] hover:bg-slate-50 dark:hover:bg-slate-900/30"
+                >
+                  <td class="px-3 py-2 text-[var(--text-tertiary)]">{{ m._no }}</td>
+                  <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)] whitespace-nowrap">
+                    {{ fmtTgl(m.tanggal) }}
+                  </td>
+                  <td class="px-3 py-2 text-[11px]">
+                    <span
+                      :class="[
+                        'inline-block text-[9px] font-black uppercase px-1.5 py-0.5 rounded mr-1',
+                        m._setor ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                      ]"
+                      >{{ m._setor ? 'Setor' : 'Tarik' }}</span
+                    >
+                    <span class="text-[var(--text-secondary)]">{{
+                      m.catatan || m.kategori || '-'
+                    }}</span>
+                  </td>
+                  <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)] whitespace-nowrap">
+                    {{ m.operator || '-' }}
+                  </td>
+                  <td class="px-3 py-2 text-right font-black text-emerald-700 whitespace-nowrap">
+                    {{ m._setor ? fmtRp(m._setor) : '—' }}
+                  </td>
+                  <td class="px-3 py-2 text-right font-black text-rose-700 whitespace-nowrap">
+                    {{ m._tarik ? fmtRp(m._tarik) : '—' }}
+                  </td>
+                  <td
+                    class="px-3 py-2 text-right font-bold text-[var(--text-primary)] whitespace-nowrap"
+                  >
+                    {{ fmtRp(m._saldo) }}
+                  </td>
+                  <td class="px-3 py-2 text-right whitespace-nowrap">
+                    <button
+                      class="text-[10px] text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 px-1.5 py-1 rounded"
+                      title="Cetak slip"
+                      @click="cetakSlip(m)"
+                    >
+                      <i class="fas fa-receipt"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr
+                  class="border-t-2 border-[var(--border-default)] bg-[var(--bg-card-elevated)] font-black"
+                >
+                  <td
+                    colspan="4"
+                    class="px-3 py-2.5 text-right text-[11px] uppercase text-[var(--text-secondary)]"
+                  >
+                    Total
+                  </td>
+                  <td class="px-3 py-2.5 text-right text-emerald-700 whitespace-nowrap">
+                    {{ fmtRp(ledgerTotals.setor) }}
+                  </td>
+                  <td class="px-3 py-2.5 text-right text-rose-700 whitespace-nowrap">
+                    {{ fmtRp(ledgerTotals.tarik) }}
+                  </td>
+                  <td class="px-3 py-2.5 text-right text-emerald-700 whitespace-nowrap">
+                    {{ fmtRp(ledgerTotals.saldo) }}
+                  </td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </template>
     </template>
 
     <!-- v.21.100.0527: SEMUA MUTASI panel — super_admin edit/hapus + bulk -->
+    <!-- v.1.2.8 (Kyai 5 Agu 2026: "di tabungan belum ada ekspor PDF harian untuk admin
+         keuangan"): panel ini dulu super_admin-saja, padahal SELURUH kontrol tanggal
+         harian + rekap per lembaga hidup di dalamnya — jadi admin keuangan tak punya
+         jalan sama sekali ke laporan harian. Panelnya kini terbuka untuk admin keuangan
+         (baca + cetak); ubah/hapus mutasi TETAP super_admin. -->
     <div
-      v-if="isFullAccess && isAdmin"
+      v-if="isFullAccess && bolehSemuaMutasi && tabAdmin === 'mutasi'"
       class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
     >
-      <div class="px-4 md:px-5 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between flex-wrap gap-2">
+      <div
+        class="px-4 md:px-5 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between flex-wrap gap-2"
+      >
         <h3 class="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest">
           <i class="fas fa-list-check text-emerald-600 mr-2"></i>Semua Mutasi
-          <span class="text-[10px] text-[var(--text-tertiary)] font-bold ml-1">(super admin)</span>
+          <span v-if="!isAdmin" class="text-[10px] text-[var(--text-tertiary)] font-bold ml-1"
+            >(lihat &amp; cetak)</span
+          >
         </h3>
         <div class="flex items-center gap-2 flex-wrap">
-          <select v-model.number="mutFilterYear" class="text-[11px] px-2 py-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] outline-none">
+          <select
+            v-model.number="mutFilterYear"
+            class="text-[11px] px-2 py-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] outline-none"
+          >
             <option v-for="y in mutYears" :key="y" :value="y">{{ y }}</option>
           </select>
-          <select v-model.number="mutFilterMonth" class="text-[11px] px-2 py-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] outline-none">
+          <select
+            v-model.number="mutFilterMonth"
+            class="text-[11px] px-2 py-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] outline-none"
+          >
             <option :value="0">Semua bln</option>
             <option v-for="(b, i) in BULAN_TAB" :key="b" :value="i + 1">{{ b }}</option>
           </select>
-          <select v-model.number="mutFilterDay" class="text-[11px] px-2 py-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] outline-none">
+          <select
+            v-model.number="mutFilterDay"
+            class="text-[11px] px-2 py-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] outline-none"
+          >
             <option :value="0">Semua tgl</option>
             <option v-for="d in 31" :key="d" :value="d">{{ d }}</option>
+          </select>
+          <!-- v.1.2.6 (Kyai): kas per lembaga. Tabungan tak punya label pembayaran, jadi
+               lembaganya ikut lembaga SANTRI (ngaji dulu, sekolah sbg cadangan). -->
+          <select
+            v-model="mutFilterLembaga"
+            class="text-[11px] px-2 py-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] outline-none"
+          >
+            <option value="">Semua lembaga</option>
+            <option
+              v-for="o in rekapLembagaTab"
+              :key="`tfl_${o.kunci || 'induk'}`"
+              :value="o.kunci || KAS_INDUK"
+            >
+              {{ o.lembaga || 'Tanpa lembaga' }} ({{ o.jumlah }})
+            </option>
           </select>
           <span class="text-[10px] text-[var(--text-tertiary)] font-bold">
             {{ mutasiFiltered.length }} / {{ mutasiSource.length }} mutasi
           </span>
+          <!-- Laporan mengikuti filter yang sedang aktif (tahun/bulan/tanggal/lembaga),
+               jadi "harian" = pilih tanggalnya lalu cetak. Tombol Hari Ini = jalan cepat. -->
+          <button
+            class="text-[11px] font-black bg-[var(--bg-muted)] text-[var(--text-primary)] border border-[var(--border-subtle)] px-3 py-1.5 rounded-lg"
+            title="Setel filter ke tanggal hari ini (WIB)"
+            @click="setFilterHariIni"
+          >
+            <i class="fas fa-calendar-day mr-1"></i>Hari Ini
+          </button>
+          <button
+            class="text-[11px] font-black bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 px-3 py-1.5 rounded-lg disabled:opacity-50"
+            :disabled="pdfMutasiBusy"
+            title="Cetak PDF laporan sesuai filter aktif"
+            @click="cetakLaporanMutasi"
+          >
+            <i class="fas fa-file-pdf mr-1" :class="{ 'fa-spin': pdfMutasiBusy }"></i>PDF Laporan
+          </button>
           <button
             v-if="selectedMutasi.size > 0"
-            @click="hapusMutasiTerpilih"
             class="text-[11px] font-black bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg"
+            @click="hapusMutasiTerpilih"
           >
             <i class="fas fa-trash mr-1"></i>Hapus Terpilih ({{ selectedMutasi.size }})
           </button>
         </div>
       </div>
-      <div v-if="mutasiFiltered.length === 0" class="p-6 text-center text-xs text-[var(--text-tertiary)] italic">
+      <!-- v.1.2.6 (Kyai): kas tabungan tiap lembaga sendiri-sendiri. Ikut tanggal yang
+           aktif, TIDAK ikut filter lembaga — jadi tetap utuh sambil menyaring satu
+           lembaga. Klik kartu = saring ke lembaga itu. -->
+      <div
+        v-if="rekapLembagaTab.length > 1"
+        class="px-4 md:px-5 py-3 border-b border-[var(--border-subtle)]"
+      >
+        <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1.5">
+          <i class="fas fa-sitemap mr-1"></i>{{ pageTitle }} per lembaga
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          <button
+            v-for="o in rekapLembagaTab"
+            :key="`tkl_${o.kunci || 'induk'}`"
+            type="button"
+            :class="[
+              'text-left p-2.5 rounded-xl border transition',
+              mutFilterLembaga === (o.kunci || KAS_INDUK)
+                ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30'
+                : 'border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] hover:border-emerald-300'
+            ]"
+            @click="
+              mutFilterLembaga =
+                mutFilterLembaga === (o.kunci || KAS_INDUK) ? '' : o.kunci || KAS_INDUK
+            "
+          >
+            <p class="text-[11px] font-black text-[var(--text-primary)] truncate">
+              {{ o.lembaga || 'Tanpa lembaga' }}
+            </p>
+            <p class="text-sm font-black text-emerald-700 dark:text-emerald-300 mt-0.5">
+              {{ fmtRp(o.saldo) }}
+            </p>
+            <p class="text-[10px] text-[var(--text-secondary)] mt-0.5">
+              setor {{ fmtRp(o.masuk) }} · tarik {{ fmtRp(o.keluar) }} · {{ o.jumlah }} mutasi
+            </p>
+          </button>
+        </div>
+      </div>
+      <div
+        v-if="mutasiFiltered.length === 0"
+        class="p-6 text-center text-xs text-[var(--text-tertiary)] italic"
+      >
         {{ mutasiSource.length === 0 ? 'Belum ada mutasi.' : 'Tidak ada mutasi pada filter ini.' }}
       </div>
       <div v-else class="max-h-[480px] overflow-y-auto">
         <table class="w-full text-xs">
           <thead class="bg-[var(--bg-card-elevated)] sticky top-0">
-            <tr class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-wider">
+            <tr
+              class="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-wider"
+            >
               <th class="px-3 py-2 w-8"></th>
               <th class="px-3 py-2 text-left">Tanggal</th>
               <th class="px-3 py-2 text-left">Santri</th>
@@ -332,38 +658,76 @@
               class="border-t border-[var(--border-subtle)] hover:bg-slate-50 dark:hover:bg-slate-900/30"
             >
               <td class="px-3 py-2 text-center">
+                <!-- Pilih-untuk-hapus hanya bermakna bagi yang boleh menghapus. -->
                 <input
+                  v-if="isAdmin"
                   type="checkbox"
                   :checked="selectedMutasi.has(String(m.id))"
-                  @change="toggleMutasi(m.id)"
                   class="w-4 h-4 accent-emerald-600"
+                  @change="toggleMutasi(m.id)"
                 />
               </td>
-              <td class="px-3 py-2 whitespace-nowrap text-[11px] text-[var(--text-secondary)]">{{ fmtTgl(m.tanggal) }}</td>
+              <td class="px-3 py-2 whitespace-nowrap text-[11px] text-[var(--text-secondary)]">
+                {{ fmtTgl(m.tanggal) }}
+              </td>
               <td class="px-3 py-2 font-bold text-[var(--text-primary)] truncate max-w-[200px]">
                 {{ m.nama_cache || getNamaSantri(m.santri_id) }}
               </td>
               <td class="px-3 py-2">
-                <span :class="['inline-block text-[10px] font-black uppercase px-2 py-0.5 rounded', m.jenis === 'setor' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700']">{{ m.jenis }}</span>
+                <span
+                  :class="[
+                    'inline-block text-[10px] font-black uppercase px-2 py-0.5 rounded',
+                    m.jenis === 'setor'
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'bg-rose-100 text-rose-700'
+                  ]"
+                  >{{ m.jenis }}</span
+                >
+                <span
+                  v-if="m.sumber === 'bmt_va'"
+                  class="ml-1 inline-block text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700"
+                  title="Top-up via Virtual Account BMT"
+                  ><i class="fas fa-credit-card"></i> VA</span
+                >
               </td>
-              <td :class="['px-3 py-2 text-right font-black whitespace-nowrap', m.jenis === 'setor' ? 'text-emerald-700' : 'text-rose-700']">{{ fmtRp(m.nominal) }}</td>
-              <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)] truncate max-w-[200px]">{{ m.catatan || '-' }}</td>
+              <td
+                :class="[
+                  'px-3 py-2 text-right font-black whitespace-nowrap',
+                  m.jenis === 'setor' ? 'text-emerald-700' : 'text-rose-700'
+                ]"
+              >
+                {{ fmtRp(m.nominal) }}
+              </td>
+              <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)] truncate max-w-[200px]">
+                {{ m.catatan || '-' }}
+              </td>
               <td class="px-3 py-2 text-right whitespace-nowrap">
                 <button
-                  @click="cetakSlip(m)"
                   class="text-[10px] text-emerald-600 hover:bg-emerald-50 px-1.5 py-1 rounded mr-1"
                   title="Cetak slip"
-                ><i class="fas fa-receipt"></i></button>
+                  @click="cetakSlip(m)"
+                >
+                  <i class="fas fa-receipt"></i>
+                </button>
+                <!-- Ubah/hapus mutasi = super_admin. Admin keuangan cukup lihat & cetak
+                     (koreksi catatan uang tetap kewenangan tertinggi, sejalan dgn CRUD
+                     keuangan lain). -->
                 <button
-                  @click="openEditMutasi(m)"
+                  v-if="isAdmin"
                   class="text-[10px] text-cyan-600 hover:bg-cyan-50 px-1.5 py-1 rounded mr-1"
                   title="Edit"
-                ><i class="fas fa-edit"></i></button>
+                  @click="openEditMutasi(m)"
+                >
+                  <i class="fas fa-edit"></i>
+                </button>
                 <button
-                  @click="hapusMutasi(m)"
+                  v-if="isAdmin"
                   class="text-[10px] text-rose-600 hover:bg-rose-50 px-1.5 py-1 rounded"
                   title="Hapus"
-                ><i class="fas fa-trash"></i></button>
+                  @click="hapusMutasi(m)"
+                >
+                  <i class="fas fa-trash"></i>
+                </button>
               </td>
             </tr>
           </tbody>
@@ -386,12 +750,15 @@
           <h3 class="text-base font-black text-[var(--text-primary)]">
             <i class="fas fa-wallet text-emerald-500 mr-2"></i>Input Mutasi {{ pageTitle }}
           </h3>
-          <button @click="closeModal" class="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]">
+          <button
+            class="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+            @click="closeModal"
+          >
             <i class="fas fa-times text-lg"></i>
           </button>
         </div>
 
-        <form v-if="!savedMutasi" @submit.prevent="simpanMutasi" class="p-5 space-y-3">
+        <form v-if="!savedMutasi" class="p-5 space-y-3" @submit.prevent="simpanMutasi">
           <!-- Santri (datalist autocomplete) -->
           <div>
             <label
@@ -404,8 +771,8 @@
               list="tabungan-santri-list"
               placeholder="Ketik nama santri..."
               class="w-full mt-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
-              @input="onSantriInput"
               required
+              @input="onSantriInput"
             />
             <datalist id="tabungan-santri-list">
               <option
@@ -425,37 +792,61 @@
             </p>
           </div>
 
-          <!-- Jenis + Kategori -->
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label
-                class="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]"
+          <!-- v.1.2.6 (C): Jenis + Kategori gaya POS — tombol/chip berwarna klik (bukan dropdown) -->
+          <div>
+            <label
+              class="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]"
+            >
+              Jenis
+            </label>
+            <div class="grid grid-cols-2 gap-2 mt-1">
+              <button
+                type="button"
+                :class="[
+                  'px-3 py-2.5 text-sm font-black rounded-lg border-2 transition',
+                  modalJenis === 'setor'
+                    ? 'bg-emerald-600 text-white border-emerald-700'
+                    : 'bg-[var(--bg-card)] text-emerald-700 border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+                ]"
+                @click="modalJenis = 'setor'"
               >
-                Jenis
-              </label>
-              <select
-                v-model="modalJenis"
-                class="w-full mt-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
+                <i class="fas fa-arrow-down mr-1"></i>Setor
+              </button>
+              <button
+                type="button"
+                :class="[
+                  'px-3 py-2.5 text-sm font-black rounded-lg border-2 transition',
+                  modalJenis === 'tarik'
+                    ? 'bg-rose-600 text-white border-rose-700'
+                    : 'bg-[var(--bg-card)] text-rose-700 border-rose-300 hover:bg-rose-50 dark:hover:bg-rose-900/20'
+                ]"
+                @click="modalJenis = 'tarik'"
               >
-                <option value="setor">Setor</option>
-                <option value="tarik">Tarik</option>
-              </select>
+                <i class="fas fa-arrow-up mr-1"></i>Tarik
+              </button>
             </div>
-            <div>
-              <label
-                class="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]"
+          </div>
+          <div>
+            <label
+              class="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]"
+            >
+              Kategori
+            </label>
+            <div class="flex flex-wrap gap-1.5 mt-1">
+              <button
+                v-for="k in kategoriOptions"
+                :key="k.id"
+                type="button"
+                :class="[
+                  'px-3 py-1.5 text-xs font-bold rounded-full border-2 transition',
+                  modalKategori === k.id
+                    ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
+                    : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-default)] hover:border-[var(--color-primary)]'
+                ]"
+                @click="pilihKategori(k.id)"
               >
-                Kategori
-              </label>
-              <select
-                v-model="modalKategori"
-                @change="onKategoriChange"
-                class="w-full mt-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
-              >
-                <option v-for="k in kategoriOptions" :key="k.id" :value="k.id">
-                  {{ k.label }}
-                </option>
-              </select>
+                {{ k.label }}
+              </button>
             </div>
           </div>
 
@@ -499,8 +890,8 @@
           >
             <button
               type="button"
-              @click="closeModal"
               class="px-4 py-2 text-xs font-bold text-[var(--text-primary)] hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 rounded-lg"
+              @click="closeModal"
             >
               Batal
             </button>
@@ -516,49 +907,58 @@
 
         <!-- v.96.0626: panel SUKSES + tombol cetak struk (gaya POS) -->
         <div v-else class="p-5 space-y-4 text-center">
-          <div class="mx-auto w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl">
+          <div
+            class="mx-auto w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl"
+          >
             <i class="fas fa-check"></i>
           </div>
           <div>
             <p class="text-base font-black text-[var(--text-primary)]">Mutasi tersimpan</p>
             <p class="text-sm text-[var(--text-secondary)] mt-0.5">
               {{ savedMutasi.nama_cache }} &middot;
-              {{ savedMutasi.jenis === 'setor' ? 'Setor' : 'Tarik' }} {{ fmtRp(savedMutasi.nominal) }}
+              {{ savedMutasi.jenis === 'setor' ? 'Setor' : 'Tarik' }}
+              {{ fmtRp(savedMutasi.nominal) }}
             </p>
-            <p class="text-[11px] text-[var(--text-tertiary)] mt-0.5">No. Transaksi: {{ savedMutasi.no_bukti || savedMutasi.id }}</p>
+            <p class="text-[11px] text-[var(--text-tertiary)] mt-0.5">
+              No. Transaksi: {{ savedMutasi.no_bukti || savedMutasi.id }}
+            </p>
           </div>
 
-          <p class="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]">Cetak struk:</p>
+          <p class="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]">
+            Cetak struk:
+          </p>
           <div class="flex flex-wrap items-center justify-center gap-2">
             <button
               type="button"
-              @click="cetakSlip(savedMutasi)"
               class="px-4 py-2 text-xs font-black bg-rose-600 hover:bg-rose-700 text-white rounded-lg"
+              @click="cetakSlip(savedMutasi)"
             >
               <i class="fas fa-file-pdf mr-1"></i>Struk PDF
             </button>
             <button
               v-if="isDesktop"
               type="button"
-              @click="cetakSlipLangsung(savedMutasi)"
               class="px-4 py-2 text-xs font-black bg-amber-500 hover:bg-amber-600 text-white rounded-lg"
+              @click="cetakSlipLangsung(savedMutasi)"
             >
               <i class="fas fa-bolt mr-1"></i>Cetak Langsung
             </button>
           </div>
 
-          <div class="flex items-center justify-center gap-2 pt-3 border-t border-[var(--border-subtle)]">
+          <div
+            class="flex items-center justify-center gap-2 pt-3 border-t border-[var(--border-subtle)]"
+          >
             <button
               type="button"
-              @click="transaksiBaru"
               class="px-4 py-2 text-xs font-bold text-[var(--text-primary)] hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 rounded-lg"
+              @click="transaksiBaru"
             >
               <i class="fas fa-plus mr-1"></i>Transaksi Baru
             </button>
             <button
               type="button"
-              @click="closeModal"
               class="px-5 py-2 text-xs font-black bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-lg"
+              @click="closeModal"
             >
               <i class="fas fa-check-double mr-1"></i>Selesai
             </button>
@@ -573,12 +973,10 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
-import { subscribeColl } from '@/services/firestore'
-import { doc, setDoc, deleteDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
-import { deleteOne } from '@/services/firestore' // v.91.0626: hapus = backup audit_log dulu
-import { isSuperAdmin } from '@/utils/roleScope'
+// v.91.0626: deleteOne = backup audit_log dulu. serverTimestamp = shim ISO string (db.js).
+import { subscribeColl, setOne, updateOne, deleteOne, serverTimestamp } from '@/services/db'
+import { isSuperAdmin, isAdminKeuangan } from '@/utils/roleScope'
 import { writeAuditLog } from '@/utils/auditLog'
-import { db } from '@/services/firebase'
 import { sortSantri } from '@/utils/santriSort'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
@@ -586,7 +984,17 @@ import { useToast } from '@/composables/useToast'
 // v.21.115.0528: useConfirm utk replace window.confirm native
 import { useConfirm } from '@/composables/useConfirm'
 import { useKeuangan } from '@/composables/useKeuangan'
-import { fmtRp, fmtTgl } from '@/utils/format'
+import { useGedungScope } from '@/composables/useGedungScope'
+import { fmtRp, fmtTgl, todayJakarta } from '@/utils/format'
+// v.1.2.6 (Kyai): kas per lembaga — resolver & rekap di utils/kasLembaga (sumber tunggal)
+import {
+  petaLembagaSantri,
+  kasLembagaTabungan,
+  ringkasTabunganLembaga,
+  ringkasSetorTarik,
+  mutasiSetor,
+  kunciLembaga
+} from '@/utils/kasLembaga'
 import { cetakSlipTabunganPdf, exportRekapTabunganPdf } from '@/utils/strukBuilder'
 import { buildSlipTabunganEscpBase64 } from '@/utils/escpImage'
 import { isElectron, printRaw, getDefaultPrinter } from '@/composables/useDesktopPrint' // v.96.0626: cetak struk setor/tarik gaya POS (ESC/P grafis raster)
@@ -594,16 +1002,37 @@ import { useExcel } from '@/composables/useExcel'
 import { useRoute } from 'vue-router'
 
 const { tabunganSantri, loading, isFullAccess, getNamaSantri, santriRaw } = useKeuangan()
+// v.111: scope Gedung — admin keuangan ber-gedung hanya kelola santri gedungnya
+const { allowSantri } = useGedungScope()
 // v.95.0626: mode dari route — 'uangsaku' (menu terpisah, koleksi sendiri, santri ma'had/mukim) atau default 'tabungan'
 const route = useRoute()
-const isUangSaku = computed(() => String(route.meta?.mode || route.query?.mode || '') === 'uangsaku')
-const COLL = computed(() => (isUangSaku.value ? 'keuangan_uang_saku_santri' : 'keuangan_tabungan_santri'))
+const isUangSaku = computed(
+  () => String(route.meta?.mode || route.query?.mode || '') === 'uangsaku'
+)
+const COLL = computed(() =>
+  isUangSaku.value ? 'keuangan_uang_saku_santri' : 'keuangan_tabungan_santri'
+)
 const pageTitle = computed(() => (isUangSaku.value ? 'Uang Saku' : 'Tabungan'))
 const uangSakuMutasi = ref([]) // sumber mutasi admin saat mode uang saku (subscribe lokal)
 let unsubUS = null
-const mutasiSource = computed(() => (isUangSaku.value ? uangSakuMutasi.value : tabunganSantri.value))
+const mutasiSource = computed(() =>
+  isUangSaku.value ? uangSakuMutasi.value : tabunganSantri.value
+)
 // v.108: filter tahun/bulan/hari utk panel "Semua Mutasi"
-const BULAN_TAB = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+const BULAN_TAB = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember'
+]
 const mutFilterYear = ref(new Date().getFullYear())
 const mutFilterMonth = ref(0)
 const mutFilterDay = ref(0)
@@ -616,24 +1045,71 @@ const mutYears = computed(() => {
   ys.add(new Date().getFullYear())
   return [...ys].sort((a, b) => b - a)
 })
-const mutasiFiltered = computed(() =>
+// v.1.2.6 (Kyai): kas per lembaga. Tabungan tak punya label pembayaran → ikut lembaga
+//   SANTRI (keputusan Kyai 4 Agu). Resolver & rekapnya di utils/kasLembaga.
+//   KAS_INDUK = sentinel "tanpa lembaga": kuncinya '' dan itu dipakai "Semua lembaga".
+const KAS_INDUK = '__induk__'
+const mutFilterLembaga = ref('')
+const petaSantriLembaga = computed(() => petaLembagaSantri(santriRaw.value || []))
+function lembagaMutasi(m) {
+  return kasLembagaTabungan(m, petaSantriLembaga.value)
+}
+
+// Semua penyaring KECUALI lembaga — dasar rekap & opsi filter lembaga.
+const mutasiTanpaLembaga = computed(() =>
   mutasiSource.value
+    .filter((m) => allowSantri(m.santri_id || m.santriId))
     .filter((m) => {
       const tg = String(m.tanggal || '')
       if (mutFilterYear.value && tg.slice(0, 4) !== String(mutFilterYear.value)) return false
-      if (mutFilterMonth.value > 0 && tg.slice(5, 7) !== String(mutFilterMonth.value).padStart(2, '0')) return false
-      if (mutFilterDay.value > 0 && tg.slice(8, 10) !== String(mutFilterDay.value).padStart(2, '0')) return false
+      if (
+        mutFilterMonth.value > 0 &&
+        tg.slice(5, 7) !== String(mutFilterMonth.value).padStart(2, '0')
+      )
+        return false
+      if (mutFilterDay.value > 0 && tg.slice(8, 10) !== String(mutFilterDay.value).padStart(2, '0'))
+        return false
       return true
     })
-    .slice()
-    .sort((a, b) => String(b.tanggal || '').localeCompare(String(a.tanggal || '')))
 )
+
+// Rekap tabungan per lembaga — kartu ringkasan + daftar opsi filter lembaga.
+const rekapLembagaTab = computed(() =>
+  ringkasTabunganLembaga(mutasiTanpaLembaga.value, petaSantriLembaga.value)
+)
+
+const mutasiFiltered = computed(() => {
+  let list = mutasiTanpaLembaga.value
+  if (mutFilterLembaga.value) {
+    const target = mutFilterLembaga.value === KAS_INDUK ? '' : mutFilterLembaga.value
+    list = list.filter((m) => kunciLembaga(lembagaMutasi(m)) === target)
+  }
+  return list.slice().sort((a, b) => String(b.tanggal || '').localeCompare(String(a.tanggal || '')))
+})
 const auth = useAuthStore()
 const settings = useSettingsStore()
 const toast = useToast()
 const confirmDlg = useConfirm()
 // v.21.100.0527: super_admin only — edit/hapus mutasi tabungan
 const isAdmin = computed(() => isSuperAdmin(auth.sesiAktif))
+// v.1.2.8: admin keuangan boleh MEMBUKA panel Semua Mutasi (baca + cetak laporan).
+//   Dulu panel itu super_admin-saja, dan karena seluruh kontrol tanggal harian hidup di
+//   dalamnya, admin keuangan tak punya jalan sama sekali ke laporan harian.
+//   isAdminKeuangan() WAJIB diperiksa terpisah: peran ini ber-role 'admin' di sesi,
+//   jadi tak bisa dibedakan dari admin biasa lewat `role` saja.
+const bolehSemuaMutasi = computed(() => isAdmin.value || isAdminKeuangan(auth.sesiAktif))
+
+// Kyai (5 Agu 2026): Saldo Santri vs Semua Mutasi jadi dua tab, bukan dua blok yang
+//   bertumpuk — panel mutasi dulu duduk di bawah seluruh daftar santri, jadi menutup kas
+//   harian berarti menggulir jauh tiap kali. Polanya sama dengan Pengaturan Keuangan.
+const TAB_ADMIN = [
+  { id: 'saldo', t: 'Saldo Santri', icon: 'fa-users' },
+  { id: 'mutasi', t: 'Semua Mutasi', icon: 'fa-list-check' }
+]
+const tabAdmin = ref('saldo')
+// Yang tak boleh membuka panel mutasi TIDAK melihat tab sama sekali, jadi tampilannya
+//   harus tetap seperti dulu — bukan layar kosong karena tab tersangkut di 'mutasi'.
+const tabSaldoAktif = computed(() => !bolehSemuaMutasi.value || tabAdmin.value === 'saldo')
 
 // Role flags
 const isSantri = computed(() => auth.sesiAktif?.role === 'santri')
@@ -697,6 +1173,27 @@ onUnmounted(() => {
 // =================== ADMIN MODE — aggregate per santri ===================
 const search = ref('')
 
+// Kyai (6 Agu 2026): "untuk uang saku, apakah bisa di halaman langsung muncul semua nama
+//   santri ma'had? jadi admin keuangan tidak perlu mencet dulu di tombol input mutasi."
+//   Daftar ini dulu lahir SEPENUHNYA dari mutasi, jadi santri yang belum pernah setor
+//   sekali pun tak punya baris — satu-satunya jalan menyetorkan uangnya lewat tombol
+//   Input Mutasi lalu mengetik namanya. Sekarang daftarnya di-seed dari santri ma'had,
+//   dan mutasi hanya mengisi saldonya.
+//   Kriterianya SENGAJA sama persis dengan dropdown modal (santriOptions) — kalau beda,
+//   akan ada santri yang bisa dipilih di modal tapi tak pernah muncul di daftar.
+const santriSeedUangSaku = computed(() => {
+  if (!isUangSaku.value) return []
+  return (santriRaw.value || [])
+    .filter((s) => s.aktif !== false && s.is_mukim === true)
+    .filter((s) => allowSantri(s.id))
+})
+
+// Nama tampil satu baris agregat — dipakai pencarian & pengurutan.
+function namaBaris(t) {
+  const n = getNamaSantri(t.santri_id)
+  return n !== '(unknown)' ? n : t.nama_cache || ''
+}
+
 const aggregated = computed(() => {
   const map = {}
   for (const t of mutasiSource.value) {
@@ -712,16 +1209,28 @@ const aggregated = computed(() => {
     const tgl = String(t.tanggal || '')
     if (tgl && tgl > map[sid].terakhir_update) map[sid].terakhir_update = tgl
   }
-  return Object.values(map)
+  // Santri ma'had yang belum punya mutasi ditambahkan bersaldo 0. Sengaja SESUDAH
+  // loop di atas dan hanya bila belum ada, supaya tak menimpa saldo yang sudah terhitung.
+  for (const s of santriSeedUangSaku.value) {
+    const sid = String(s.id || '')
+    if (!sid || map[sid]) continue
+    map[sid] = { santri_id: sid, saldo: 0, terakhir_update: '', nama_cache: s.nama || '' }
+  }
+  // v.111: scope Gedung — hanya santri gedung admin (tak ter-scope → semua)
+  return Object.values(map).filter((t) => allowSantri(t.santri_id))
 })
 
 const filteredItems = computed(() => {
   const kw = search.value.trim().toLowerCase()
   let list = [...aggregated.value]
   if (kw) {
-    list = list.filter((t) =>
-      (getNamaSantri(t.santri_id) || t.nama_cache || '').toLowerCase().includes(kw)
-    )
+    list = list.filter((t) => namaBaris(t).toLowerCase().includes(kw))
+  }
+  // Uang saku menampilkan SELURUH santri ma'had, jadi daftarnya panjang dan posisinya
+  // harus tetap: urut nama A–Z supaya bisa dipindai mata. Urut saldo (dipakai Tabungan)
+  // akan membuat baris melompat-lompat setiap kali ada setoran.
+  if (isUangSaku.value) {
+    return list.sort((a, b) => namaBaris(a).localeCompare(namaBaris(b), 'id'))
   }
   return list.sort((a, b) => (Number(b.saldo) || 0) - (Number(a.saldo) || 0))
 })
@@ -740,6 +1249,49 @@ const orphanStats = computed(() => {
 const totalSaldoFmt = computed(() =>
   fmtRp(aggregated.value.reduce((s, t) => s + (Number(t.saldo) || 0), 0))
 )
+
+// v.1.1.x: master-detail (gaya Braja) — pilih santri → buku besar (ledger) tabungannya
+const selectedSantriId = ref('')
+function selectSantri(id) {
+  selectedSantriId.value = selectedSantriId.value === String(id) ? '' : String(id)
+}
+const selectedSantri = computed(
+  () => (santriRaw.value || []).find((s) => String(s.id) === String(selectedSantriId.value)) || null
+)
+const ledgerMutasi = computed(() => {
+  const sid = String(selectedSantriId.value || '')
+  if (!sid) return []
+  const list = (mutasiSource.value || [])
+    .filter((m) => String(m.santri_id || m.santriId || '') === sid)
+    .sort((a, b) => {
+      const ta = String(a.tanggal || ''),
+        tb = String(b.tanggal || '')
+      if (ta !== tb) return ta < tb ? -1 : 1 // kronologis (saldo berjalan)
+      return String(a.createdAt || a.id || '') < String(b.createdAt || b.id || '') ? -1 : 1
+    })
+  let saldo = 0
+  return list.map((m, i) => {
+    const nominal = Number(m.nominal) || 0
+    const setor = String(m.jenis || '').toLowerCase() === 'setor'
+    saldo += setor ? nominal : -nominal
+    return {
+      ...m,
+      _no: i + 1,
+      _setor: setor ? nominal : 0,
+      _tarik: setor ? 0 : nominal,
+      _saldo: saldo
+    }
+  })
+})
+const ledgerTotals = computed(() => {
+  let setor = 0,
+    tarik = 0
+  for (const m of ledgerMutasi.value) {
+    setor += m._setor
+    tarik += m._tarik
+  }
+  return { setor, tarik, saldo: setor - tarik }
+})
 
 // Orphan cleanup
 const orphanCleaning = ref(false)
@@ -857,6 +1409,7 @@ const santriOptions = computed(() =>
   sortSantri(
     (santriRaw.value || [])
       .filter((s) => s.aktif !== false && (!isUangSaku.value || s.is_mukim === true))
+      .filter((s) => allowSantri(s.id)) // v.111: scope Gedung
       .map((s) => ({ id: s.id, nama: s.nama, lembaga: s.lembaga, kelas: s.kelas }))
   ).slice(0, 200)
 )
@@ -903,7 +1456,9 @@ function openEditMutasi(m) {
   editingMutasiId.value = String(m.id)
   modalSantriId.value = String(m.santri_id || m.santriId || '')
   const sx = (santriRaw.value || []).find((x) => String(x.id) === modalSantriId.value)
-  modalSantriLabel.value = sx ? `${sx.nama} (${sx.lembaga || ''} - ${sx.kelas || ''})` : (m.nama_cache || '')
+  modalSantriLabel.value = sx
+    ? `${sx.nama} (${sx.lembaga || ''} - ${sx.kelas || ''})`
+    : m.nama_cache || ''
   modalJenis.value = m.jenis || 'setor'
   modalKategori.value = m.kategori || 'umum'
   modalNominal.value = Number(m.nominal || 0)
@@ -914,7 +1469,12 @@ function openEditMutasi(m) {
 // v.21.100.0527: hapus mutasi individual (super_admin)
 async function hapusMutasi(m) {
   if (!isAdmin.value) return
-  if (!confirm(`Hapus mutasi ${pageTitle.value.toLowerCase()}?\nSantri: ${m.nama_cache || getNamaSantri(m.santri_id)}\n${m.jenis} ${fmtRp(m.nominal)}\n\nTidak bisa di-undo.`)) return
+  if (
+    !confirm(
+      `Hapus mutasi ${pageTitle.value.toLowerCase()}?\nSantri: ${m.nama_cache || getNamaSantri(m.santri_id)}\n${m.jenis} ${fmtRp(m.nominal)}\n\nTidak bisa di-undo.`
+    )
+  )
+    return
   try {
     await deleteOne(COLL.value, m.id)
     toast.success('Mutasi dihapus')
@@ -928,8 +1488,14 @@ async function hapusMutasiTerpilih() {
   if (!isAdmin.value) return
   const ids = Array.from(selectedMutasi.value)
   if (ids.length === 0) return
-  if (!confirm(`Hapus ${ids.length} mutasi ${pageTitle.value.toLowerCase()} terpilih?\n\nTidak bisa di-undo.`)) return
-  let ok = 0, fail = 0
+  if (
+    !confirm(
+      `Hapus ${ids.length} mutasi ${pageTitle.value.toLowerCase()} terpilih?\n\nTidak bisa di-undo.`
+    )
+  )
+    return
+  let ok = 0,
+    fail = 0
   for (const id of ids) {
     try {
       await deleteOne(COLL.value, id)
@@ -979,6 +1545,12 @@ function onKategoriChange() {
   }
 }
 
+// v.1.2.6 (C): pilih kategori via chip (gaya POS) → set + auto-fill nominal
+function pilihKategori(id) {
+  modalKategori.value = id
+  onKategoriChange()
+}
+
 // Manual edit nominal → matikan auto-fill flag
 watch(modalNominal, () => {
   if (modalOpen.value) autoFilled.value = false
@@ -990,8 +1562,8 @@ async function simpanMutasi() {
   try {
     const santri = (santriRaw.value || []).find((s) => String(s.id) === String(modalSantriId.value))
     if (editingMutasiId.value) {
-      // v.21.100.0527: mode edit — update mutasi existing
-      await updateDoc(doc(db, COLL.value, editingMutasiId.value), {
+      // v.21.100.0527: mode edit — update mutasi existing (row pasti ada, dari list)
+      await updateOne(COLL.value, editingMutasiId.value, {
         santri_id: modalSantriId.value,
         nama_cache: santri?.nama || '',
         jenis: modalJenis.value,
@@ -1002,14 +1574,18 @@ async function simpanMutasi() {
       toast.success('Mutasi diperbarui')
     } else {
       const id = `mutasi_${modalSantriId.value}_${Date.now()}`
-      const tanggal = new Date().toISOString().slice(0, 10)
+      // v.1.2.8: WIB, bukan UTC. toISOString() memundurkan tanggal 1 hari untuk transaksi
+      //   00:00-06:59 WIB — setoran subuh akan tercatat di tanggal SEBELUMNYA, dan itu
+      //   langsung merusak laporan harian di bawah (juga penomoran No. Bukti ddmmyy-nya).
+      //   Sama seperti POS, yang sudah pakai helper ini sejak audit Agu 2026.
+      const tanggal = todayJakarta()
       const opName = auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin'
       // v.96.0626: No. Transaksi rapi — TB-NNNddmmyy (tabungan) / US-NNNddmmyy (uang saku), mirror POS MU-
       const dtp = tanggal.split('-')
       const ddmmyy = (dtp[2] || '') + (dtp[1] || '') + String(dtp[0] || '').slice(-2)
       const seqN = (mutasiSource.value || []).filter((x) => x.tanggal === tanggal).length + 1
       const noBukti = (isUangSaku.value ? 'US-' : 'TB-') + String(seqN).padStart(3, '0') + ddmmyy
-      await setDoc(doc(db, COLL.value, id), {
+      await setOne(COLL.value, id, {
         id,
         no_bukti: noBukti,
         santri_id: modalSantriId.value,
@@ -1082,23 +1658,158 @@ async function cetakSlip(m) {
 async function cetakSlipLangsung(m) {
   try {
     const s = settings.settings || {}
-    if (!isElectron()) { await cetakSlipTabunganPdf(m, s, { preview: true, ...slipOpts(m) }); return }
+    if (!isElectron()) {
+      await cetakSlipTabunganPdf(m, s, { preview: true, ...slipOpts(m) })
+      return
+    }
     // v.96.0626: cetak GRAFIS RASTER via ESC/P (bypass driver -> TANPA feed 5cm, tetap Arial)
     const printerName = getDefaultPrinter()
-    const res = await printRaw({ base64: buildSlipTabunganEscpBase64(m, s, slipOpts(m)), deviceName: printerName || undefined })
+    const res = await printRaw({
+      base64: buildSlipTabunganEscpBase64(m, s, slipOpts(m)),
+      deviceName: printerName || undefined
+    })
     if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
     toast.success('Struk dikirim ke: ' + (printerName || 'printer default Windows'))
   } catch (e) {
     toast.error('Gagal cetak: ' + (e.message || e))
   }
 }
+// ─── v.1.2.8 · Laporan PDF mutasi (Kyai: "ekspor PDF harian untuk admin keuangan") ───
+//
+// Bedanya dengan exportPdf() di bawah: itu rekap SALDO per santri dan mengabaikan filter
+// tanggal. Yang dibutuhkan admin keuangan adalah daftar TRANSAKSI pada satu hari untuk
+// dicocokkan dengan uang di kas — jadi laporan ini mengikuti filter yang sedang aktif
+// (tahun/bulan/tanggal/lembaga) dan menutup dengan subtotal setor/tarik + saldo bersih.
+//
+// Polanya sengaja meniru RiwayatPosView.cetakLaporanPos: buildListPdf + kop dari
+// pengaturan, supaya laporan keuangan tetap satu wajah.
+const pdfMutasiBusy = ref(false)
+
+function labelPeriodeMutasi() {
+  const th = String(mutFilterYear.value)
+  if (!mutFilterMonth.value) return th
+  const bl = `${BULAN_TAB[mutFilterMonth.value - 1]} ${th}`
+  return mutFilterDay.value ? `${mutFilterDay.value} ${bl}` : bl
+}
+
+function labelLembagaMutasi() {
+  if (!mutFilterLembaga.value) return ''
+  if (mutFilterLembaga.value === KAS_INDUK) return 'Kas Induk'
+  const o = rekapLembagaTab.value.find((x) => x.kunci === mutFilterLembaga.value)
+  return o?.lembaga || ''
+}
+
+// Setel filter ke HARI INI (WIB). Jalan cepat: tanpa ini admin keuangan harus memilih
+//   tahun+bulan+tanggal satu per satu tiap kali menutup kas harian.
+function setFilterHariIni() {
+  const iso = todayJakarta()
+  const [y, m, d] = iso.split('-').map(Number)
+  mutFilterYear.value = y
+  mutFilterMonth.value = m
+  mutFilterDay.value = d
+}
+
+async function cetakLaporanMutasi() {
+  if (pdfMutasiBusy.value) return
+  const list = mutasiFiltered.value || []
+  if (!list.length) {
+    toast.warning('Tidak ada mutasi pada filter ini.')
+    return
+  }
+  pdfMutasiBusy.value = true
+  try {
+    // Urut NAIK (kronologis) — laporan kas dibaca dari awal hari ke akhir hari, beda dari
+    // tabel di layar yang menaruh yang terbaru di atas.
+    const urut = [...list].sort(
+      (a, b) =>
+        String(a.tanggal || '').localeCompare(String(b.tanggal || '')) ||
+        String(a.no_bukti || '').localeCompare(String(b.no_bukti || ''))
+    )
+    // Subtotal & penggolongan setor/tarik lewat helper bersama — konvensinya HARUS sama
+    //   dengan kartu rekap per lembaga di atas ('setor' = masuk, selain itu keluar).
+    //   Kalau berbeda, satu layar bisa menampilkan dua angka untuk hari yang sama.
+    const { setor, tarik } = ringkasSetorTarik(urut)
+    const rows = urut.map((m, i) => {
+      const nom = Number(m.nominal || 0)
+      const isSetor = mutasiSetor(m)
+      return {
+        no: i + 1,
+        tanggal: m.tanggal ? fmtTgl(m.tanggal) : '',
+        bukti: m.no_bukti || '',
+        santri: m.nama_cache || getNamaSantri(m.santri_id) || '-',
+        lembaga: lembagaMutasi(m) || 'Kas Induk',
+        setor: isSetor ? fmtRp(nom) : '',
+        tarik: isSetor ? '' : fmtRp(nom),
+        catatan: m.catatan || ''
+      }
+    })
+    const barisJumlah = (label, kolomSetor, kolomTarik) => ({
+      no: '',
+      tanggal: '',
+      bukti: '',
+      santri: label,
+      lembaga: '',
+      setor: kolomSetor,
+      tarik: kolomTarik,
+      catatan: ''
+    })
+    rows.push(barisJumlah(`JUMLAH (${urut.length} mutasi)`, fmtRp(setor), fmtRp(tarik)))
+    rows.push(barisJumlah('SALDO BERSIH', fmtRp(setor - tarik), ''))
+
+    const bagian = [labelPeriodeMutasi()]
+    const lbl = labelLembagaMutasi()
+    if (lbl) bagian.push(lbl)
+    const slug = [
+      isUangSaku.value ? 'uang-saku' : 'tabungan',
+      String(mutFilterYear.value),
+      mutFilterMonth.value ? String(mutFilterMonth.value).padStart(2, '0') : '',
+      mutFilterDay.value ? String(mutFilterDay.value).padStart(2, '0') : '',
+      lbl.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    ]
+      .filter(Boolean)
+      .join('-')
+
+    const { buildListPdf, buildKopFromSettings } = await import('@/utils/pdfBuilder')
+    await buildListPdf({
+      kind: 'umum',
+      orientation: 'l',
+      format: 'a4',
+      kop: buildKopFromSettings(settings.settings || {}),
+      title: `MUTASI ${pageTitle.value.toUpperCase()} — ${bagian.join(' — ')}`,
+      columns: [
+        { key: 'no', header: 'No', width: 10 },
+        { key: 'tanggal', header: 'Tanggal', width: 26 },
+        { key: 'bukti', header: 'No. Bukti', width: 26 },
+        { key: 'santri', header: 'Santri', width: 56 },
+        { key: 'lembaga', header: 'Kas Lembaga', width: 30 },
+        { key: 'setor', header: 'Setor', width: 28 },
+        { key: 'tarik', header: 'Tarik', width: 28 },
+        { key: 'catatan', header: 'Catatan', width: 44 }
+      ],
+      rows,
+      filename: `${slug}.pdf`
+    })
+    toast.success('PDF laporan berhasil dibuat')
+  } catch (e) {
+    toast.error('Gagal cetak: ' + (e?.message || e))
+  } finally {
+    pdfMutasiBusy.value = false
+  }
+}
+
 async function exportPdf() {
   const items = filteredItems.value || []
-  if (!items.length) { toast.warning('Tidak ada data untuk diekspor.'); return }
+  if (!items.length) {
+    toast.warning('Tidak ada data untuk diekspor.')
+    return
+  }
   try {
     await exportRekapTabunganPdf(items, settings.settings || {}, {
       title: 'REKAP ' + pageTitle.value.toUpperCase() + ' SANTRI',
-      namaOf: (t) => (getNamaSantri(t.santri_id) !== '(unknown)' ? getNamaSantri(t.santri_id) : (t.nama_cache || t.santri_id))
+      namaOf: (t) =>
+        getNamaSantri(t.santri_id) !== '(unknown)'
+          ? getNamaSantri(t.santri_id)
+          : t.nama_cache || t.santri_id
     })
   } catch (e) {
     toast.error('Gagal ekspor PDF: ' + (e.message || e))
@@ -1107,11 +1818,20 @@ async function exportPdf() {
 async function downloadTemplate() {
   try {
     await exportSimple(
-      [{ nis: '03.00245', nama: 'Contoh Santri', jenis: 'setor', nominal: 50000, catatan: 'saldo awal' }],
+      [
+        {
+          nis: '03.00245',
+          nama: 'Contoh Santri',
+          jenis: 'setor',
+          nominal: 50000,
+          catatan: 'saldo awal'
+        }
+      ],
       {
         filename: 'template_' + (isUangSaku.value ? 'uang_saku' : 'tabungan') + '.xlsx',
         sheetName: pageTitle.value,
-        title: 'TEMPLATE IMPOR ' + pageTitle.value.toUpperCase() + ' (hapus baris contoh, isi data)',
+        title:
+          'TEMPLATE IMPOR ' + pageTitle.value.toUpperCase() + ' (hapus baris contoh, isi data)',
         columns: [
           { key: 'nis', header: 'No. Induk', width: 16 },
           { key: 'nama', header: 'Nama', width: 28 },
@@ -1125,36 +1845,61 @@ async function downloadTemplate() {
     toast.error('Gagal buat template: ' + (e.message || e))
   }
 }
-function triggerImport() { importInput.value && importInput.value.click() }
+function triggerImport() {
+  importInput.value && importInput.value.click()
+}
 async function importXlsx(e) {
   const file = e.target.files && e.target.files[0]
   if (!file) return
   importingTab.value = true
   try {
     const rows = await importFile(file)
-    let ok = 0, skip = 0
+    let ok = 0,
+      skip = 0
     const writes = []
     for (const r of rows) {
       const nis = String(r['No. Induk'] || r['No Induk'] || r.NIS || r.nis || '').trim() // v.100: terima header baru + template lama
       const namaR = String(r.Nama || r.nama || '').trim()
-      const jenis = String(r['jenis (setor/tarik)'] || r.jenis || r.Jenis || 'setor').toLowerCase().includes('tarik') ? 'tarik' : 'setor'
+      const jenis = String(r['jenis (setor/tarik)'] || r.jenis || r.Jenis || 'setor')
+        .toLowerCase()
+        .includes('tarik')
+        ? 'tarik'
+        : 'setor'
       const nominal = Number(String(r.Nominal || r.nominal || 0).replace(/[^\d]/g, '')) || 0
-      if (nominal <= 0) { skip++; continue }
+      if (nominal <= 0) {
+        skip++
+        continue
+      }
       const santri = (santriRaw.value || []).find(
-        (s) => (nis && String(s.nis) === nis) || (namaR && String(s.nama || '').toLowerCase() === namaR.toLowerCase())
+        (s) =>
+          (nis && String(s.nis) === nis) ||
+          (namaR && String(s.nama || '').toLowerCase() === namaR.toLowerCase())
       )
-      if (!santri) { skip++; continue }
+      if (!santri) {
+        skip++
+        continue
+      }
       const id = `mutasi_${santri.id}_${Date.now()}_${ok}`
-      writes.push(setDoc(doc(db, COLL.value, id), {
-        id, santri_id: String(santri.id), nama_cache: santri.nama || '',
-        jenis, kategori: 'impor', nominal,
-        catatan: String(r.Catatan || r.catatan || 'impor xlsx'),
-        tanggal: new Date().toISOString().slice(0, 10), createdAt: serverTimestamp()
-      }))
+      writes.push(
+        setOne(COLL.value, id, {
+          id,
+          santri_id: String(santri.id),
+          nama_cache: santri.nama || '',
+          jenis,
+          kategori: 'impor',
+          nominal,
+          catatan: String(r.Catatan || r.catatan || 'impor xlsx'),
+          // WIB, bukan UTC — jalur impor ini terlewat saat setor/tarik diperbaiki di v.1.2.8.
+          tanggal: todayJakarta(),
+          createdAt: serverTimestamp()
+        })
+      )
       ok++
     }
     await Promise.all(writes)
-    toast.success(`Impor selesai: ${ok} mutasi masuk, ${skip} dilewati (No. Induk/nama tak cocok atau nominal 0)`)
+    toast.success(
+      `Impor selesai: ${ok} mutasi masuk, ${skip} dilewati (No. Induk/nama tak cocok atau nominal 0)`
+    )
   } catch (err) {
     toast.error('Gagal impor: ' + (err.message || err))
   } finally {

@@ -3,6 +3,7 @@
 // Wrapper Capacitor LocalNotifications untuk trigger native notifikasi di status bar.
 // Akses plugin via window.Capacitor.Plugins.LocalNotifications (auto-register oleh Capacitor)
 // supaya tidak butuh import package — build web tetap OK tanpa plugin installed.
+import { BRAND } from '@/config/brand'
 
 function getPlugin() {
   try {
@@ -43,7 +44,7 @@ export async function showLocal(opts) {
     await plugin.schedule({
       notifications: [{
         id,
-        title: String(opts.title || 'Waseela'),
+        title: String(opts.title || BRAND.appName),
         body: String(opts.body || ''),
         smallIcon: 'ic_stat_icon',
         largeIcon: 'ic_launcher',
@@ -92,7 +93,7 @@ export async function pushFromItems(items) {
     _seenIds.add(`${it.id}-${it.jenis}`)
     await showLocal({
       id: Math.abs(hashCode(it.id + it.jenis)) % 1e6,
-      title: it.judul || 'Waseela',
+      title: it.judul || BRAND.appName,
       body: it.body || '',
       link: it.link || ''
     })

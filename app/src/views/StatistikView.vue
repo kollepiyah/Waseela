@@ -40,8 +40,8 @@
           >No. Induk: {{ santriProfile.nis }}</span
         >
         <button
-          @click="gotoProfil"
           class="ml-2 mt-3 inline-flex items-center gap-1.5 bg-[var(--bg-card)]/15 hover:bg-[var(--bg-card)]/25 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-lg transition cursor-pointer"
+          @click="gotoProfil"
         >
           <i class="fas fa-id-card"></i>Lihat Data Diri
         </button>
@@ -204,8 +204,8 @@
         class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
       >
         <button
-          @click="toggleSection('rekap')"
           class="w-full px-4 md:px-5 py-3 md:py-4 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-900/30 transition cursor-pointer"
+          @click="toggleSection('rekap')"
         >
           <div class="flex items-center gap-3 min-w-0">
             <div
@@ -250,8 +250,8 @@
         class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
       >
         <button
-          @click="toggleSection('statistik')"
           class="w-full px-4 md:px-5 py-3 md:py-4 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-900/30 transition cursor-pointer"
+          @click="toggleSection('statistik')"
         >
           <div class="flex items-center gap-3 min-w-0">
             <div
@@ -346,8 +346,8 @@
         class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
       >
         <button
-          @click="toggleSection('kartu')"
           class="w-full px-4 md:px-5 py-3 md:py-4 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-900/30 transition cursor-pointer"
+          @click="toggleSection('kartu')"
         >
           <div class="flex items-center gap-3 min-w-0">
             <div
@@ -377,7 +377,9 @@
         >
           <div v-if="totalKartuKenaikan === 0" class="text-center py-6">
             <i class="fas fa-inbox text-[var(--text-tertiary)] text-2xl mb-2"></i>
-            <p class="text-xs text-[var(--text-secondary)] italic">Belum ada riwayat kenaikan jilid.</p>
+            <p class="text-xs text-[var(--text-secondary)] italic">
+              Belum ada riwayat kenaikan jilid.
+            </p>
           </div>
           <div v-else class="space-y-2">
             <div class="text-xs text-slate-700 dark:text-[var(--text-tertiary)]">
@@ -402,8 +404,8 @@
         class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm overflow-hidden"
       >
         <button
-          @click="toggleSection('rapor')"
           class="w-full px-4 md:px-5 py-3 md:py-4 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-900/30 transition cursor-pointer"
+          @click="toggleSection('rapor')"
         >
           <div class="flex items-center gap-3 min-w-0">
             <div
@@ -446,38 +448,55 @@
     </div>
 
     <!-- ============================================================
-         ADMIN: KPI ringkas (Total Santri/Guru/Lembaga/Kelas) + Grafik Perkembangan.
-         v.103: KPI dikembalikan ke dasbor (kyai req — at-a-glance cocok di sini).
-         Alert operasional, distribusi capaian, grid/distribusi per-lembaga tetap di
-         Laporan (components/statistik/*).
+         ADMIN: Ringkasan = potret cepat. KPI (Santri/Guru/Lembaga/Kelas) +
+         Statistik Lembaga (grid per-lembaga) + grafik Kenaikan Tes per lembaga.
+         v.110: grafik perkembangan lain pindah ke tab domain di Laporan
+         (kehadiran→Pegawai, kas→Keuangan, capaian/santri→Santri).
          ============================================================ -->
     <RingkasanSantriLembaga v-if="isAdminMode" section="kpi" />
-    <AdminStatsCharts v-if="isAdminMode" :santri-list="scopedSantriAll" />
+    <RingkasanSantriLembaga v-if="isAdminMode" section="lembaga" />
+    <AdminStatsCharts v-if="isAdminMode" :only="['kenaikan']" class="mt-4" />
 
     <!-- ============================================================
          GURU: Statistik Pengajaran + Kehadiran + Kelas Saya
          ============================================================ -->
     <template v-if="role === 'guru'">
       <!-- Statistik Santri Saya (agregat santri yang diampu) -->
-      <div class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
-        <h3 class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2">
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+      >
+        <h3
+          class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
+        >
           <i class="fas fa-user-graduate text-teal-600 mr-2"></i>Statistik Santri Saya
         </h3>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
           <div class="bg-teal-50 dark:bg-teal-900/20 p-3 rounded-lg">
-            <p class="text-[10px] font-bold text-teal-700 dark:text-teal-300 uppercase">Total Santri Diampu</p>
+            <p class="text-[10px] font-bold text-teal-700 dark:text-teal-300 uppercase">
+              Total Santri Diampu
+            </p>
             <p class="text-2xl font-black text-[var(--text-primary)]">{{ totalSantriDisplay }}</p>
           </div>
           <div v-if="adaQiraati" class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg">
-            <p class="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase">Santri Ngaji (Qiraati)</p>
-            <p class="text-2xl font-black text-[var(--text-primary)]">{{ santriQiraatiSaya.length }}</p>
+            <p class="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase">
+              Santri Ngaji (Qiraati)
+            </p>
+            <p class="text-2xl font-black text-[var(--text-primary)]">
+              {{ santriQiraatiSaya.length }}
+            </p>
           </div>
           <div v-if="adaSekolah" class="bg-cyan-50 dark:bg-cyan-900/20 p-3 rounded-lg">
-            <p class="text-[10px] font-bold text-cyan-700 dark:text-cyan-300 uppercase">Santri Sekolah</p>
-            <p class="text-2xl font-black text-[var(--text-primary)]">{{ santriSekolahSaya.length }}</p>
+            <p class="text-[10px] font-bold text-cyan-700 dark:text-cyan-300 uppercase">
+              Santri Sekolah
+            </p>
+            <p class="text-2xl font-black text-[var(--text-primary)]">
+              {{ santriSekolahSaya.length }}
+            </p>
           </div>
           <div class="bg-cyan-50 dark:bg-cyan-900/20 p-3 rounded-lg">
-            <p class="text-[10px] font-bold text-cyan-700 dark:text-cyan-300 uppercase">Kelas Diampu</p>
+            <p class="text-[10px] font-bold text-cyan-700 dark:text-cyan-300 uppercase">
+              Kelas Diampu
+            </p>
             <p class="text-2xl font-black text-[var(--text-primary)]">{{ kelasSaya.length }}</p>
           </div>
         </div>
@@ -506,16 +525,39 @@
       </template>
 
       <!-- Breakdown Qiraati (kalau guru ngaji) -->
-      <div v-if="adaQiraati && qiraatiPrestasi.length > 0" class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
-        <h3 class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2">
+      <div
+        v-if="adaQiraati && qiraatiPrestasi.length > 0"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+      >
+        <h3
+          class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
+        >
           <i class="fas fa-trophy text-teal-600 mr-2"></i>Santri Ngaji Berprestasi
         </h3>
         <ol class="space-y-2">
-          <li v-for="(s, i) in qiraatiPrestasi" :key="s.id" class="flex items-center gap-3 bg-[var(--bg-card-elevated)] rounded-xl p-2.5 border border-[var(--border-subtle)]">
-            <span :class="['w-7 h-7 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0', i === 0 ? 'bg-teal-600 text-white' : i === 1 ? 'bg-slate-300 text-slate-700' : i === 2 ? 'bg-emerald-500 text-emerald-900' : 'bg-slate-200 text-slate-600']">{{ i + 1 }}</span>
+          <li
+            v-for="(s, i) in qiraatiPrestasi"
+            :key="s.id"
+            class="flex items-center gap-3 bg-[var(--bg-card-elevated)] rounded-xl p-2.5 border border-[var(--border-subtle)]"
+          >
+            <span
+              :class="[
+                'w-7 h-7 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0',
+                i === 0
+                  ? 'bg-teal-600 text-white'
+                  : i === 1
+                    ? 'bg-slate-300 text-slate-700'
+                    : i === 2
+                      ? 'bg-emerald-500 text-emerald-900'
+                      : 'bg-slate-200 text-slate-600'
+              ]"
+              >{{ i + 1 }}</span
+            >
             <div class="flex-1 min-w-0">
               <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</p>
-              <p class="text-[10px] text-[var(--text-secondary)]">{{ s.lembaga }} · Kelas {{ s.kelas || '-' }}</p>
+              <p class="text-[10px] text-[var(--text-secondary)]">
+                {{ s.lembaga }} · Kelas {{ s.kelas || '-' }}
+              </p>
             </div>
             <p class="text-sm font-black text-teal-700 dark:text-teal-300">{{ prestasiNum(s) }}</p>
           </li>
@@ -523,16 +565,39 @@
       </div>
 
       <!-- Breakdown Sekolah (kalau guru sekolah) -->
-      <div v-if="adaSekolah && sekolahPrestasi.length > 0" class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
-        <h3 class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2">
+      <div
+        v-if="adaSekolah && sekolahPrestasi.length > 0"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+      >
+        <h3
+          class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
+        >
           <i class="fas fa-trophy text-cyan-600 mr-2"></i>Santri Sekolah Berprestasi
         </h3>
         <ol class="space-y-2">
-          <li v-for="(s, i) in sekolahPrestasi" :key="s.id" class="flex items-center gap-3 bg-[var(--bg-card-elevated)] rounded-xl p-2.5 border border-[var(--border-subtle)]">
-            <span :class="['w-7 h-7 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0', i === 0 ? 'bg-cyan-600 text-white' : i === 1 ? 'bg-slate-300 text-slate-700' : i === 2 ? 'bg-emerald-500 text-emerald-900' : 'bg-slate-200 text-slate-600']">{{ i + 1 }}</span>
+          <li
+            v-for="(s, i) in sekolahPrestasi"
+            :key="s.id"
+            class="flex items-center gap-3 bg-[var(--bg-card-elevated)] rounded-xl p-2.5 border border-[var(--border-subtle)]"
+          >
+            <span
+              :class="[
+                'w-7 h-7 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0',
+                i === 0
+                  ? 'bg-cyan-600 text-white'
+                  : i === 1
+                    ? 'bg-slate-300 text-slate-700'
+                    : i === 2
+                      ? 'bg-emerald-500 text-emerald-900'
+                      : 'bg-slate-200 text-slate-600'
+              ]"
+              >{{ i + 1 }}</span
+            >
             <div class="flex-1 min-w-0">
               <p class="text-sm font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</p>
-              <p class="text-[10px] text-[var(--text-secondary)]">{{ s.lembaga_sekolah || s.lembaga }} · Kelas {{ s.kelas_sekolah || s.kelas || '-' }}</p>
+              <p class="text-[10px] text-[var(--text-secondary)]">
+                {{ s.lembaga_sekolah || s.lembaga }} · Kelas {{ s.kelas_sekolah || s.kelas || '-' }}
+              </p>
             </div>
             <p class="text-sm font-black text-cyan-700 dark:text-cyan-300">{{ prestasiNum(s) }}</p>
           </li>
@@ -540,25 +605,43 @@
       </div>
 
       <!-- Kelas Saya -->
-      <div v-if="kelasSaya.length > 0" class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm">
-        <h3 class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2">
+      <div
+        v-if="kelasSaya.length > 0"
+        class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
+      >
+        <h3
+          class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
+        >
           <i class="fas fa-chalkboard-teacher text-cyan-600 mr-2"></i>Kelas Saya
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-          <div v-for="k in kelasSaya" :key="k.lembaga + '_' + k.kelas" class="flex items-center justify-between gap-3 bg-cyan-50 dark:bg-cyan-900/20 rounded-xl p-3 border border-cyan-100 dark:border-cyan-800">
+          <div
+            v-for="k in kelasSaya"
+            :key="k.key"
+            class="flex items-center justify-between gap-3 bg-cyan-50 dark:bg-cyan-900/20 rounded-xl p-3 border border-cyan-100 dark:border-cyan-800"
+          >
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-black text-[var(--text-primary)] truncate">{{ k.lembaga }} · Kelas {{ k.kelas }}</p>
-              <p class="text-[10px] text-[var(--text-secondary)]"><i class="fas fa-users mr-1"></i>{{ k.santriCount }} santri</p>
+              <p class="text-sm font-black text-[var(--text-primary)] truncate">
+                {{ k.lembaga }} · Kelas {{ k.kelas }}
+              </p>
+              <p class="text-[10px] text-[var(--text-secondary)]">
+                <i class="fas fa-users mr-1"></i>{{ k.santriCount }} santri
+              </p>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Info: kehadiran & bisyaroh pribadi pindah ke menu Personal -->
-      <div class="bg-teal-50 dark:bg-teal-900/20 rounded-2xl p-3 border border-teal-100 dark:border-teal-800 text-center">
+      <div
+        class="bg-teal-50 dark:bg-teal-900/20 rounded-2xl p-3 border border-teal-100 dark:border-teal-800 text-center"
+      >
         <p class="text-[11px] text-teal-700 dark:text-teal-300">
-          <i class="fas fa-info-circle mr-1"></i>Data kehadiran &amp; slip bisyaroh pribadi Anda ada di menu
-          <button @click="$router.push('/personal')" class="font-black underline cursor-pointer">Personal</button>.
+          <i class="fas fa-info-circle mr-1"></i>Data kehadiran &amp; slip bisyaroh pribadi Anda ada
+          di menu
+          <button class="font-black underline cursor-pointer" @click="$router.push('/personal')">
+            Personal</button
+          >.
         </p>
       </div>
     </template>
@@ -591,7 +674,9 @@
       v-if="loadingAny"
       class="bg-[var(--bg-card)] rounded-2xl p-8 border border-[var(--border-subtle)] shadow-sm text-center"
     >
-      <i class="fas fa-spinner fa-spin text-2xl text-slate-300 dark:text-[var(--text-secondary)]"></i>
+      <i
+        class="fas fa-spinner fa-spin text-2xl text-slate-300 dark:text-[var(--text-secondary)]"
+      ></i>
       <p class="text-xs text-[var(--text-tertiary)] mt-2">Memuat data statistik...</p>
     </div>
   </div>
@@ -620,15 +705,17 @@ import { useSettingsStore } from '@/stores/settings'
 import { useSantri } from '@/composables/useSantri'
 import { useGuru } from '@/composables/useGuru'
 import { formatKelasLabel } from '@/composables/useLembaga'
-import { subscribeColl } from '@/services/firestore'
-import AdminStatsCharts from '@/components/charts/AdminStatsCharts.vue'
+import { subscribeColl } from '@/services/db'
+import AdminStatsCharts from '@/components/charts/AdminStatsCharts.vue' // v.110: grafik Kenaikan Tes di Ringkasan
 import TrenCapaianChart from '@/components/charts/TrenCapaianChart.vue' // v.100c: Opsi A — tren capaian
 import RingkasanSantriLembaga from '@/components/statistik/RingkasanSantriLembaga.vue' // v.103: KPI ringkas di dasbor
 // v.21.107.0527: gating role konsisten (admin/super_admin/admin_keuangan)
 import { isFullFilterRole, isKepalaLembaga } from '@/utils/roleScope'
+import { kelasKeyQiraati, kelasKeySekolah } from '@/utils/kelasHitung'
 import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
-// v.103 "rapikan dashboard": KPI/alert/distribusi/per-lembaga admin DIPINDAH ke Laporan
-// (components/statistik/*). Di sini cukup scope utk AdminStatsCharts & TrenCapaian guru.
+// v.110: Ringkasan admin = KPI + Statistik Lembaga + grafik Kenaikan Tes (potret cepat).
+// Grafik perkembangan lain (kehadiran/kas/capaian/santri) pindah ke tab domain di Laporan.
+// Scope di sini cukup utk TrenCapaian guru/kepala (scopedSantriAktif).
 import { useStatistikScope } from '@/composables/useStatistikScope'
 
 // Logo dipakai sebagai watermark di greeting santri (dari public/)
@@ -658,10 +745,9 @@ const role = computed(() => auth.sesiAktif?.role || 'guest')
 const isAdminMode = computed(() => isFullFilterRole(auth.sesiAktif))
 const loadingAny = computed(() => loadingSantri.value || loadingGuru.value)
 
-// v.103: scope dipakai utk AdminStatsCharts (scopedSantriAll) & TrenCapaian guru/kepala
-//   (scopedSantriAktif). KPI/alert/distribusi/per-lembaga admin sudah pindah ke Laporan
-//   (components/statistik/{RingkasanSantriLembaga,DistribusiPrestasi,OperasionalGuru}.vue).
-const { scopedSantriAktif, scopedSantriAll } = useStatistikScope()
+// v.110: scopedSantriAktif dipakai TrenCapaian guru/kepala. scopedSantriAll (utk
+//   AdminStatsCharts/Grafik Perkembangan) dipindah ke LaporanView — kini di tab Santri.
+const { scopedSantriAktif } = useStatistikScope()
 
 // ---- Helpers ---------------------------------------------------------------
 // parseNum: dipakai section santri (selisih/status prestasi)
@@ -696,11 +782,21 @@ const totalSantriDisplay = computed(() => {
   if (!guruName) return 0
   return santriRaw.value.filter((s) => {
     if (s.aktif === false) return false
-    const gp = String(s.guru_pagi || '').toLowerCase().trim()
-    const gs = String(s.guru_sore || '').toLowerCase().trim()
-    const g = String(s.guru || '').toLowerCase().trim()
+    const gp = String(s.guru_pagi || '')
+      .toLowerCase()
+      .trim()
+    const gs = String(s.guru_sore || '')
+      .toLowerCase()
+      .trim()
+    const g = String(s.guru || '')
+      .toLowerCase()
+      .trim()
     const gsek = Array.isArray(s.guru_sekolah)
-      ? s.guru_sekolah.map((x) => String(x || '').toLowerCase().trim())
+      ? s.guru_sekolah.map((x) =>
+          String(x || '')
+            .toLowerCase()
+            .trim()
+        )
       : []
     return gp === guruName || gs === guruName || g === guruName || gsek.includes(guruName)
   }).length
@@ -770,7 +866,9 @@ const totalKartuKenaikan = computed(() => {
 })
 
 // v.21.107.0527: jangan hardcode periode Hijriah (cepat kadaluarsa)
-const periodeAktif = computed(() => settings.settings?.periodeAktif || settings.settings?.txtPeriode || '-')
+const periodeAktif = computed(
+  () => settings.settings?.periodeAktif || settings.settings?.txtPeriode || '-'
+)
 
 function gotoProfil() {
   router.push('/profil')
@@ -788,48 +886,60 @@ const guruProfile = computed(() => {
 const guruLembaga = computed(() => guruProfile.value?.lembaga || '-')
 const guruJabatan = computed(() => guruProfile.value?.jabatan || 'Guru')
 
+// v.1.1.9: "Kelas Diampu" mengikuti definisi tunggal utils/kelasHitung — kunci = (pasangan)
+//   GURU, jenjang TIDAK ikut. Dulu dikunci `lembaga_kelas` sehingga guru dgn santri
+//   campur jenjang (mis. Ust. Muin: kelas 1 + 2 di PTPT) terhitung 2 kelas, padahal 1.
+//   Sisi ngaji & sekolah dihitung TERPISAH: baru jadi 2 kalau guru itu memang juga
+//   mengajar sekolah. Jenjang dikumpulkan jadi label ("Kelas 1, 2").
+//   Sisi sekolah juga kini memakai lembaga_sekolah/kelas_sekolah — dulu keliru
+//   melabelinya dengan lembaga & kelas Qiraati santri.
 const kelasSaya = computed(() => {
   if (role.value !== 'guru') return []
-  const guruName = String(auth.sesiAktif?.guru || auth.sesiAktif?.nama || '')
-    .toLowerCase()
-    .trim()
+  const norm = (v) =>
+    String(v ?? '')
+      .toLowerCase()
+      .trim()
+  const guruName = norm(auth.sesiAktif?.guru || auth.sesiAktif?.nama)
   if (!guruName) return []
   const map = new Map()
+  const tambah = (lembaga, kunci, jenjang, sisi) => {
+    const key = `${norm(lembaga)}|${sisi}|${kunci}`
+    if (!map.has(key))
+      map.set(key, { key, lembaga: lembaga || '-', sisi, jenjang: new Set(), santriCount: 0 })
+    const it = map.get(key)
+    it.jenjang.add(String(jenjang || '-').trim() || '-')
+    it.santriCount++
+  }
   for (const s of santriRaw.value) {
     if (s.aktif === false) continue
-    const gp = String(s.guru_pagi || '')
-      .toLowerCase()
-      .trim()
-    const gs = String(s.guru_sore || '')
-      .toLowerCase()
-      .trim()
-    const g = String(s.guru || '')
-      .toLowerCase()
-      .trim()
-    const gsek = Array.isArray(s.guru_sekolah)
-      ? s.guru_sekolah.map((x) =>
-          String(x || '')
-            .toLowerCase()
-            .trim()
-        )
-      : []
-    if (gp !== guruName && gs !== guruName && g !== guruName && !gsek.includes(guruName)) continue
-    const key = `${s.lembaga || '-'}_${s.kelas || '-'}`
-    if (!map.has(key)) {
-      map.set(key, { lembaga: s.lembaga || '-', kelas: s.kelas || '-', santriCount: 0 })
+    if ([s.guru_pagi, s.guru_sore, s.guru].some((g) => norm(g) === guruName)) {
+      const k = kelasKeyQiraati(s)
+      if (k) tambah(s.lembaga, k, s.kelas, 'ngaji')
     }
-    map.get(key).santriCount++
+    if ((Array.isArray(s.guru_sekolah) ? s.guru_sekolah : []).some((g) => norm(g) === guruName)) {
+      const k = kelasKeySekolah(s)
+      if (k) tambah(s.lembaga_sekolah, k, s.kelas_sekolah, 'sekolah')
+    }
   }
-  return [...map.values()].sort(
-    (a, b) =>
-      String(a.lembaga).localeCompare(String(b.lembaga)) ||
-      String(a.kelas).localeCompare(String(b.kelas))
-  )
+  return [...map.values()]
+    .map((x) => ({
+      ...x,
+      kelas: [...x.jenjang]
+        .sort((a, b) => String(a).localeCompare(String(b), 'id', { numeric: true }))
+        .join(', ')
+    }))
+    .sort(
+      (a, b) =>
+        String(a.lembaga).localeCompare(String(b.lembaga)) ||
+        String(a.kelas).localeCompare(String(b.kelas), 'id', { numeric: true })
+    )
 })
 
 // v.21.84.0527: Breakdown Qiraati vs Sekolah santri yang diampu guru
 function _guruNameLower() {
-  return String(auth.sesiAktif?.guru || auth.sesiAktif?.nama || '').toLowerCase().trim()
+  return String(auth.sesiAktif?.guru || auth.sesiAktif?.nama || '')
+    .toLowerCase()
+    .trim()
 }
 function prestasiNum(s) {
   const v = s.prestasi_total ?? s.prestasi_akhir ?? 0
@@ -844,9 +954,15 @@ const santriQiraatiSaya = computed(() => {
   if (!gn) return []
   return santriRaw.value.filter((s) => {
     if (s.aktif === false) return false
-    const gp = String(s.guru_pagi || '').toLowerCase().trim()
-    const gs = String(s.guru_sore || '').toLowerCase().trim()
-    const g = String(s.guru || '').toLowerCase().trim()
+    const gp = String(s.guru_pagi || '')
+      .toLowerCase()
+      .trim()
+    const gs = String(s.guru_sore || '')
+      .toLowerCase()
+      .trim()
+    const g = String(s.guru || '')
+      .toLowerCase()
+      .trim()
     return gp === gn || gs === gn || g === gn
   })
 })
@@ -859,7 +975,11 @@ const santriSekolahSaya = computed(() => {
   return santriRaw.value.filter((s) => {
     if (s.aktif === false) return false
     const gsek = Array.isArray(s.guru_sekolah)
-      ? s.guru_sekolah.map((x) => String(x || '').toLowerCase().trim())
+      ? s.guru_sekolah.map((x) =>
+          String(x || '')
+            .toLowerCase()
+            .trim()
+        )
       : []
     return gsek.includes(gn)
   })

@@ -11,8 +11,7 @@ import router from './router'
 import { useUiStore } from './stores/ui'
 // v.21.24.0526: STATIC import auth store — fix race condition dengan router guard.
 import { useAuthStore } from './stores/auth'
-// WASEELA: config tenant aktif (utk warna brand chrome per-tenant)
-import tenantConfig from './tenant.config'
+import { BRAND } from './config/brand'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -20,8 +19,8 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 
-// WASEELA Fase 3 (cutover Supabase): pasang vue-query untuk cache/dedup data view yang
-// sudah cutover ke services/db.js. Aman dipasang walau belum ada konsumen (dormant).
+// F4 (migrasi Supabase): SWR cache utk view yang sudah cutover ke db.js (F6).
+// Additif — tak memengaruhi store/firestore yang masih jalan.
 import { VueQueryPlugin } from '@tanstack/vue-query'
 import { queryClient } from './services/queryClient'
 app.use(VueQueryPlugin, { queryClient })
@@ -33,18 +32,6 @@ app.directive('haptic', vHaptic)
 // Init dark mode dari storage SEBELUM mount supaya tidak flash
 const ui = useUiStore(pinia)
 ui.initDarkFromStorage()
-
-// WASEELA: terapkan themeColor tenant → CSS var --theme-color (dipakai ribbon --accent =
-// header/strip/tab-aktif) + sinkron <meta theme-color> browser. Menjadikan field
-// tenant.config.themeColor FUNGSIONAL (tiap lembaga bisa beda warna chrome).
-try {
-  const tc = tenantConfig?.themeColor
-  if (tc) {
-    document.documentElement.style.setProperty('--theme-color', tc)
-    const m = document.querySelector('meta[name="theme-color"]')
-    if (m) m.setAttribute('content', tc)
-  }
-} catch {}
 
 // v.21.24.0526: Init auth SEBELUM mount supaya authReady promise tersedia di router guard
 const auth = useAuthStore(pinia)
@@ -91,7 +78,6 @@ function revealSplash() {
 try {
   app.mount('#app')
 } catch (mountErr) {
-  // eslint-disable-next-line no-console
   console.error('[main.js] Vue app.mount FAIL:', mountErr)
 }
 
@@ -128,7 +114,6 @@ if (IS_NATIVE) {
   // FALLBACK: kalau ada apa-apa yg block, force-hide splash max 6 detik
   setTimeout(() => {
     if (!document.body.classList.contains('app-running')) {
-      // eslint-disable-next-line no-console
       console.warn('[main.js] Splash fallback hide @ 6s — Vue mount mungkin stuck')
       hideSplash()
     }
@@ -153,27 +138,19 @@ async function initSentry() {
       await new Promise((r) => setTimeout(r, 100))
     }
     if (!window.Sentry) return
-    // 3) Override dari Firestore bila admin set (opsional, non-blocking).
-    try {
-      const { db } = await import('@/services/firebase')
-      const { doc, getDoc } = await import('firebase/firestore')
-      const snap = await getDoc(doc(db, 'settings', 'general'))
-      const fsDsn = snap.exists() ? (snap.data()?.sentryDsn || '').trim() : ''
-      if (fsDsn) dsn = fsDsn
-    } catch {
-      /* abaikan — pakai env/default */
-    }
+    // v.110: override DSN dari Firestore DIBUANG (migrasi Supabase). Dulu import('firebase/
+    //   firestore') di sini menyeret SELURUH SDK Firestore ke vendor-firebase (~+300KB) PADAHAL
+    //   db tak lagi di-ekspor firebase.js -> blok selalu gagal (di-catch). DSN cukup env/default.
     if (!dsn) return
     window.Sentry.init({
       dsn,
       tracesSampleRate: 0.1,
-      release: 'waseela@108.0626',
+      release: `${BRAND.sentryRelease}@${BRAND.version.replace(/^v\./, '')}`,
       environment: window.location.hostname.includes('localhost') ? 'dev' : 'prod'
     })
-    // eslint-disable-next-line no-console
+
     console.log('[main.js] Sentry initialized')
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.warn('[main.js] Sentry init skipped:', e.message)
   }
 }

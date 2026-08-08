@@ -1,22 +1,21 @@
-// Auth store — sesiAktif (replace legacy global `sesiAktif`)
-// v.53.0526: Full port loginUnified — findUserByLoginInput + padded password + lazy migration
-// v.53.1: Persist admin built-in sesiAktif via localStorage (Firebase Auth user only untuk guru/santri)
+// Auth store — sesiAktif (Supabase Auth). F6a (migrasi Supabase): cutover auth.
+// login/logout/initAuth pindah dari Firebase (services/auth) -> services/authSupabase.
+//
+// sesiAktif bentuk IDENTIK seperti sebelumnya. Kompat:
+//   - field `firebase_uid`/`firebase_email` tetap diisi (dari user Supabase) supaya
+//     useWaliChildren/ProfilView/localStorage tak perlu diubah.
+//   - admin built-in tetap `auth_method:'admin-builtin'` (deteksi admin + persist).
+//   - guru/santri `auth_method:'supabase'`.
+// Google login (loadSesiFromUser) DITUNDA ke F6c/F7 (akan via Supabase OAuth, bukan
+//   Firebase) — di-stub dgn error jelas selama migrasi.
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { onAuthStateChanged, setPersistence, browserLocalPersistence, indexedDBLocalPersistence } from 'firebase/auth'
-import { doc, setDoc } from 'firebase/firestore'
-import { auth as fbAuth, db } from '@/services/firebase'
-import * as authService from '@/services/auth'
 import * as authSupabase from '@/services/authSupabase'
-import { queryColl, setAuditSesi } from '@/services/firestore'
+import { mergeOne, setAuditSesi } from '@/services/db'
+import { useCollectionsStore } from '@/stores/collections'
+import { useToast } from '@/composables/useToast'
 
-// Backend auth aktif: 'firebase' (default) | 'supabase' (cutover Fase 3, per .env.local).
-// Firebase tetap jalur bawaan; 'supabase' merutekan login/logout/init ke authSupabase.
-const AUTH_BACKEND = import.meta.env.VITE_AUTH_BACKEND || 'firebase'
-
-// Domain Auth internal — aktif '@waseela.local', legacy '@ammu.local'/'@portal-mu.local' (backward-compat).
-const AUTH_EMAIL_DOMAINS = ['@waseela.local', '@ammu.local', '@portal-mu.local']
-const SESI_STORAGE_KEY = 'portalMu_sesiAdminBuiltIn'
+const SESI_STORAGE_KEY = 'waseela_sesiAdminBuiltIn'
 
 function _persistAdminSesi(sesi) {
   try {
@@ -44,10 +43,12 @@ function _loadAdminSesi() {
 
 // v.84.0526: Persist FULL sesi (admin/guru/santri) — fix Android logout setiap close app.
 // Capacitor WebView restart bisa clear IndexedDB → user terlogout. localStorage lebih persistent.
-const SESI_FULL_KEY = 'portalMu_sesiAktif'
+const SESI_FULL_KEY = 'waseela_sesiAktif'
 function _persistFullSesi(sesi) {
   // v.91.0626: set sesi utk atribusi audit_log (backup-sebelum-hapus di deleteOne)
-  try { setAuditSesi(sesi && sesi.role ? sesi : null) } catch (e) {}
+  try {
+    setAuditSesi(sesi && sesi.role ? sesi : null)
+  } catch (e) {}
   try {
     if (sesi && sesi.role) {
       localStorage.setItem(SESI_FULL_KEY, JSON.stringify({ ...sesi, _persisted_at: Date.now() }))
@@ -71,19 +72,41 @@ function _loadFullSesi() {
       return parsed
     }
     return null
-  } catch (e) { return null }
+  } catch (e) {
+    return null
+  }
+}
+
+// Kompat: app lama baca firebase_uid/firebase_email; admin pakai auth_method
+// 'admin-builtin'. Petakan output buildSesi() (supabase_uid/email + auth_method
+// 'supabase') ke bentuk yang dipakai komponen lama TANPA mengubah komponen itu.
+function _finalizeSesi(sesi) {
+  if (!sesi) return sesi
+  sesi.firebase_uid = sesi.supabase_uid
+  sesi.firebase_email = sesi.supabase_email
+  if (sesi.id === 'admin') sesi.auth_method = 'admin-builtin'
+  return sesi
 }
 
 export const useAuthStore = defineStore('auth', () => {
   // State
   const sesiAktif = ref(null) // { id, role, role_sistem, nama, jk, lembaga, guru, akses, ... }
-  const fbUser = ref(null) // Firebase Auth user
+  const fbUser = ref(null) // user Supabase Auth (nama dipertahankan utk kompat internal)
   const isLoading = ref(false)
   const error = ref(null)
-  // v.20.4.0526: authReady Promise — resolve setelah Firebase Auth + admin storage restore done.
+  // v.20.4.0526: authReady Promise — resolve setelah auth state pertama selesai.
   // Router guard await ini sebelum check isLoggedIn → fix refresh = logout
   let _authReadyResolve = null
-  const authReady = new Promise((resolve) => { _authReadyResolve = resolve })
+  const authReady = new Promise((resolve) => {
+    _authReadyResolve = resolve
+  })
+  // v.111: dedupe reload koleksi terpusat (santri/guru/bukuInduk) per-uid supaya
+  // TOKEN_REFRESHED berkala tak memicu refetch tiap kali.
+  let _lastCollUid = null
+  // v.111b: auto-recovery sesi "zombie" (refresh_token mati → onAuthChange user=null
+  //   padahal sesiAktif terisi dari localStorage = "login tapi data kosong").
+  let _loggingOut = false // tekan deteksi zombie selama logout DISENGAJA
+  let _zombieHandled = false // one-shot supaya recover sekali per sesi-mati
 
   // Getters
   const isLoggedIn = computed(() => sesiAktif.value !== null)
@@ -111,7 +134,26 @@ export const useAuthStore = defineStore('auth', () => {
     if (perm === 'akses_supervisi') {
       const a = String(s.jabatan || '').toLowerCase()
       const b = String(s.jabatan_tambahan || '').toLowerCase()
-      if (a.includes('direktur') || a.includes('supervisor') || b.includes('direktur') || b.includes('supervisor')) return true
+      if (
+        a.includes('direktur') ||
+        a.includes('supervisor') ||
+        b.includes('direktur') ||
+        b.includes('supervisor')
+      )
+        return true
+    }
+    // Layanan Pengaduan: super/admin sudah true di atas; KORLAP (Koordinator
+    // Lapangan) via jabatan/jabatan_tambahan (cermin pola akses_supervisi).
+    if (perm === 'akses_pengaduan') {
+      const a = String(s.jabatan || '').toLowerCase()
+      const b = String(s.jabatan_tambahan || '').toLowerCase()
+      if (
+        a.includes('koordinator lapangan') ||
+        a.includes('korlap') ||
+        b.includes('koordinator lapangan') ||
+        b.includes('korlap')
+      )
+        return true
     }
     // Granular per-user akses map
     return s.akses?.[perm] === true
@@ -121,143 +163,53 @@ export const useAuthStore = defineStore('auth', () => {
 
   /**
    * login(input, password, persistent)
-   * v.53.0526: Full port loginUnified dari legacy.
-   * input bisa: username, WA digits, NIS, atau 'adminmu' / 'admin'
-   * Flow:
-   *   1. findUserByLoginInput → match guru/santri/admin
-   *   2. Status check (aktif/nonaktif)
-   *   3. loginUnified → padded password → raw fallback → lazy migration
-   *   4. Build sesiAktif dari userInfo
+   * F6a: resolve_login (RPC) -> signIn/signUp lazy (Supabase) -> buildSesi.
+   * input bisa: username, WA digits, NIS, atau 'adminmu' / 'admin'.
+   * Peran dipetakan server-side oleh trigger handle_new_user (migration 07).
+   * Catatan: `persistent` (ingat saya) kini no-op — Supabase selalu persistSession.
    */
-  async function login(input, password, persistent = true) {
+  async function login(input, password, persistent = true, source = null) {
     isLoading.value = true
     error.value = null
     try {
-      // === CUTOVER Fase 3: jalur Supabase (resolve_login RPC → signIn/signUp → buildSesi) ===
-      // platform_owner SELALU lewat Supabase (konsol), walau backend tenant masih Firebase.
-      if (AUTH_BACKEND === 'supabase' || authSupabase.isPlatformOwnerKey(input)) {
-        await authSupabase.loginUnified(input, password, null)
-        const sesi = await authSupabase.buildSesi()
-        if (!sesi) {
-          const e = new Error('Akun terautentikasi tapi belum terdaftar (guru/santri/admin).')
-          e.code = 'auth/not-found'
-          throw e
-        }
-        sesiAktif.value = sesi
-        _persistAdminSesi(sesi.id === 'admin' ? sesi : null)
-        _persistFullSesi(sesi)
-        return
-      }
+      // 1) Auth Supabase: resolve canonical auth_key -> signIn (lazy signUp bila baru).
+      //    Status aktif/nonaktif & sandi salah dilempar di sini (auth/inactive, auth/wrong-password).
+      //    `source` ('guru'|'santri'|null) memisahkan jalur login guru/pegawai vs santri/wali.
+      await authSupabase.loginUnified(input, password, source)
 
-      // 1) Lookup user di Firestore data
-      const userInfo = await authService.findUserByLoginInput(input)
-      if (!userInfo) {
-        // v.20.2.0526: Hapus bocoran admin username dari error. Hint umum saja.
+      // 2) Bangun sesiAktif dari profiles + guru/santri (bentuk identik store lama).
+      const sesi = _finalizeSesi(await authSupabase.buildSesi())
+      if (!sesi) {
         const err = new Error(
-          'Username tidak ditemukan. Pastikan ketik dengan benar — Guru/Pegawai bisa pakai username atau no WA, Santri pakai No. Induk atau no WA wali.'
+          'Akun terautentikasi tapi belum terdaftar sebagai guru/santri/admin di sistem.'
         )
-        err.code = 'auth/not-found'
+        err.code = 'auth/not-registered'
         throw err
       }
 
-      // 2) Status check
-      if (userInfo.source === 'guru' && userInfo.data.status === 'Tidak Aktif') {
-        throw new Error('Akun guru berstatus tidak aktif. Hubungi administrator.')
-      }
-      if (userInfo.source === 'santri' && userInfo.data.aktif === false) {
-        throw new Error('Akun santri tidak aktif. Hubungi administrator.')
-      }
-
-      // 3) Auth via Firebase (padded → raw → lazy migration)
-      const result = await authService.loginUnified(userInfo, password, persistent)
-
-      // S4a (v.102): set custom claim `role` di token (best-effort; rules enforce di S4b)
-      try { await authService.syncUserClaims() } catch (e) { /* best-effort */ }
-
-      // 4) Build sesiAktif sesuai source
-      if (userInfo.source === 'admin') {
-        sesiAktif.value = {
-          id: 'admin',
-          role: 'admin',
-          role_sistem: 'super_admin',
-          nama: 'Administrator',
-          guru: 'Admin Utama',
-          jk: 'L',
-          jabatan: 'Administrator',
-          lembaga: 'Semua Data',
-          akses: { kelola_guru: true, akses_keuangan: true, kelola_santri: true, kelola_lembaga: true, kelola_kelas: true },
-          auth_method: 'admin-builtin',
-          firebase_uid: result.user?.uid,
-          firebase_email: result.user?.email
-        }
-        fbUser.value = result.user // v.100f: admin kini punya sesi Firebase Auth ASLI (Anonymous di-disable)
-        _persistAdminSesi(sesiAktif.value); _persistFullSesi(sesiAktif.value) /* v.91.0626: fix reopen-logout semua platform */
-        return
-      }
-
-      // v.20.5.0526: clear admin built-in localStorage saat login non-admin
-      // supaya refresh tidak restore admin session yang overwrite guru/santri
-      if (userInfo.source !== 'admin') {
-        _persistAdminSesi(null)
-      }
-
-      if (userInfo.source === 'guru') {
-        const g = userInfo.data
-        const rs = g.role_sistem || 'user'
-        const isPengurus = ['admin', 'admin_keuangan', 'super_admin'].includes(rs)
-        sesiAktif.value = {
-          id: g.id,
-          role: isPengurus ? 'admin' : 'guru',
-          role_sistem: rs,
-          nama: g.nama,
-          guru: g.nama,
-          lembaga: isPengurus ? 'Semua Data' : g.lembaga || '',
-          jk: g.jk || '',
-          jabatan: g.jabatan || '',
-          username: g.username || '',
-          wa: g.wa || '',
-          foto: g.foto || '',
-          akses: g.akses || {},
-          auth_method: result.authMethod,
-          firebase_uid: result.user?.uid,
-          firebase_email: result.user?.email
-        }
-        fbUser.value = result.user
-        _persistFullSesi(sesiAktif.value) /* v.91.0626: backup sesi -> fix reopen-logout */
-        return
-      }
-
-      if (userInfo.source === 'santri') {
-        const s = userInfo.data
-        sesiAktif.value = {
-          id: s.id,
-          role: 'santri',
-          role_sistem: 'santri',
-          nama: s.nama,
-          nis: s.nis || '',
-          username: s.username || '',
-          wa: s.wa || '',
-          foto: s.foto || '',
-          lembaga: s.lembaga || '',
-          kelas: s.kelas || '',
-          wali: s.wali || '',
-          is_mukim: s.is_mukim === true, // v.101: gate menu Uang Saku (ma'had/mukim saja)
-          auth_method: result.authMethod,
-          firebase_uid: result.user?.uid,
-          firebase_email: result.user?.email
-        }
-        fbUser.value = result.user
-        _persistFullSesi(sesiAktif.value) /* v.91.0626: backup sesi -> fix reopen-logout */
-        return
+      sesiAktif.value = sesi
+      fbUser.value = { id: sesi.supabase_uid, email: sesi.supabase_email }
+      _persistAdminSesi(sesi.id === 'admin' ? sesi : null) // clear admin localStorage utk non-admin
+      _persistFullSesi(sesi) // v.91.0626: backup sesi -> fix reopen-logout
+      // v.111: token sudah menempel pasca-signIn -> refetch koleksi terpusat supaya
+      //   santri/guru/bukuInduk tak kosong tanpa hard refresh. Dedupe vs onAuthChange.
+      try {
+        _lastCollUid = sesi.supabase_uid || sesi.id || null
+        useCollectionsStore().reloadActive()
+      } catch (e) {
+        /* noop */
       }
     } catch (e) {
       const code = e.code || ''
       let msg = e.message || String(e)
       if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
         msg = 'Kata sandi salah'
-      } else if (code === 'auth/too-many-requests') {
+      } else if (code === 'auth/not-found') {
+        msg =
+          'Username tidak ditemukan. Pastikan ketik dengan benar — Guru/Pegawai bisa pakai username atau no WA, Santri pakai No. Induk atau no WA wali.'
+      } else if (/too many|rate limit/i.test(msg)) {
         msg = 'Terlalu banyak percobaan. Coba lagi dalam beberapa menit.'
-      } else if (code === 'auth/network-request-failed') {
+      } else if (/network|failed to fetch/i.test(msg)) {
         msg = 'Koneksi bermasalah. Periksa internet Anda.'
       }
       error.value = msg
@@ -270,154 +222,50 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
-   * loadSesiFromUser — port lengkap dari legacy index.html _handleGoogleAuthResult.
-   * Strategy:
-   *   1. Cek linked_uid → match guru/santri yang sudah link Google Sign-In
-   *   2. Fallback: cek linked_email
-   *   3. Fallback: ambil wa dari email pattern (`{wa}@portal-mu.local`)
-   *      → lookup guru/santri dengan field wa match
-   *   4. Set sesiAktif sesuai role + role_sistem (admin/guru/santri)
+   * loadSesiFromUser — DITUNDA (F6c/F7). Google OAuth akan dipindah ke Supabase
+   * (signInWithOAuth), bukan Firebase. Selama migrasi, pakai username/WA/NIS + sandi.
    */
+  // eslint-disable-next-line no-unused-vars
   async function loadSesiFromUser(user) {
-    if (!user) return
-    const uid = user.uid
-    const emailLower = (user.email || '').toLowerCase()
-
-    // v.100f: kenali email admin built-in (adminmu@<domain>). Normalnya sesi admin
-    //   sudah di-restore dari localStorage (loadSesiFromUser di-skip), ini jaring
-    //   pengaman bila localStorage kosong tapi sesi Firebase admin tetap ada.
-    const adminDomain = AUTH_EMAIL_DOMAINS.find((d) => emailLower.endsWith(d))
-    if (adminDomain) {
-      const localPart = emailLower.slice(0, -adminDomain.length)
-      if (localPart === 'adminmu' || localPart === 'admin') {
-        sesiAktif.value = {
-          id: 'admin', role: 'admin', role_sistem: 'super_admin', nama: 'Administrator',
-          guru: 'Admin Utama', jk: 'L', jabatan: 'Administrator', lembaga: 'Semua Data',
-          akses: { kelola_guru: true, akses_keuangan: true, kelola_santri: true, kelola_lembaga: true, kelola_kelas: true },
-          auth_method: 'admin-builtin', firebase_uid: uid, firebase_email: user.email
-        }
-        _persistAdminSesi(sesiAktif.value); _persistFullSesi(sesiAktif.value)
-        return
-      }
-    }
-
-    // Step 1: lookup by linked_uid (Google linking)
-    let matchGuru = await queryColl('guru', [['linked_uid', '==', uid]], [], 1)
-    let matchSantri = []
-    if (matchGuru.length === 0) {
-      matchSantri = await queryColl('santri', [['linked_uid', '==', uid]], [], 1)
-    }
-
-    // Step 2: fallback by linked_email
-    if (matchGuru.length === 0 && matchSantri.length === 0 && emailLower) {
-      matchGuru = await queryColl('guru', [['linked_email', '==', emailLower]], [], 1)
-      if (matchGuru.length === 0) {
-        matchSantri = await queryColl('santri', [['linked_email', '==', emailLower]], [], 1)
-      }
-    }
-
-    // Step 3: fallback by WA dari email pattern (`{wa}@waseela.local` atau legacy `@ammu.local`/`@portal-mu.local`)
-    const waDomain = AUTH_EMAIL_DOMAINS.find((d) => emailLower.endsWith(d))
-    if (matchGuru.length === 0 && matchSantri.length === 0 && waDomain) {
-      const wa = emailLower.slice(0, -waDomain.length)
-      if (wa && wa !== 'admin' && wa !== 'adminmu') {
-        // Coba match field wa (number atau string)
-        matchGuru = await queryColl('guru', [['wa', '==', wa]], [], 1)
-        if (matchGuru.length === 0) {
-          matchSantri = await queryColl('santri', [['wa', '==', wa]], [], 1)
-        }
-      }
-    }
-
-    // Step 4: Set sesiAktif berdasar match
-    if (matchGuru.length > 0) {
-      const g = matchGuru[0]
-      if (g.status === 'Tidak Aktif') {
-        await authService.logout()
-        throw new Error('Akun guru berstatus tidak aktif')
-      }
-      const rs = g.role_sistem || 'user'
-      const isPengurus = ['admin', 'admin_keuangan', 'super_admin'].includes(rs)
-      sesiAktif.value = {
-        id: g.id,
-        role: isPengurus ? 'admin' : 'guru',
-        role_sistem: rs,
-        nama: g.nama,
-        guru: g.nama,
-        lembaga: isPengurus ? 'Semua Data' : g.lembaga || '',
-        jk: g.jk || '',
-        jabatan: g.jabatan || '',
-        username: g.username || '',
-        wa: g.wa || '',
-        foto: g.foto || '',
-        akses: g.akses || {},
-        auth_method: 'firebase',
-        firebase_uid: uid,
-        firebase_email: user.email
-      }
-      return
-    }
-
-    if (matchSantri.length > 0) {
-      const s = matchSantri[0]
-      if (s.aktif === false) {
-        await authService.logout()
-        throw new Error('Akun santri tidak aktif')
-      }
-      sesiAktif.value = {
-        id: s.id,
-        role: 'santri',
-        role_sistem: 'santri',
-        nama: s.nama,
-        nis: s.nis || '',
-        username: s.username || '',
-        wa: s.wa || '',
-        foto: s.foto || '',
-        lembaga: s.lembaga || '',
-        kelas: s.kelas || '',
-        wali: s.wali || '',
-        is_mukim: s.is_mukim === true, // v.101: gate menu Uang Saku (ma'had/mukim saja)
-        auth_method: 'firebase',
-        firebase_uid: uid,
-        firebase_email: user.email
-      }
-      return
-    }
-
-    // Step 5: No match — user terotentikasi tapi tidak terdaftar di DB
-    // eslint-disable-next-line no-console
-    console.warn('[auth.loadSesiFromUser] Firebase user authenticated tapi tidak match guru/santri:', emailLower)
-    sesiAktif.value = null
-    throw new Error('Akun terautentikasi tapi belum terdaftar sebagai guru/santri di sistem.')
+    const err = new Error(
+      'Login Google sementara dinonaktifkan selama migrasi. Silakan masuk dengan username/WA/NIS + kata sandi.'
+    )
+    err.code = 'auth/google-deferred'
+    throw err
   }
 
   async function logout() {
-    if (AUTH_BACKEND === 'supabase' || sesiAktif.value?.role_sistem === 'platform_owner') {
-      try { await authSupabase.signOut() } catch (e) { /* ignore */ }
-      sesiAktif.value = null
-      fbUser.value = null
-      _persistAdminSesi(null)
-      _persistFullSesi(null)
-      return
-    }
+    _loggingOut = true // v.111b: cegah _recoverZombieSession nyala saat logout disengaja
     // v.100 K1: hapus fcm_token user yang KELUAR sebelum sign-out — cegah notif anak/wali
-    //   nyasar ke pengguna berikutnya di HP yang sama (token device basi menempel di doc lama).
-    //   Best-effort; dijalankan selagi sesi Firebase masih ada (rules signedIn() lolos).
+    //   nyasar ke pengguna berikutnya di HP yang sama. Best-effort (lewat adapter Supabase).
     try {
       const s = sesiAktif.value
       if (s && s.id && String(s.id) !== 'admin') {
         const coll = s.role === 'santri' ? 'santri' : 'guru'
-        await setDoc(doc(db, coll, String(s.id)), { fcm_token: null }, { merge: true })
+        await mergeOne(coll, String(s.id), { fcm_token: null })
       }
     } catch (e) {
-      // eslint-disable-next-line no-console
       console.warn('[auth.logout] clear fcm_token gagal:', e?.message || e)
     }
-    await authService.logout()
+    try {
+      await authSupabase.signOut()
+    } catch (e) {
+      console.warn('[auth.logout] signOut Supabase gagal:', e?.message || e)
+    }
     sesiAktif.value = null
     fbUser.value = null
     _persistAdminSesi(null) // clear localStorage
     _persistFullSesi(null) // v.85.0526: clear backup sesi juga
+    // v.111: kosongkan koleksi terpusat (cegah data user lama bocor ke user berikut
+    //   di perangkat bersama; santri/guru/bukuInduk fresh saat login baru).
+    _lastCollUid = null
+    try {
+      useCollectionsStore().clear()
+    } catch (e) {
+      /* noop */
+    }
+    _zombieHandled = false // v.111b: reset one-shot utk sesi berikutnya
+    _loggingOut = false
   }
 
   function setSesiAktif(sesi) {
@@ -435,104 +283,128 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
-   * Restore sesi admin built-in dari localStorage saat App init.
-   * Dipanggil di App.vue onMounted setelah Firebase Auth check selesai.
-   * Kalau Firebase user null TAPI admin sesi tersimpan → restore.
+   * Restore sesi admin built-in dari localStorage saat App init (sync, instan).
+   * Sesi Supabase asli di-restore async oleh onAuthChange (persistSession).
    */
   function restoreAdminSesiFromStorage() {
-    if (sesiAktif.value) return // sudah ada sesi (kemungkinan dari Firebase Auth)
-    // v.20.5.0526: kalau Firebase Auth user ada → ini sesi guru/santri.
-    // Skip restore admin built-in supaya tidak overwrite sesi non-admin
-    if (fbAuth.currentUser) return
+    if (sesiAktif.value) return // sudah ada sesi
     const stored = _loadAdminSesi()
-    if (stored) {
-      sesiAktif.value = stored
+    if (stored) sesiAktif.value = stored
+  }
+
+  /**
+   * v.111b: AUTO-RECOVERY sesi "zombie" — sesiAktif terisi dari localStorage tapi Supabase
+   *   tak punya sesi valid (refresh_token mati/400). Tanpa ini: koleksi ke-RLS-filter →
+   *   "data guru/santri kosong padahal seolah login". Recover: bersihkan sesi basi + koleksi,
+   *   beri tahu user, arahkan ke /login (ambil token segar). One-shot per sesi-mati.
+   */
+  function _recoverZombieSession() {
+    if (_zombieHandled) return
+    _zombieHandled = true
+
+    console.warn('[auth] Sesi Supabase zombie (token mati) — auto-logout ke halaman login.')
+    sesiAktif.value = null
+    fbUser.value = null
+    _lastCollUid = null
+    _persistAdminSesi(null)
+    _persistFullSesi(null)
+    try {
+      useCollectionsStore().clear()
+    } catch (e) {
+      /* noop */
+    }
+    try {
+      useToast().warning('Sesi berakhir — silakan masuk kembali.')
+    } catch (e) {
+      /* noop */
+    }
+    try {
+      if (!String(window.location.hash || '').includes('/login')) {
+        window.location.hash = '#/login'
+      }
+    } catch (e) {
+      /* noop */
     }
   }
 
   /**
-   * v.20.4.0526: initAuth — dipanggil sekali dari main.js sebelum router siap.
-   * Restore admin (sync) + subscribe Firebase Auth (async), resolve authReady setelah
-   * first onAuthStateChanged fire supaya router guard tidak redirect ke /login saat refresh.
+   * initAuth — dipanggil sekali dari main.js sebelum router siap.
+   * 1) Restore cepat dari localStorage (admin + full sesi) supaya UI tak flash logout.
+   * 2) Subscribe Supabase Auth: event pertama resolve authReady. Bila ada sesi Supabase
+   *    (di-restore persistSession) tapi sesiAktif kosong/basi -> buildSesi() rekonstruksi.
    */
-  function initAuth() {
-    // === CUTOVER Fase 3: init jalur Supabase ===
-    if (AUTH_BACKEND === 'supabase') {
-      restoreAdminSesiFromStorage()
-      if (!sesiAktif.value) {
-        const stored = _loadFullSesi()
-        if (stored && stored.role) sesiAktif.value = stored
+  async function initAuth() {
+    // Step 0: OAuth Google return — tukar ?code jadi sesi (detectSessionInUrl:false → manual).
+    try {
+      const _code = new URLSearchParams(window.location.search).get('code')
+      if (_code) {
+        await authSupabase.exchangeOAuthCode(_code)
+        const _clean = window.location.origin + window.location.pathname + window.location.hash
+        window.history.replaceState({}, '', _clean)
       }
-      try { setAuditSesi(sesiAktif.value) } catch (e) {}
-      let resolvedS = false
-      const done = () => { if (!resolvedS && _authReadyResolve) { resolvedS = true; _authReadyResolve() } }
-      try {
-        authSupabase.onAuthChange(async (user) => {
-          if (user && !sesiAktif.value) {
-            try {
-              const s = await authSupabase.buildSesi()
-              if (s) { sesiAktif.value = s; _persistFullSesi(s) }
-            } catch (e) { /* ignore */ }
-          }
-          done()
-        })
-      } catch (e) { done() }
-      setTimeout(done, 3000)
-      return
+    } catch (e) {
+      console.warn('[auth.initAuth] OAuth code exchange gagal:', e?.message || e)
     }
-
-    // Step 1: Admin built-in instant restore (sync localStorage)
+    // Step 1: restore cepat dari localStorage (sync)
     restoreAdminSesiFromStorage()
-    // v.85.0526: Restore FULL sesi backup (guru/santri) — fix Android logout setiap close
     if (!sesiAktif.value) {
       const stored = _loadFullSesi()
       if (stored && stored.role) sesiAktif.value = stored
     }
-    // v.91.0626: set sesi utk atribusi audit_log setelah restore (reopen tetap ter-atribusi)
-    try { setAuditSesi(sesiAktif.value) } catch (e) {}
-    // v.100f: admin built-in kini punya sesi Firebase Auth ASLI (Anonymous di-disable).
-    //   Saat refresh, sesi Auth admin di-restore otomatis oleh persistence (onAuthStateChanged
-    //   fire dengan user admin asli) → request.auth tetap valid tanpa Anonymous.
+    // set sesi utk atribusi audit_log setelah restore (reopen tetap ter-atribusi)
+    try {
+      setAuditSesi(sesiAktif.value)
+    } catch (e) {}
 
-    // v.21.24c.0526: Force persist Firebase Auth ke IndexedDB (lebih reliable di PWA standalone)
-    // Sebelumnya: persistence dipasang hanya saat loginUnified. Di PWA refresh, kalau ada race
-    // di onAuthStateChanged sebelum persistence di-set → state hilang.
-    // Try indexedDBLocalPersistence dulu (PWA-friendly), fallback ke browserLocalPersistence (localStorage).
-    setPersistence(fbAuth, indexedDBLocalPersistence)
-      .catch(() => setPersistence(fbAuth, browserLocalPersistence))
-      .catch((e) => {
-        // eslint-disable-next-line no-console
-        console.warn('[auth.initAuth] setPersistence fail:', e?.message)
-      })
-
-    // Step 2: Subscribe Firebase Auth — first callback resolves authReady
+    // Step 2: subscribe Supabase Auth — first callback resolves authReady.
     let resolved = false
-    onAuthStateChanged(fbAuth, async (user) => {
-      if (user && user.isAnonymous) {
-        // v.90.0626: sesi Anonymous (admin built-in) — set fbUser saja, jangan loadSesi/timpa sesiAktif
-        fbUser.value = user
-      } else if (user) {
+    const done = () => {
+      if (!resolved && _authReadyResolve) {
+        resolved = true
+        _authReadyResolve()
+      }
+    }
+    authSupabase.onAuthChange(async (user) => {
+      if (user) {
+        _zombieHandled = false // sesi valid lagi → izinkan deteksi zombie berikutnya
         fbUser.value = user
         try {
-          if (!sesiAktif.value) await loadSesiFromUser(user) /* v.91.0626: jangan timpa sesi ke-restore dari localStorage -> fix reopen-logout */
+          // Rekonstruksi sesi bila kosong atau milik user lain (sesi basi dari localStorage).
+          if (!sesiAktif.value || sesiAktif.value.supabase_uid !== user.id) {
+            const sesi = _finalizeSesi(await authSupabase.buildSesi())
+            if (sesi) {
+              sesiAktif.value = sesi
+              _persistFullSesi(sesi)
+              if (sesi.id === 'admin') _persistAdminSesi(sesi)
+            }
+          }
         } catch (e) {
-          // eslint-disable-next-line no-console
-          console.warn('[auth.initAuth] loadSesiFromUser fail:', e.message)
+          console.warn('[auth.initAuth] buildSesi fail:', e?.message)
+        }
+        // v.111: saat token auth siap (INITIAL_SESSION ketika sesi di-restore / SIGNED_IN
+        //   ketika login) -> refetch koleksi terpusat. Ini yang memperbaiki "data kosong
+        //   sampai hard refresh" di Android/Electron. Dedupe per-uid (TOKEN_REFRESHED skip).
+        if (_lastCollUid !== user.id) {
+          _lastCollUid = user.id
+          try {
+            useCollectionsStore().reloadActive()
+          } catch (e) {
+            /* noop */
+          }
+        }
+      } else {
+        // user null. Bedakan: (a) memang belum login (sesiAktif kosong) → biarkan, guard
+        //   arahkan ke /login; vs (b) ZOMBIE: sesiAktif terisi dari localStorage tapi
+        //   Supabase tak punya sesi (token mati). Recover HANYA bila BUKAN logout sengaja.
+        if (!_loggingOut && sesiAktif.value) {
+          _recoverZombieSession()
         }
       }
-      if (!resolved && _authReadyResolve) {
-        resolved = true
-        _authReadyResolve()
-      }
+      done()
     })
 
-    // Safety timeout 3s
-    setTimeout(() => {
-      if (!resolved && _authReadyResolve) {
-        resolved = true
-        _authReadyResolve()
-      }
-    }, 3000)
+    // Safety timeout 3s (kalau onAuthChange tak fire)
+    setTimeout(done, 3000)
   }
 
   return {

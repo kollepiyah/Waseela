@@ -53,8 +53,8 @@
             }}</code>
           </div>
           <button
-            @click="copyLink"
             class="px-3 py-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold rounded-lg transition"
+            @click="copyLink"
           >
             <i class="fas fa-copy mr-1"></i>Salin
           </button>
@@ -120,9 +120,9 @@
           </div>
           <button
             v-if="psbAssetLembaga"
-            @click="savePsbAssets"
             :disabled="savingAssets"
             class="px-3 py-2 text-xs font-bold rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white disabled:opacity-50"
+            @click="savePsbAssets"
           >
             <i class="fas fa-save mr-1"></i
             >{{ savingAssets ? 'Menyimpan...' : 'Simpan Asset Lembaga' }}
@@ -273,21 +273,21 @@
                   </RouterLink>
                   <button
                     v-if="p.status !== 'approved'"
-                    @click="updateStatus(p, 'approved')"
                     class="text-[10px] px-2.5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold rounded transition"
+                    @click="updateStatus(p, 'approved')"
                   >
                     <i class="fas fa-check mr-1"></i>Approve
                   </button>
                   <button
                     v-if="p.status !== 'rejected'"
-                    @click="updateStatus(p, 'rejected')"
                     class="text-[10px] px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold rounded transition"
+                    @click="updateStatus(p, 'rejected')"
                   >
                     <i class="fas fa-times mr-1"></i>Reject
                   </button>
                   <button
-                    @click="onDelete(p)"
                     class="text-[10px] px-2.5 py-1 bg-[var(--bg-muted)] hover:bg-slate-200 text-[var(--text-primary)] font-bold rounded transition"
+                    @click="onDelete(p)"
                   >
                     <i class="fas fa-trash mr-1"></i>Hapus
                   </button>
@@ -298,7 +298,7 @@
         </div>
 
         <p class="text-center text-[10px] text-[var(--text-tertiary)] pt-2">
-          <i class="fas fa-circle-info mr-1"></i>{{ filteredPpdb.length }} pendaftar
+          <i class="fas fa-circle-info mr-1"></i>{{ filteredPpdb.length }} pendaftar · v.1.3.4
         </p>
       </div>
       <!-- /blok Riwayat -->
@@ -309,12 +309,13 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { subscribeColl, updateOne, deleteOne, subscribeDoc, mergeOne } from '@/services/firestore'
+import { subscribeColl, updateOne, deleteOne, subscribeDoc, mergeOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
-import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan canonical dropdown lembaga
+import { useSettingsStore } from '@/stores/settings'
+import { BRAND } from '@/config/brand'
 
 // v.100g: fmtDate tak terdefinisi di file ini → render baris pendaftaran lempar
 //   "s.fmtDate is not a function" → PpdbAdminView crash → halaman PSB blank.
@@ -333,8 +334,8 @@ function fmtDate(v) {
 }
 
 const auth = useAuthStore()
-const settings = useSettingsStore()
 const toast = useToast()
+const settingsStore = useSettingsStore()
 const confirmDlg = useConfirm()
 const route = useRoute()
 
@@ -368,9 +369,7 @@ const filterLembaga = ref('')
 const filterTahun = ref('')
 let _unsubPpdb = null
 
-// WASEELA: URL form PSB publik (situs PSB standalone) — diisi admin via Pengaturan bila dipakai.
-//   Default kosong (situs PSB standalone opsional/ditunda); tak lagi hardcode.
-const publicFormUrl = computed(() => settings.settings?.psbPublicUrl || '')
+const publicFormUrl = computed(() => settingsStore.settings?.psbPublicUrl || BRAND.psbUrl)
 
 function copyLink() {
   try {
@@ -423,12 +422,21 @@ const filteredPpdb = computed(() => {
           .toLowerCase()
           .includes(kw)
     )
-  return list.sort((a, b) =>
-    String(b.created_at?.seconds || b.no_pendaftaran || '').localeCompare(
-      String(a.created_at?.seconds || a.no_pendaftaran || '')
-    )
-  )
+  return list.sort((a, b) => ppdbEpoch(b) - ppdbEpoch(a))
 })
+
+// v.110: created_at Supabase = ISO string (dulu baca .seconds Firestore -> selalu fallback
+//   no_pendaftaran). Urut newest-first via epoch; fallback no_pendaftaran 'PSB-<ms>'.
+function ppdbEpoch(p) {
+  const c = p?.created_at
+  if (typeof c === 'string') {
+    const t = Date.parse(c)
+    if (!isNaN(t)) return t
+  }
+  if (c && typeof c === 'object' && c.seconds != null) return Number(c.seconds) * 1000
+  const n = Number(String(p?.no_pendaftaran || '').replace(/\D/g, ''))
+  return isNaN(n) ? 0 : n
+}
 
 function statusBg(s) {
   const st = String(s || 'pending').toLowerCase()

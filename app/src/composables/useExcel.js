@@ -1,8 +1,34 @@
 // v.21.25.0526 — useExcel composable
 // CDN-first loading (cdnjs) untuk hindari Firebase Hosting rewrite "**" -> /index.html
 // yang bikin /exceljs.min.js return text/html (MIME error).
+import { BRAND } from '@/config/brand'
 
 let _loadedPromise = null
+
+/**
+ * v.111: unwrap nilai sel ExcelJS dengan TAHAN-BANTING.
+ * Primitif (number/string/boolean) & Date DIBIARKAN apa adanya (konsumen impor
+ * lain—Absensi/Tabungan/Keuangan—mengandalkan angka tetap angka).
+ * Hanya OBJEK yang dirapikan agar TIDAK PERNAH bocor jadi "[object Object]":
+ *   - hyperlink { text, hyperlink }         -> text
+ *   - formula  { formula, result }          -> result (di-unwrap lagi)
+ *   - richText { richText:[{text},…] }      -> gabungan text
+ *   - array/spill anchor { formula, ref, shareType } tanpa result, atau objek lain -> ''
+ * (Kasus nyata: sheet "DATA UTAMA" pakai 1 formula array dinamis LET+SORTBY yang
+ *  nyebar ke seluruh sheet; sel anchor kebaca sbg objek formula → dulu jadi "[object Object]".)
+ */
+function unwrapCellValue(v, depth = 0) {
+  if (v === null || v === undefined) return v
+  if (typeof v !== 'object') return v // number/string/boolean → apa adanya
+  if (v instanceof Date) return v
+  if (depth > 4) return '' // jaga-jaga rekursi
+  if ('richText' in v && Array.isArray(v.richText))
+    return v.richText.map((r) => r?.text ?? '').join('')
+  if ('text' in v) return unwrapCellValue(v.text, depth + 1)
+  if ('result' in v) return unwrapCellValue(v.result, depth + 1)
+  if ('hyperlink' in v) return '' // hyperlink tanpa text
+  return '' // formula array/spill anchor / objek tak dikenal → jangan bocor
+}
 
 /**
  * v.21.25.0526: CDN-first. Local /vue/exceljs.min.js sebagai fallback (kalau offline/blocked).
@@ -32,11 +58,12 @@ export function useExcel() {
   async function exportSimple(rows, opts = {}) {
     const ExcelJS = await loadExcelJS()
     const wb = new ExcelJS.Workbook()
-    wb.creator = 'Waseela'
+    wb.creator = BRAND.appName
     wb.created = new Date()
     const ws = wb.addWorksheet(opts.sheetName || 'Data')
 
-    const columns = opts.columns || Object.keys(rows[0] || {}).map((k) => ({ key: k, header: k, width: 16 }))
+    const columns =
+      opts.columns || Object.keys(rows[0] || {}).map((k) => ({ key: k, header: k, width: 16 }))
 
     let titleRowOffset = 0
     if (opts.title) {
@@ -57,7 +84,12 @@ export function useExcel() {
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' } }
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F766E' } }
       cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
-      cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } }
+      cell.border = {
+        top: { style: 'thin' },
+        bottom: { style: 'thin' },
+        left: { style: 'thin' },
+        right: { style: 'thin' }
+      }
     })
     headerRow.height = 22
 
@@ -73,12 +105,19 @@ export function useExcel() {
         const cell = row.getCell(i + 1)
         cell.value = r[c.key] ?? ''
         cell.alignment = { vertical: 'middle', wrapText: true }
-        cell.border = { top: { style: 'hair' }, bottom: { style: 'hair' }, left: { style: 'hair' }, right: { style: 'hair' } }
+        cell.border = {
+          top: { style: 'hair' },
+          bottom: { style: 'hair' },
+          left: { style: 'hair' },
+          right: { style: 'hair' }
+        }
       })
     })
 
     const buffer = await wb.xlsx.writeBuffer()
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    })
     await downloadBlob(blob, opts.filename || `export_${Date.now()}.xlsx`)
   }
 
@@ -89,7 +128,8 @@ export function useExcel() {
     const ExcelJS = await loadExcelJS()
     const wb = new ExcelJS.Workbook()
     const ws = wb.addWorksheet(opts.sheetName || 'Data')
-    const columns = opts.columns || Object.keys(rows[0] || {}).map((k) => ({ key: k, header: k, width: 16 }))
+    const columns =
+      opts.columns || Object.keys(rows[0] || {}).map((k) => ({ key: k, header: k, width: 16 }))
 
     const kop = opts.kop || []
     let rowIdx = 1
@@ -127,7 +167,12 @@ export function useExcel() {
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' } }
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F766E' } }
       cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
-      cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } }
+      cell.border = {
+        top: { style: 'thin' },
+        bottom: { style: 'thin' },
+        left: { style: 'thin' },
+        right: { style: 'thin' }
+      }
     })
     headerRow.height = 24
     rowIdx++
@@ -139,7 +184,12 @@ export function useExcel() {
         const cell = row.getCell(i + 1)
         cell.value = r[col.key] ?? ''
         cell.alignment = { vertical: 'middle', wrapText: true }
-        cell.border = { top: { style: 'hair' }, bottom: { style: 'hair' }, left: { style: 'hair' }, right: { style: 'hair' } }
+        cell.border = {
+          top: { style: 'hair' },
+          bottom: { style: 'hair' },
+          left: { style: 'hair' },
+          right: { style: 'hair' }
+        }
       })
       rowIdx++
     })
@@ -149,7 +199,9 @@ export function useExcel() {
     })
 
     const buffer = await wb.xlsx.writeBuffer()
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    })
     await downloadBlob(blob, opts.filename || `export_${Date.now()}.xlsx`)
   }
 
@@ -166,17 +218,19 @@ export function useExcel() {
     const ws = wb.worksheets[0]
     if (!ws) return []
 
-    // Step 1: Find header row — pick row in first 10 with most non-empty cells
+    // Step 1: Find header row — pick row in first 10 with most DISTINCT short cells.
+    // Distinct (bukan sekadar jumlah sel) agar baris metadata ber-isi sama berulang
+    // (mis. ekspor Fingerspot "Perjanjian : ..." × 13 kolom) tak salah dikira header.
     let bestHeaderRow = 1
     let bestCount = 0
     for (let i = 1; i <= Math.min(10, ws.rowCount); i++) {
-      let count = 0
+      const seen = new Set()
       ws.getRow(i).eachCell((cell) => {
         const v = String(cell.value || '').trim()
-        if (v && v.length > 0 && v.length < 60) count++
+        if (v && v.length < 60) seen.add(v.toLowerCase())
       })
-      if (count > bestCount) {
-        bestCount = count
+      if (seen.size > bestCount) {
+        bestCount = seen.size
         bestHeaderRow = i
       }
     }
@@ -184,7 +238,7 @@ export function useExcel() {
     // Step 2: Read headers from detected row
     const headers = []
     ws.getRow(bestHeaderRow).eachCell((cell, colNumber) => {
-      headers[colNumber - 1] = String(cell.value || `col${colNumber}`).trim()
+      headers[colNumber - 1] = String(unwrapCellValue(cell.value) || `col${colNumber}`).trim()
     })
 
     // Step 3: Read data from rows AFTER header row
@@ -193,12 +247,11 @@ export function useExcel() {
       if (rowNumber <= bestHeaderRow) return
       const obj = {}
       row.eachCell((cell, colNumber) => {
-        let v = cell.value
-        if (v && typeof v === 'object' && 'text' in v) v = v.text
-        if (v && typeof v === 'object' && 'result' in v) v = v.result
-        obj[headers[colNumber - 1]] = v
+        obj[headers[colNumber - 1]] = unwrapCellValue(cell.value)
       })
-      if (Object.values(obj).some((v) => v !== undefined && v !== null && String(v).trim() !== '')) {
+      if (
+        Object.values(obj).some((v) => v !== undefined && v !== null && String(v).trim() !== '')
+      ) {
         rows.push(obj)
       }
     })

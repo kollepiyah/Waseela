@@ -1,17 +1,13 @@
-// Firebase v10 modular — init satu kali, export instances
-// Migrasi dari `firebase.firestore()` (compat) di legacy ke modular SDK
-import { initializeApp, getApp } from 'firebase/app'
-import { initializeFirestore, getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
-import { getAuth, connectAuthEmulator } from 'firebase/auth'
-import { getStorage, connectStorageEmulator } from 'firebase/storage'
+// Firebase modular — init SATU KALI untuk FCM (Cloud Messaging) + App Check.
+// Migrasi Supabase (F8): Firestore / Auth / Storage Firebase DIHAPUS dari app —
+//   data, auth, dan storage kini sepenuhnya Supabase. Firebase menyusut jadi
+//   "pipa notifikasi" (firebaseApp dipakai usePushNotifications + SW messaging)
+//   plus App Check (defense-in-depth, native Play Integrity).
+import { initializeApp } from 'firebase/app'
 import { initializeAppCheck, ReCaptchaV3Provider, CustomProvider } from 'firebase/app-check'
-import tenantConfig from '@/tenant.config.js'
+import { FIREBASE_CONFIG } from '@/config/brand'
 
-// WASEELA white-label: firebaseConfig per-tenant dari tenant.config.js (build-time).
-//   Tiap lembaga = project Firebase terpisah. File aktif digenerate build-tenant.js.
-const firebaseConfig = tenantConfig.firebaseConfig
-
-export const firebaseApp = initializeApp(firebaseConfig)
+export const firebaseApp = initializeApp(FIREBASE_CONFIG)
 
 // v.105 (S5): loader Play Integrity native (memoized) untuk CustomProvider App Check.
 //   Hanya dipakai di Capacitor Android. Plugin + FirebaseAppCheck.initialize() di-load
@@ -40,9 +36,6 @@ async function _getNativeAppCheckToken() {
 }
 
 // === App Check (audit 08Jun2026, v.96.0626) — blokir klien non-app ==========================
-// Init SINKRON, tepat setelah initializeApp & SEBELUM getFirestore/getAuth dipakai, supaya
-// SEMUA request Firestore/Auth/Storage App Check-aware sejak awal (penting agar aman saat
-// Console di-Enforce: request awal tak ditolak karena token belum siap).
 // AMAN/non-breaking: hanya aktif bila VITE_APPCHECK_RECAPTCHA_KEY di-set. Key kosong = OFF.
 // Web/PWA: reCAPTCHA v3. Native (Capacitor/Electron): set VITE_APPCHECK_DEBUG_TOKEN (token
 // terdaftar di Console) atau exempt dulu. try/catch -> gagal init TIDAK memblok app.
@@ -53,7 +46,10 @@ try {
   // native (localhost/capacitor scheme) reCAPTCHA gagal terus -> spam "appCheck/recaptcha-error".
   const _isElectron = typeof navigator !== 'undefined' && /Electron/i.test(navigator.userAgent)
   const _isCapacitorNative =
-    typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()
+    typeof window !== 'undefined' &&
+    window.Capacitor &&
+    window.Capacitor.isNativePlatform &&
+    window.Capacitor.isNativePlatform()
   const _isNative = _isElectron || _isCapacitorNative
   const _isWebOrigin =
     typeof location !== 'undefined' && /^https?:$/.test(location.protocol) && !_isNative
@@ -63,16 +59,12 @@ try {
     //   @capacitor-firebase/app-check meng-attest device di sisi native; CustomProvider
     //   menyalurkan token native ke JS SDK (WebView). initializeAppCheck dipanggil SINKRON
     //   (registrasi awal) — plugin di-load + getToken LAZY (memoized) saat request pertama.
-    //   Menggantikan DEBUG TOKEN lama (dev-only, tak valid utk user produksi).
-    //   PRASYARAT enforce: daftarkan Play Integrity di Firebase Console (App Check > app
-    //   Android) + SHA-256 (upload & app-signing) + `npx cap sync android` + rebuild AAB.
     initializeAppCheck(firebaseApp, {
       provider: new CustomProvider({ getToken: _getNativeAppCheckToken }),
       isTokenAutoRefreshEnabled: true
     })
   } else if (_isElectron) {
     // Electron (desktop) — TAK ada Play Integrity → tetap DEBUG TOKEN (fase testing).
-    //   VITE_APPCHECK_DEBUG_TOKEN didaftarkan di Console App Check > app Web > Manage debug tokens.
     if (_acDebug && typeof self !== 'undefined') {
       self.FIREBASE_APPCHECK_DEBUG_TOKEN = _acDebug === 'true' ? true : _acDebug
       initializeAppCheck(firebaseApp, {
@@ -87,59 +79,7 @@ try {
       isTokenAutoRefreshEnabled: true
     })
   }
-} catch (e) { /* non-blocking */ }
+} catch (e) {
+  /* non-blocking */
+}
 // ==========================================================================================
-// v.109 FIX: Firestore transport. Default WebChannel streaming GAGAL di Android WebView
-// (Capacitor) → "Could not reach Cloud Firestore backend within 10 seconds" → offline mode
-// → data macet "Memuat…" selamanya. Force long-polling KHUSUS native; web tetap WebChannel
-// (lebih efisien & sudah jalan). initializeFirestore WAJIB jadi akses Firestore PERTAMA —
-// titik ini adalah init Firestore pertama di app, jadi aman.
-const _isCapNativeFS =
-  typeof window !== 'undefined' && window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()
-export const db = _isCapNativeFS
-  ? initializeFirestore(firebaseApp, { experimentalForceLongPolling: true })
-  : getFirestore(firebaseApp)
-export const auth = getAuth(firebaseApp)
-export const storage = getStorage(firebaseApp)
-
-// WASEELA white-label: base URL Cloud Functions HTTP (onRequest) = PROJECT TENANT INI.
-//   Region us-central1 (lihat region onRequest di functions/index.js — sama semua tenant).
-//   Dulu di-hardcode ke project asal → login guru/santri & analitik bisa nyasar. Kini
-//   derive dari firebaseConfig.projectId. Kosong bila projectId belum diisi (mis. demo draft)
-//   → fetch jadi relatif & gagal anggun (caller fallback / abaikan).
-export const FUNCTIONS_BASE = firebaseConfig?.projectId
-  ? `https://us-central1-${firebaseConfig.projectId}.cloudfunctions.net`
-  : ''
-
-// v.53.0526: Secondary Firebase app untuk provisioning Auth user baru tanpa swap session admin.
-// Port dari legacy _getSecondaryAuth() — saat lazy-create Auth user untuk guru/santri legacy,
-// createUserWithEmailAndPassword auto-signIn user baru di app utama → kebuang session admin.
-// Pakai secondary app: createUser di sana, lalu signOut, main app session tidak terganggu.
-let _secondaryAuth = null
-export function getSecondaryAuth() {
-  if (_secondaryAuth) return _secondaryAuth
-  try {
-    const secondaryApp = initializeApp(firebaseConfig, '_auth_provisioning')
-    _secondaryAuth = getAuth(secondaryApp)
-    return _secondaryAuth
-  } catch (e) {
-    try {
-      const existingApp = getApp('_auth_provisioning')
-      _secondaryAuth = getAuth(existingApp)
-      return _secondaryAuth
-    } catch (e2) {
-      // eslint-disable-next-line no-console
-      console.warn('[firebase] Secondary auth init fail:', e2.message)
-      return null
-    }
-  }
-}
-
-// Emulator opt-in: set VITE_USE_FIREBASE_EMULATOR=1 di .env.local
-if (import.meta.env.VITE_USE_FIREBASE_EMULATOR === '1') {
-  connectFirestoreEmulator(db, 'localhost', 8080)
-  connectAuthEmulator(auth, 'http://localhost:9099')
-  connectStorageEmulator(storage, 'localhost', 9199)
-  // eslint-disable-next-line no-console
-  console.info('[firebase] Connected to local emulators')
-}

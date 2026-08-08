@@ -1,11 +1,31 @@
 // Formatting utilities — port dari legacy
 const BULAN_ID = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember'
 ]
 const BULAN_ID_SHORT = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-  'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'Mei',
+  'Jun',
+  'Jul',
+  'Agt',
+  'Sep',
+  'Okt',
+  'Nov',
+  'Des'
 ]
 
 /** Format Rupiah. */
@@ -46,6 +66,65 @@ export function fmtDateTime(d) {
   return fmtTgl(d) + ', ' + fmtJam(d)
 }
 
+/**
+ * Tanggal KALENDER Asia/Jakarta (WIB) 'YYYY-MM-DD'.
+ * WIB = UTC+7. `new Date().toISOString().slice(0,10)` memakai UTC → MUNDUR 1 hari
+ * untuk transaksi 00:00–06:59 WIB (= 17:00–23:59 UTC hari sebelumnya). Pakai helper
+ * ini untuk tanggal transaksi (POS dsb.) supaya tak salah masuk laporan harian.
+ * `d` opsional (default sekarang) — dibuat menerima argumen agar bisa diuji deterministik.
+ */
+export function todayJakarta(d = new Date()) {
+  const dt = d instanceof Date ? d : new Date(d)
+  if (isNaN(dt.getTime())) return ''
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(dt)
+  const p = Object.fromEntries(parts.map((x) => [x.type, x.value]))
+  return `${p.year}-${p.month}-${p.day}`
+}
+
+/**
+ * Deret tanggal KALENDER 'YYYY-MM-DD' dari `start` s/d `end` (INKLUSIF).
+ *
+ * Kenapa ada: pola lama `for (d = new Date(start + 'T00:00:00'); ...) out.push(
+ * d.toISOString().slice(0,10))` bikin tanggal MUNDUR 1 HARI di WIB — `new Date(
+ * '2026-08-04T00:00:00')` = tengah malam LOKAL = 2026-08-03T17:00:00Z, lalu
+ * toISOString() membacanya sebagai UTC. Akibat nyatanya (Kyai, 5 Agu 2026): izin
+ * tanggal 4 Agu menulis baris absensi ke 3 Agu; karena 3 Agu sudah ada baris
+ * "hadir", penulisan malah dilewati → hari 4 Agu tetap ALPA & kolom Izin 0.
+ *
+ * Di sini tanggal masuk & keluar sama-sama string KALENDER (dari date picker,
+ * tanpa jam/zona), jadi iterasinya di UTC murni + dibaca pakai getUTC* — tak
+ * pernah menyentuh zona lokal sama sekali, jadi bebas dari pergeseran itu.
+ *
+ * `maxHari` = guard supaya rentang keliru (mis. salah ketik tahun) tak meledak.
+ * Input tak valid → []; `end` < `start` → hanya [start].
+ */
+export function rentangTanggal(start, end, maxHari = 60) {
+  const isTgl = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v)
+  const s = String(start || '').slice(0, 10)
+  if (!isTgl(s)) return []
+  const e0 = String(end || '').slice(0, 10)
+  const e = isTgl(e0) ? e0 : s
+  if (e < s) return [s]
+  const out = []
+  const d = new Date(s + 'T00:00:00Z')
+  const last = new Date(e + 'T00:00:00Z')
+  if (isNaN(d.getTime()) || isNaN(last.getTime())) return []
+  while (d <= last && out.length < maxHari) {
+    out.push(
+      `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(
+        d.getUTCDate()
+      ).padStart(2, '0')}`
+    )
+    d.setUTCDate(d.getUTCDate() + 1)
+  }
+  return out
+}
+
 /** Ambil angka dari string '21 (PTPT-A)' → 21. */
 export function extractNumber(s) {
   if (s == null) return 0
@@ -72,7 +151,10 @@ export function juzNum(v) {
  */
 export function toTitleCase(str) {
   if (!str) return ''
-  return String(str).trim().toLowerCase().replace(/(^|[\s,.\-])(\w)/g, (m, sep, c) => sep + c.toUpperCase())
+  return String(str)
+    .trim()
+    .toLowerCase()
+    .replace(/(^|[\s,.\-])(\w)/g, (m, sep, c) => sep + c.toUpperCase())
 }
 
 /** Hapus gelar dari nama guru ('Ustadz Ahmad' → 'Ahmad'). */
@@ -152,7 +234,11 @@ export function parseMultipleWA(raw) {
   return result
 }
 
-// Tautan wa.me dari nomor lokal + pesan opsional (dipakai view kontak penyimak/guru).
+/**
+ * v.1.1.9: Tautan wa.me dari nomor apa pun ('' bila nomor tak layak).
+ * wa.me minta format internasional TANPA '+' → 0812… jadi 62812…
+ * `pesan` opsional untuk teks awal chat.
+ */
 export function waLink(raw, pesan = '') {
   const lokal = normalizeWA(raw) // selalu berawalan '0'
   if (!lokal || lokal.length < 8) return ''

@@ -1,13 +1,14 @@
-// authSupabase.js — WASEELA Fase 3 (migrasi Supabase): jalur auth PARALEL ke auth.js
-// (Firebase), DORMANT sampai cutover (Fase 6). Belum diimpor view/store mana pun.
+// authSupabase.js — F5 (migrasi Supabase): jalur auth PARALEL ke auth.js (Firebase),
+// DORMANT sampai cutover (F6). Tak diimpor view/store mana pun sekarang.
 //
-// Alur: login username/WA/NIS + source -> resolve_login RPC (auth_key kanonik, tenant
-// dari header x-tenant, tanpa PII) -> email `<auth_key>@<slug>.waseela.local` -> signIn;
-// belum ada -> signUp (lazy-create, sandi default '1234'). Peran + tenant dipetakan
-// server (trigger handle_new_user). Client lalu baca profiles + guru/santri -> sesiAktif.
+// Alur (keputusan final): login username/WA/NIS -> resolve_login RPC (canonical
+// auth_key, tanpa PII) -> email `<auth_key>@waseela.local` -> signIn; bila akun belum
+// ada -> signUp (lazy-create, sandi default '1234'). Peran dipetakan server-side
+// oleh trigger handle_new_user (lihat migration 07). Client lalu baca profiles +
+// guru/santri -> bangun sesiAktif (bentuk IDENTIK stores/auth.js).
 //
-// MULTI-TENANT: email di-NAMESPACE per-tenant (<slug>.waseela.local) supaya username/NIS
-// yang sama antar-lembaga tak bentrok di auth.users.email (unik global). slug = build tenant.
+// Tak ada hashing/token sendiri. Sandi user dipad 'wsl_auth_'+sandi (min 6 char
+// Supabase; mirror Firebase toAuthPassword) — user tetap ketik '1234'.
 import { supabase } from './supabase'
 import { getOne, mergeOne } from './db'
 
@@ -15,38 +16,28 @@ function _ensure() {
   if (!supabase) throw new Error('Supabase belum dikonfigurasi (.env.local).')
 }
 
-// Slug tenant build ini (sama dg header x-tenant di supabase.js). Domain email dinamai
-// per-tenant. Dev tanpa env -> 'demo'.
-const TENANT_SLUG = import.meta.env.VITE_SUPABASE_TENANT_SLUG || 'demo'
-export const AUTH_EMAIL_DOMAIN = '@' + TENANT_SLUG + '.waseela.local'
+export const AUTH_EMAIL_DOMAIN = '@waseela.local'
 
 /** Padding sandi -> >= 6 char (mirror Firebase). User tak tahu prefix. */
 export function toAuthPassword(pass) {
   return 'wsl_auth_' + String(pass || '')
 }
 
-// Platform owner (vendor Bakafrawi) — akun LINTAS-tenant, email TETAP (bukan
-// namespaced per-tenant). Login pakai key ini di form username biasa.
-export const PLATFORM_OWNER_EMAIL = 'owner@waseela.local'
-const PLATFORM_OWNER_KEYS = ['owner', 'superowner', 'platform', 'bakafrawi']
-
-/** True bila input login = key platform owner (selalu dirutekan ke Supabase, apa pun AUTH_BACKEND). */
-export function isPlatformOwnerKey(input) {
-  return PLATFORM_OWNER_KEYS.includes(String(input || '').trim().toLowerCase())
-}
-
 function sanitizeAuthLocalPart(input) {
-  return String(input || '').toLowerCase().replace(/[^a-z0-9._-]/g, '')
+  return String(input || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, '')
 }
 
-/** Bangun email Auth internal (namespaced tenant) dari auth_key kanonik. */
+/** Bangun email Auth internal dari auth_key kanonik (hasil resolve_login). */
 export function buildAuthEmail(authKey) {
   const clean = sanitizeAuthLocalPart(authKey)
   return clean ? clean + AUTH_EMAIL_DOMAIN : null
 }
 
-/** Resolusi login pra-auth via RPC. `source`: 'guru' | 'santri' | null.
- *  Return { source, auth_key, active } | null. Tenant di-resolve server dari header x-tenant. */
+/** Resolusi login pra-auth via RPC. `source` opsional: 'guru' | 'santri' | null
+ *  (memisahkan jalur login guru/pegawai vs santri/wali saat 1 WA dipakai keduanya).
+ *  Return { source, auth_key, active } | null. */
 export async function resolveLogin(input, source = null) {
   _ensure()
   const { data, error } = await supabase.rpc('resolve_login', {
@@ -64,28 +55,40 @@ function _isInvalidCred(error) {
 }
 
 /**
+ * Resolusi login dengan CADANGAN lintas-jalur (v.1.2.9).
+ *
+ * LATAR: sejak v.111 layar login punya dua tab, dan tab yang dipilih dikirim
+ *   sebagai `p_source` — gunanya memisahkan satu nomor WA yang dipakai guru yang
+ *   SEKALIGUS wali santri. Efek sampingnya: memilih tab yang keliru bukan sekadar
+ *   merepotkan, tapi menghasilkan "tidak ditemukan" untuk akun yang jelas ADA.
+ *   Itu yang berulang kali dibaca peninjau Google Play sebagai "kredensial salah"
+ *   (lihat PLAYSTORE-LISTING.md §9), dan pemeriksa otomatis memang tak membaca
+ *   instruksi tab yang kita tulis di kolom Detail login.
+ *
+ * ATURAN: cadangan HANYA dipakai ketika jalur terpilih tak menemukan APA PUN.
+ *   Kalau jalur terpilih menemukan sesuatu, hasilnya dipakai apa adanya — jadi
+ *   pemisahan WA-ganda yang jadi alasan tab itu ada tetap utuh, karena kasus itu
+ *   selalu ketemu di jalur terpilih.
+ *
+ * BUKAN kelonggaran hak: identitas & peran tetap dibangun server-side dari
+ *   `profiles` (buildSesi), bukan dari tab yang diklik. Memakai `p_source: null`
+ *   pun tak membuka apa-apa — anon memang boleh memanggil resolve_login begitu.
+ *
+ * `resolver` disuntikkan supaya keputusannya bisa diuji tanpa jaringan.
+ */
+export async function resolveLoginLintasJalur(input, source = null, resolver = resolveLogin) {
+  const utama = await resolver(input, source)
+  if (utama || !source) return utama
+  return (await resolver(input, null)) || null
+}
+
+/**
  * loginUnified — resolve -> signIn -> (lazy) signUp. Return { source, user, session }.
  * Lempar error kode 'auth/not-found' | 'auth/inactive' | 'auth/wrong-password'.
  */
 export async function loginUnified(input, password, source = null) {
   _ensure()
-
-  // Platform owner: bypass resolve_login (tak terikat tenant). Email tetap, signIn saja
-  // (akun di-provision, TIDAK lazy-signup — cegah pembuatan owner sembarangan).
-  if (PLATFORM_OWNER_KEYS.includes(String(input || '').trim().toLowerCase())) {
-    const si = await supabase.auth.signInWithPassword({
-      email: PLATFORM_OWNER_EMAIL, password: toAuthPassword(password)
-    })
-    if (si.error) {
-      const e = new Error(_isInvalidCred(si.error)
-        ? 'Sandi owner salah.' : 'Akun owner belum tersedia. Hubungi administrator sistem.')
-      e.code = _isInvalidCred(si.error) ? 'auth/wrong-password' : 'auth/not-found'
-      throw e
-    }
-    return { source: 'owner', user: si.data.user, session: si.data.session }
-  }
-
-  const info = await resolveLogin(input, source)
+  const info = await resolveLoginLintasJalur(input, source)
   if (!info) {
     const e = new Error(
       source === 'santri'
@@ -108,8 +111,10 @@ export async function loginUnified(input, password, source = null) {
   let { data, error } = await supabase.auth.signInWithPassword({ email, password: pass })
   if (error) {
     if (!_isInvalidCred(error)) throw error
+    // Akun belum ada -> lazy-create.
     const up = await supabase.auth.signUp({ email, password: pass })
     if (up.error) {
+      // Akun SUDAH ada tapi kredensial salah tadi -> sandi salah (bukan akun baru).
       if (/already|registered|exists/i.test(up.error.message || '')) {
         const e = new Error('Kata sandi salah')
         e.code = 'auth/wrong-password'
@@ -117,6 +122,7 @@ export async function loginUnified(input, password, source = null) {
       }
       throw up.error
     }
+    // Bila "Confirm email" OFF -> signUp langsung punya session; jika tidak, signIn lagi.
     if (up.data?.session) {
       data = up.data
     } else {
@@ -148,30 +154,16 @@ export async function buildSesi() {
   const uid = user.id
   const email = user.email || ''
 
-  const { data: prof, error } = await supabase.from('profiles').select('*').eq('id', uid).maybeSingle()
+  // profiles dibaca LANGSUNG (bukan db.getOne) supaya `akses` tetap objek bersarang.
+  const { data: prof, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', uid)
+    .maybeSingle()
   if (error) throw error
   if (!prof) return null
 
-  // Platform owner (vendor) — sesi lintas-tenant utk konsol; role UI 'admin' (akses penuh),
-  // role_sistem 'platform_owner' dipakai router utk gate /konsol.
-  if (prof.role_sistem === 'platform_owner') {
-    return {
-      id: 'owner',
-      role: 'admin',
-      role_sistem: 'platform_owner',
-      nama: 'Platform Owner',
-      guru: 'Platform Owner',
-      jk: 'L',
-      jabatan: 'Platform Owner',
-      lembaga: 'Semua Tenant',
-      akses: { ..._ADMIN_AKSES },
-      auth_method: 'supabase',
-      supabase_uid: uid,
-      supabase_email: email
-    }
-  }
-
-  // Admin built-in (super_admin tanpa guru_id/santri_id).
+  // Admin built-in (super_admin tanpa guru_id/santri_id, login_key admin).
   if (!prof.guru_id && !prof.santri_id && prof.role_sistem === 'super_admin') {
     return {
       id: 'admin',
@@ -211,6 +203,7 @@ export async function buildSesi() {
       jk: g.jk || '',
       jabatan: g.jabatan || '',
       jabatan_tambahan: g.jabatan_tambahan || '',
+      // v.111: gedung yang dikelola admin keuangan (scope Buku Kas + akademik)
       gedung: g.gedung || '',
       username: g.username || '',
       wa: g.wa || '',
@@ -266,9 +259,15 @@ export async function signOut() {
 /** Subscribe perubahan auth state. Return unsubscribe function. */
 export function onAuthChange(callback) {
   _ensure()
-  const { data } = supabase.auth.onAuthStateChange((_event, session) => callback(session?.user || null))
+  const { data } = supabase.auth.onAuthStateChange((_event, session) =>
+    callback(session?.user || null)
+  )
   return () => {
-    try { data.subscription.unsubscribe() } catch { /* noop */ }
+    try {
+      data.subscription.unsubscribe()
+    } catch {
+      /* noop */
+    }
   }
 }
 
@@ -280,8 +279,9 @@ export async function currentSession() {
 }
 
 /**
- * resetUserPassword — admin (super_admin) reset sandi guru/santri ke '1234' via
- * Edge Function reset-user-password (service-role; guard super_admin). Fase 5.
+ * resetUserPassword — admin (WAJIB super_admin) reset sandi guru/santri ke '1234'.
+ * Pengganti Cloud Function resetUserPassword: panggil Edge Function reset-user-password
+ * (service-role; guard super_admin via RPC admin_target_auth_uid). Lempar error bila gagal.
  */
 export async function resetUserPassword(collection, docId) {
   _ensure()
@@ -289,22 +289,115 @@ export async function resetUserPassword(collection, docId) {
     body: { collection, docId: String(docId) }
   })
   if (error) {
+    // FunctionsHttpError (non-2xx): coba ambil pesan dari body respons.
     let msg = error.message || 'reset-gagal'
     try {
       const j = await error.context?.json?.()
       if (j?.error) msg = j.error
-    } catch { /* noop */ }
+    } catch {
+      /* noop */
+    }
     throw new Error(msg)
   }
   if (!data?.ok) throw new Error(data?.error || 'reset-gagal')
   return data
 }
 
-// --- Google OAuth via Supabase (provider Google diaktifkan di Supabase Auth). ---
-function _googleRedirect() {
-  try { return window.location.origin + window.location.pathname } catch { return undefined }
+/**
+ * provisionAkun — buat akun login untuk guru/santri yang BELUM punya (K1-b).
+ * Permintaan Kyai: akun lahir bersama datanya, supaya tak perlu dibuat satu per
+ * satu dan pendaftaran mandiri boleh dimatikan tanpa ada yang terkunci.
+ *
+ * HANYA MEMBUAT yang belum ada — sandi akun yang sudah ada tak pernah disentuh
+ * (dijaga di sisi server: RPC mengecualikan yang sudah punya baris auth.users,
+ * dan Edge Function memakai createUser, bukan update).
+ *
+ * @param {{collection?:'guru'|'santri', docId?:string|number}} target kosong = sweep semua
+ * @returns {Promise<{dibuat:number, dilewati:number, gagal:Array, kandidat:number, sisa:number}>}
+ */
+export async function provisionAkun(target = {}) {
+  _ensure()
+  const body = target?.docId
+    ? { mode: 'one', collection: target.collection, docId: String(target.docId) }
+    : { mode: 'sweep' }
+  const { data, error } = await supabase.functions.invoke('provision-akun', { body })
+  if (error) {
+    let msg = error.message || 'provision-gagal'
+    try {
+      const j = await error.context?.json?.()
+      if (j?.error) msg = j.error
+    } catch {
+      /* noop */
+    }
+    throw new Error(msg)
+  }
+  if (!data?.ok) throw new Error(data?.error || 'provision-gagal')
+  return data
 }
 
+/**
+ * provisionAkunSemua — sweep berulang sampai habis (Edge Function membatasi 100
+ * akun per panggilan). Dipakai tombol "Buat akun yang belum ada" + sesudah impor.
+ * @param {(p:{dibuat:number,sisa:number})=>void} [onProgress]
+ */
+export async function provisionAkunSemua(onProgress) {
+  let dibuat = 0
+  let dilewati = 0
+  let kandidat = 0
+  // Di-dedup per id: yang gagal tetap jadi kandidat di putaran berikutnya, jadi
+  // orang yang sama muncul sekali per putaran. Tanpa ini laporannya menyesatkan —
+  // 3 Agu 2026 tampil "18 gagal" padahal 3 orang x 6 putaran.
+  const gagalMap = new Map()
+  // Batas putaran = jaring pengaman; 20 x 100 = 2.000 akun, jauh di atas kebutuhan.
+  for (let i = 0; i < 20; i++) {
+    const r = await provisionAkun()
+    dibuat += r.dibuat || 0
+    dilewati += r.dilewati || 0
+    kandidat = Math.max(kandidat, r.kandidat || 0)
+    for (const g of r.gagal || []) gagalMap.set(String(g?.id ?? g?.nama ?? Math.random()), g)
+    if (onProgress) onProgress({ dibuat, sisa: r.sisa || 0 })
+    // Berhenti bila tak ada sisa ATAU putaran ini tak membuat apa pun (cegah
+    // loop abadi kalau semua kandidat justru gagal dibuat).
+    if (!r.sisa || (r.dibuat || 0) + (r.dilewati || 0) === 0) break
+  }
+  return { dibuat, dilewati, kandidat, gagal: [...gagalMap.values()] }
+}
+
+/**
+ * provisionAkunSenyap — versi best-effort untuk dipasang di jalur impor/simpan.
+ * TIDAK pernah melempar & tidak menampilkan galat: kalau Edge Function belum
+ * ter-deploy atau pemanggilnya bukan admin, penyimpanan datanya TIDAK boleh
+ * gagal gara-gara pembuatan akun. Kekurangannya disapu tombol manual / panggilan
+ * berikutnya (fungsinya idempoten).
+ */
+export async function provisionAkunSenyap(target = {}) {
+  try {
+    const r = target?.docId ? await provisionAkun(target) : await provisionAkunSemua()
+    if (r?.dibuat) console.log(`[provision-akun] ${r.dibuat} akun login dibuat`)
+    return r
+  } catch (e) {
+    console.warn('[provision-akun] dilewati:', e?.message || e)
+    return null
+  }
+}
+
+// --- Google OAuth via Supabase (provider Google diaktifkan di Supabase Auth). ---
+// Alur PKCE: signInWithOAuth/linkIdentity REDIRECT ke Google, balik dgn `?code=` →
+// detectSessionInUrl:FALSE (supabase.js) → ditukar MANUAL via exchangeOAuthCode di initAuth
+// (stores/auth.js Step 0) → onAuthChange bangun sesi.
+// CATATAN: login via Google HANYA berhasil untuk user yang sudah MENAUTKAN Google
+//   (akun Supabase-nya punya guru_id/santri_id di profiles). Google fresh tanpa tautan
+//   → buildSesi null → gagal (memang by design: tautkan dulu dari Profil).
+function _googleRedirect() {
+  try {
+    return window.location.origin + window.location.pathname
+  } catch {
+    return undefined
+  }
+}
+
+// Sync email Google tertaut → row guru/santri (badge "tertaut" baca row, bukan identitas
+// Supabase). Dipanggil di buildSesi (titik balik OAuth). Best-effort, tak ganggu login.
 async function _syncGoogleEmail(coll, id, current) {
   try {
     const { data } = await supabase.auth.getUserIdentities()
@@ -317,7 +410,8 @@ async function _syncGoogleEmail(coll, id, current) {
   }
 }
 
-/** Tukar kode OAuth (PKCE) jadi sesi — dipanggil initAuth saat balik dari Google. */
+/** Tukar kode OAuth (PKCE) jadi sesi — dipanggil initAuth saat balik dari Google.
+ *  Perlu krn detectSessionInUrl:false (auto-detect dimatikan supaya login biasa tak hang). */
 export async function exchangeOAuthCode(code) {
   _ensure()
   const { error } = await supabase.auth.exchangeCodeForSession(code)
@@ -331,16 +425,18 @@ export async function loginWithGoogle() {
     options: { redirectTo: _googleRedirect() }
   })
   if (error) throw error
+  // Browser redirect ke Google; tak ada nilai balik (sesi dibangun saat kembali).
 }
 
 export async function linkGoogleAccount() {
   _ensure()
+  // Manual linking — WAJIB diaktifkan di Supabase: Auth → (Advanced) Allow manual linking.
   const { error } = await supabase.auth.linkIdentity({
     provider: 'google',
     options: { redirectTo: _googleRedirect() }
   })
   if (error) throw error
-  return {}
+  return {} // redirect; tautan aktif saat kembali.
 }
 
 export async function unlinkGoogleAccount(coll, id) {
@@ -351,8 +447,11 @@ export async function unlinkGoogleAccount(coll, id) {
   if (!g) throw new Error('Tidak ada akun Google tertaut.')
   const { error: e2 } = await supabase.auth.unlinkIdentity(g)
   if (e2) throw e2
+  // Bersihkan badge "tertaut" di row guru/santri (best-effort).
   try {
     if (coll && id) await mergeOne(coll, String(id), { linked_email: null, google_email: null })
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return {}
 }

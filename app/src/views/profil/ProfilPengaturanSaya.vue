@@ -13,11 +13,11 @@
       <button
         v-for="item in items"
         :key="item.id"
-        @click="openModal(item.id)"
         :class="[
           'group bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-4 text-left transition cursor-pointer',
           colorMap[item.color].hoverBg
         ]"
+        @click="openModal(item.id)"
       >
         <i
           :class="[
@@ -83,9 +83,9 @@
             <input
               type="file"
               accept="image/*"
-              @change="onPickFoto"
               :disabled="fotoState.uploading"
               class="w-full text-sm"
+              @change="onPickFoto"
             />
             <p class="text-[10px] text-[var(--text-secondary)] italic mt-2">JPG/PNG, maks 2MB</p>
             <div v-if="fotoState.dataUrl" class="mt-3">
@@ -108,9 +108,9 @@
             <h3 class="text-lg font-black mb-3">Ganti Username</h3>
             <input
               v-model="usernameState.value"
-              @blur="cekUsername"
               type="text"
               class="w-full px-3 py-2 border border-[var(--border-default)] rounded-lg text-sm"
+              @blur="cekUsername"
             />
             <p v-if="usernameState.checking" class="text-xs text-[var(--text-secondary)] mt-2">
               Cek...
@@ -155,9 +155,9 @@
             <input
               type="file"
               accept="image/*"
-              @change="onPickTtd"
               :disabled="ttdState.uploading"
               class="w-full text-sm"
+              @change="onPickTtd"
             />
             <p class="text-[10px] text-[var(--text-secondary)] italic mt-2">
               PNG transparan disarankan, maks 1MB
@@ -181,17 +181,17 @@
             </p>
             <button
               v-if="entity?.linked_email"
-              @click="onUnlinkGoogle"
               :disabled="googleBusy"
               class="mt-3 w-full bg-slate-600 text-white py-2 rounded-lg font-bold text-sm disabled:opacity-50"
+              @click="onUnlinkGoogle"
             >
               <i class="fas fa-unlink mr-2"></i>{{ googleBusy ? 'Memutus...' : 'Putuskan Tautan' }}
             </button>
             <button
               v-else
-              @click="onLinkGoogle"
               :disabled="googleBusy"
               class="mt-3 w-full bg-rose-600 text-white py-2 rounded-lg font-bold text-sm disabled:opacity-50"
+              @click="onLinkGoogle"
             >
               <i class="fab fa-google mr-2"></i
               >{{ googleBusy ? 'Menghubungkan...' : 'Connect dengan Google' }}
@@ -227,56 +227,56 @@
 
           <div class="flex justify-end gap-2 mt-5 pt-3 border-t border-[var(--border-subtle)]">
             <button
-              @click="closeModal"
               class="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] rounded-lg"
+              @click="closeModal"
             >
               Batal
             </button>
             <button
               v-if="activeModal === 'sandi'"
-              @click="simpanSandi"
               :disabled="busy"
               class="px-4 py-2 text-sm font-bold bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg disabled:opacity-50"
+              @click="simpanSandi"
             >
               Simpan
             </button>
             <button
               v-else-if="activeModal === 'username'"
-              @click="simpanUsername"
               :disabled="busy"
               class="px-4 py-2 text-sm font-bold bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg disabled:opacity-50"
+              @click="simpanUsername"
             >
               Simpan
             </button>
             <button
               v-else-if="activeModal === 'wa' || activeModal === 'wa_wali'"
-              @click="simpanWa"
               :disabled="busy"
               class="px-4 py-2 text-sm font-bold bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50"
+              @click="simpanWa"
             >
               Simpan
             </button>
             <button
               v-else-if="activeModal === 'notif'"
-              @click="simpanNotif"
               :disabled="busy"
               class="px-4 py-2 text-sm font-bold bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg disabled:opacity-50"
+              @click="simpanNotif"
             >
               Simpan
             </button>
             <button
               v-else-if="activeModal === 'ekgq'"
-              @click="simpanEkgq"
               :disabled="busy"
               class="px-4 py-2 text-sm font-bold bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-lg disabled:opacity-50"
+              @click="simpanEkgq"
             >
               Simpan
             </button>
             <button
               v-else-if="activeModal === 'foto'"
-              @click="simpanFoto"
               :disabled="busy || fotoState.uploading || !fotoState.dataUrl"
               class="px-4 py-2 text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg disabled:opacity-50"
+              @click="simpanFoto"
             >
               {{ fotoState.uploading ? 'Menyimpan...' : 'Simpan' }}
             </button>
@@ -289,14 +289,10 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { mergeOne, queryColl } from '@/services/firestore'
-import {
-  linkGoogleAccount,
-  unlinkGoogleAccount,
-  verifyAdminPassword,
-  toAuthPassword,
-  syncUserClaims
-} from '@/services/auth'
+import { mergeOne, queryColl } from '@/services/db'
+import { linkGoogleAccount, unlinkGoogleAccount } from '@/services/authSupabase'
+import { toAuthPassword } from '@/services/authSupabase'
+import { supabase } from '@/services/supabase'
 import { uploadBase64, deleteFile } from '@/services/storage'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
@@ -425,55 +421,29 @@ async function simpanSandi() {
     return toast.error('Konfirmasi tidak cocok')
   busy.value = true
   try {
-    if (props.role === 'admin') {
-      // v.100g: validasi sandi lama via server (settings/admin tak lagi public-read).
-      const ok = await verifyAdminPassword(formSandi.value.lama)
-      if (!ok) {
-        toast.error('Password lama salah')
-        return
-      }
-      // Sync Firebase Auth DULU (sumber kebenaran login). Kalau gagal → batalkan,
-      //   jangan biarkan settings/admin desync dengan password Auth.
-      try {
-        const { getAuth, updatePassword } = await import('firebase/auth')
-        const u = getAuth().currentUser
-        if (!u) throw Object.assign(new Error('no-session'), { code: 'no-session' })
-        await updatePassword(u, toAuthPassword(formSandi.value.baru))
-      } catch (e) {
-        if (e?.code === 'auth/requires-recent-login') {
-          toast.error('Demi keamanan, logout lalu login lagi sebelum ganti sandi admin')
-        } else if (e?.code === 'no-session') {
-          toast.error('Sesi admin tak ditemukan. Logout lalu login lagi.')
-        } else {
-          toast.error('Gagal sinkron sandi: ' + (e?.message || e))
-        }
-        return
-      }
-      // Auth sukses → simpan salinan privat (settings/admin, read:false, write signedIn).
-      await mergeOne('settings', 'admin', { password: formSandi.value.baru })
-    } else {
-      // v.102: guru/santri ganti sandi via Firebase Auth (sumber kebenaran login),
-      //   BUKAN field Firestore plaintext. Reauth dgn sandi lama → updatePassword.
-      try {
-        const { getAuth, updatePassword, reauthenticateWithCredential, EmailAuthProvider } =
-          await import('firebase/auth')
-        const u = getAuth().currentUser
-        if (!u || !u.email) throw Object.assign(new Error('no-session'), { code: 'no-session' })
-        const cred = EmailAuthProvider.credential(u.email, toAuthPassword(formSandi.value.lama))
-        await reauthenticateWithCredential(u, cred)
-        await updatePassword(u, toAuthPassword(formSandi.value.baru))
-      } catch (e) {
-        if (e?.code === 'auth/wrong-password' || e?.code === 'auth/invalid-credential') {
-          toast.error('Password lama salah')
-        } else if (e?.code === 'auth/requires-recent-login') {
-          toast.error('Demi keamanan, logout lalu login lagi sebelum ganti sandi')
-        } else if (e?.code === 'no-session') {
-          toast.error('Sesi tak ditemukan. Logout lalu login lagi.')
-        } else {
-          toast.error('Gagal ganti sandi: ' + (e?.message || e))
-        }
-        return
-      }
+    // Migrasi Supabase: sandi = Supabase Auth (sumber kebenaran TUNGGAL, semua peran).
+    //   Verifikasi sandi lama via re-sign-in (gagal = sandi lama salah) → updateUser.
+    //   Tak ada lagi salinan plaintext settings/admin maupun field Firestore (S1-S4).
+    const { data: ures } = await supabase.auth.getUser()
+    const u = ures?.user
+    if (!u?.email) {
+      toast.error('Sesi tak ditemukan. Logout lalu login lagi.')
+      return
+    }
+    const { error: reauthErr } = await supabase.auth.signInWithPassword({
+      email: u.email,
+      password: toAuthPassword(formSandi.value.lama)
+    })
+    if (reauthErr) {
+      toast.error('Password lama salah')
+      return
+    }
+    const { error: updErr } = await supabase.auth.updateUser({
+      password: toAuthPassword(formSandi.value.baru)
+    })
+    if (updErr) {
+      toast.error('Gagal ganti sandi: ' + (updErr.message || updErr))
+      return
     }
     toast.success('Password berhasil diganti')
     closeModal()
@@ -485,23 +455,11 @@ async function simpanSandi() {
   }
 }
 
-// v.108: jalankan write Firestore; bila kena permission-denied (token belum bawa custom
-//   claim `role` — syncUserClaims gagal saat login, mis. sinyal jelek), sync ulang claim
-//   lalu retry SEKALI. syncUserClaims juga menandai firebase_uid di dokumen (syarat ownDoc
-//   self-edit guru/santri). Gagal tetap → pesan jelas supaya user login ulang.
+// Migrasi Supabase: RLS dievaluasi per-request (auth.uid() -> profiles), tak ada
+//   propagasi custom-claim seperti Firebase -> tak perlu sync/retry. Jalankan langsung.
+//   (Nama dipertahankan agar pemanggil simpanFoto tak berubah.)
 async function writeWithClaimRetry(writeFn) {
-  try {
-    return await writeFn()
-  } catch (e) {
-    const denied =
-      e?.code === 'permission-denied' || /insufficient permissions/i.test(String(e?.message || ''))
-    if (!denied) throw e
-    const role = await syncUserClaims().catch(() => null)
-    if (!role) {
-      throw new Error('Sesi belum punya izin tulis. Logout lalu login lagi di jaringan stabil.')
-    }
-    return await writeFn()
-  }
+  return await writeFn()
 }
 
 // v.108: pilih file = STAGING saja (pratinjau). Upload baru jalan saat klik "Simpan"
@@ -561,13 +519,17 @@ async function simpanFoto() {
     }
     // v.108: avatar pita/greeting update SEKETIKA tanpa refresh (sesiAktif.foto reaktif)
     authStore.updateSesiFoto(url)
-    // v.108: foto BESAR di halaman profil baca props.entity.foto (objek guru/santri parent).
-    //   Mutasi langsung supaya reflect tanpa refresh (pola sama Object.assign(props.guru) di
-    //   ProfilGuru). Admin pakai settings.adminFoto (sudah di-set di atas).
-    if (props.entity && props.role !== 'admin') props.entity.foto = url
     toast.success('Foto profil diupdate')
     closeModal()
-    emit('updated')
+    // v.1.2.2 (audit 23 Jul 2026): foto BESAR di halaman profil dibaca dari objek
+    //   guru/santri milik ProfilView. DULU di sini `props.entity.foto = url` —
+    //   mutasi prop (vue/no-mutating-props): kebetulan jalan karena objeknya
+    //   dilewatkan by-reference, tapi perubahan tak melewati pemiliknya dan bisa
+    //   tertimpa saat parent me-render ulang. Sekarang patch-nya dikirim ke atas
+    //   lewat 'updated' — ProfilGuru/ProfilSantri meneruskan, ProfilView yang
+    //   menyalin ke datanya. Admin tak ikut: fotonya di settings.adminFoto
+    //   (sudah di-set di atas), bukan di objek entity.
+    emit('updated', props.role !== 'admin' ? { foto: url } : undefined)
   } catch (e) {
     toast.error('Upload gagal: ' + (e.message || e))
   } finally {

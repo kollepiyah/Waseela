@@ -69,27 +69,27 @@
               class="flex flex-nowrap md:flex-wrap gap-2 items-center [&>*]:shrink-0 md:[&>*]:shrink"
             >
               <button
-                @click="printPage"
                 aria-label="Cetak daftar guru PDF"
                 class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer no-print"
+                @click="printPage"
               >
                 <i class="fas fa-file-pdf"></i>Cetak PDF
               </button>
               <button
-                @click="exportGuruExcel"
                 :disabled="exporting"
                 aria-label="Ekspor daftar guru Excel"
                 class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+                @click="exportGuruExcel"
               >
                 <i :class="['fas', exporting ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i
                 >{{ exporting ? 'Ekspor...' : 'Ekspor Excel' }}
               </button>
               <button
                 v-if="gsheetConfigured()"
-                @click="kirimGuruGsheet"
                 :disabled="sendingGsheet"
                 aria-label="Kirim daftar guru ke Google Sheet"
                 class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer"
+                @click="kirimGuruGsheet"
               >
                 <i :class="['fas', sendingGsheet ? 'fa-spinner fa-spin' : 'fa-table']"></i
                 >{{ sendingGsheet ? 'Mengirim...' : 'Google Sheet' }}
@@ -104,8 +104,8 @@
               </router-link>
               <template v-if="isMasterMode">
                 <button
-                  @click="downloadTemplateGuru"
                   class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition cursor-pointer"
+                  @click="downloadTemplateGuru"
                 >
                   <i class="fas fa-download"></i>Template
                 </button>
@@ -118,8 +118,8 @@
                     type="file"
                     accept=".xlsx,.xls"
                     class="hidden"
-                    @change="onImportGuru"
                     :disabled="importingGuru"
+                    @change="onImportGuru"
                   />
                 </label>
                 <router-link
@@ -148,8 +148,8 @@
               {{ importPreviewGuru.rows.length }} baris
             </h3>
             <button
-              @click="importPreviewGuru = null"
               class="text-[var(--text-tertiary)] hover:text-rose-600 text-xl"
+              @click="importPreviewGuru = null"
             >
               <i class="fas fa-times"></i>
             </button>
@@ -213,15 +213,15 @@
           </div>
           <div class="p-4 border-t border-[var(--border-subtle)] flex justify-end gap-2">
             <button
-              @click="importPreviewGuru = null"
               class="px-4 py-2 text-xs font-bold rounded-lg bg-slate-200 hover:bg-slate-300"
+              @click="importPreviewGuru = null"
             >
               Batal
             </button>
             <button
-              @click="confirmImportGuru"
               :disabled="importingGuru"
               class="px-4 py-2 text-xs font-bold rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white disabled:opacity-50"
+              @click="confirmImportGuru"
             >
               <i :class="['fas', importingGuru ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i
               >{{
@@ -284,23 +284,23 @@
           ><i class="fas fa-check-square mr-1"></i>{{ selectedCount }} terpilih</span
         >
         <button
-          @click="bulkSetStatus('Aktif')"
           :disabled="bulkSaving"
           class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"
+          @click="bulkSetStatus('Aktif')"
         >
           <i class="fas fa-check"></i>Set Aktif
         </button>
         <button
-          @click="bulkSetStatus('Non-aktif')"
           :disabled="bulkSaving"
           class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"
+          @click="bulkSetStatus('Non-aktif')"
         >
           <i class="fas fa-user-slash"></i>Set Non-aktif
         </button>
         <button
-          @click="bulkDeleteGuru"
           :disabled="bulkSaving"
           class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-[11px] font-bold transition cursor-pointer"
+          @click="bulkDeleteGuru"
         >
           <i class="fas fa-trash"></i>Hapus
         </button>
@@ -317,16 +317,16 @@
             <option value="super_admin">super_admin</option>
           </select>
           <button
-            @click="bulkSetRole"
             :disabled="bulkSaving"
             class="ml-1 px-2 py-0.5 rounded bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-[10px] font-bold cursor-pointer"
+            @click="bulkSetRole"
           >
             Set Role
           </button>
         </label>
         <button
-          @click="clearSelection"
           class="h-8 px-3 inline-flex items-center gap-1 rounded-lg bg-slate-200 hover:bg-slate-300 text-[var(--text-primary)] text-[11px] font-bold transition cursor-pointer ml-auto"
+          @click="clearSelection"
         >
           <i class="fas fa-times"></i>Batal
         </button>
@@ -342,8 +342,8 @@
             type="checkbox"
             :checked="isAllVisibleSelected"
             :indeterminate.prop="isSomeVisibleSelected"
-            @change="toggleSelectAllVisible"
             class="w-4 h-4 rounded border-[var(--border-default)] text-teal-600 focus:ring-teal-500 cursor-pointer"
+            @change="toggleSelectAllVisible"
           />
           <span class="text-[11px] font-bold text-[var(--text-secondary)]"
             >Pilih semua ({{ guru.length }})</span
@@ -377,13 +377,13 @@
           <div
             v-for="g in guruShown"
             :key="g.id"
-            @click="goProfil(g, $event)"
             :class="[
               'bg-[var(--bg-card)] rounded-xl p-3 md:p-4 border shadow-sm hover:shadow-md transition cursor-pointer',
               selected.has(String(g.id))
                 ? 'border-teal-400 ring-2 ring-teal-100 dark:ring-teal-900/40'
                 : 'border-[var(--border-subtle)]'
             ]"
+            @click="goProfil(g, $event)"
           >
             <div class="flex items-start gap-3">
               <!-- v.21.22c.0526: Checkbox (Master mode only) -->
@@ -391,8 +391,8 @@
                 v-if="isMasterMode"
                 type="checkbox"
                 :checked="selected.has(String(g.id))"
-                @change="toggleSelect(g.id)"
                 class="flex-shrink-0 mt-2 w-4 h-4 rounded border-[var(--border-default)] text-teal-600 focus:ring-teal-500 cursor-pointer"
+                @change="toggleSelect(g.id)"
               />
               <!-- Avatar -->
               <div
@@ -415,7 +415,7 @@
                     </p>
                   </div>
                   <span
-                    v-if="isAktif(g)"
+                    v-if="isGuruAktif(g)"
                     class="text-[9px] bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 px-2 py-0.5 rounded font-black uppercase tracking-wider flex-shrink-0"
                   >
                     Aktif
@@ -441,11 +441,13 @@
                   >
                     Sekolah: {{ g.lembaga_sekolah }}
                   </span>
+                  <!-- v.1.1.9: label shift dari MASTER via shift_ids (dulu g.shift mentah —
+                       kini field itu cuma cermin utk fp_sync, isinya bisa 'kosong'). -->
                   <span
-                    v-if="g.shift"
+                    v-if="shiftLabelGuru(g)"
                     class="text-[10px] bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-700 px-2 py-0.5 rounded font-bold uppercase"
                   >
-                    Shift: {{ g.shift.replace('_', '+') }}
+                    Shift: {{ shiftLabelGuru(g) }}
                   </span>
                   <span
                     v-if="g.role_sistem && g.role_sistem !== 'user'"
@@ -455,11 +457,21 @@
                   </span>
                 </div>
                 <!-- Tugas duration -->
-                <p v-if="g.tanggal_tugas" class="text-[10px] text-[var(--text-secondary)] mt-1.5">
-                  <i class="fas fa-clock mr-1"></i>{{ hitungLamaMengajar(g.tanggal_tugas) }}
+                <!-- Kyai 7 Agu 2026: masa pengabdian dari "Tgl. Tugas" (`tanggal_mengabdi`).
+                     `tanggal_tugas` kini "Tgl. Syahadah" — sengaja TIDAK dipakai sbg cadangan:
+                     menebak masa kerja dari tanggal syahadah = tunjangan atas angka karangan. -->
+                <p
+                  v-if="g.tanggal_mengabdi"
+                  class="text-[10px] text-[var(--text-secondary)] mt-1.5"
+                >
+                  <i class="fas fa-clock mr-1"></i>{{ hitungLamaMengajar(g.tanggal_mengabdi) }}
                   <span class="text-[var(--text-tertiary)]"
-                    >· sejak {{ formatTanggal(g.tanggal_tugas) }}</span
+                    >· sejak {{ formatTanggal(g.tanggal_mengabdi) }}</span
                   >
+                </p>
+                <p v-if="g.tanggal_tugas" class="text-[10px] text-[var(--text-tertiary)] mt-0.5">
+                  <i class="fas fa-certificate mr-1"></i>Syahadah
+                  {{ formatTanggal(g.tanggal_tugas) }}
                 </p>
                 <!-- WA + username -->
                 <div
@@ -484,23 +496,25 @@
                 >
                   <!-- v.21.24.0526: Reset Sandi tombol -->
                   <button
-                    @click="resetSandiGuru(g)"
                     class="text-[10px] text-cyan-700 dark:text-cyan-300 hover:underline font-bold"
                     title="Reset sandi ke 1234"
+                    @click="resetSandiGuru(g)"
                   >
                     <i class="fas fa-key mr-1"></i>Reset Sandi
                   </button>
                   <button
-                    @click="toggleAktifGuru(g)"
                     :class="[
                       'text-[10px] font-bold hover:underline',
-                      isAktif(g)
+                      isGuruAktif(g)
                         ? 'text-cyan-700 dark:text-cyan-300'
                         : 'text-emerald-700 dark:text-emerald-300'
                     ]"
+                    @click="toggleAktifGuru(g)"
                   >
-                    <i :class="['fas', isAktif(g) ? 'fa-toggle-off' : 'fa-toggle-on', 'mr-1']"></i
-                    >{{ isAktif(g) ? 'Non-aktifkan' : 'Aktifkan' }}
+                    <i
+                      :class="['fas', isGuruAktif(g) ? 'fa-toggle-off' : 'fa-toggle-on', 'mr-1']"
+                    ></i
+                    >{{ isGuruAktif(g) ? 'Non-aktifkan' : 'Aktifkan' }}
                   </button>
                   <router-link
                     :to="`/guru/${g.id}/edit?from=master`"
@@ -509,8 +523,8 @@
                     <i class="fas fa-edit mr-1"></i>Edit
                   </router-link>
                   <button
-                    @click="deleteGuru(g)"
                     class="text-[10px] text-rose-700 dark:text-rose-300 hover:underline font-bold"
+                    @click="deleteGuru(g)"
                   >
                     <i class="fas fa-trash mr-1"></i>Hapus
                   </button>
@@ -523,8 +537,7 @@
 
       <!-- Footer -->
       <p class="text-center text-[10px] text-slate-400 dark:text-[var(--text-secondary)] pt-2">
-        <i class="fas fa-circle-info mr-1"></i>Menampilkan {{ guru.length }} guru · Vue 3 · Phase
-        5.6
+        <i class="fas fa-circle-info mr-1"></i>Menampilkan {{ guru.length }} guru
       </p>
     </template>
   </div>
@@ -549,8 +562,19 @@ import { useConfirm } from '@/composables/useConfirm'
 import SkeletonCard from '@/components/layout/SkeletonCard.vue'
 import EmptyState from '@/components/layout/EmptyState.vue' // v.91.0626: empty-state konsisten
 // v.21.11.0526: + deleteOne untuk delete & bulk delete
-import { updateOne, deleteOne, subscribeDoc, getAll } from '@/services/firestore'
-import { resetUserPassword as _resetUserPassword } from '@/services/auth' // v.105: reset sandi via Firebase Auth (bukan field plaintext)
+import {
+  mergeOne,
+  addOne,
+  updateOne,
+  deleteOne,
+  subscribeDoc,
+  getAll,
+  serverTimestamp
+} from '@/services/db'
+import {
+  resetUserPassword as _resetUserPassword,
+  provisionAkunSenyap
+} from '@/services/authSupabase' // reset sandi + buat akun login (Edge Function)
 import { planRegenerateNig, applyNigChanges } from '@/utils/nigGenerator' // v.100 Batch16: auto-NIG pasca impor (reshuffle tgl tugas terlama)
 import { useAuthStore as _useAuthStoreGuru } from '@/stores/auth'
 // v.21.13b.0526: + toTitleCase + normalizeWA + parseMultipleWA (dual WA)
@@ -563,6 +587,11 @@ import {
   parseMultipleWA
 } from '@/utils/format'
 import { sortLembagaNames } from '@/utils/santriSort' // v.100 Batch10: urutan canonical dropdown lembaga
+// v.1.1.9: label shift kartu guru ikut master (sumber tunggal aturan shift)
+import { shiftsForGuru } from '@/utils/shiftDerive'
+import { shiftLabelOf, shiftList, shiftIdsFromNomor, shiftNomorFromIds } from '@/utils/shiftMaster'
+import { isGuruAktif } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
+import { BRAND } from '@/config/brand'
 
 const {
   guru,
@@ -619,6 +648,17 @@ watch([search, filterLembaga, filterJabatan, filterStatus], () => {
   if (filterStatus.value && filterStatus.value !== 'aktif') q.status = filterStatus.value
   router.replace({ query: q }).catch(() => {})
 })
+// v.1.1.9: label shift utk kartu guru — dari MASTER lewat shiftsForGuru (sumber tunggal),
+//   bukan lagi g.shift mentah. g.shift kini sekadar cermin utk fp_sync dan bisa berisi
+//   'kosong' (penanda "tak ada shift") yang tak layak dipajang.
+const _settingsShift = useSettingsStore()
+function shiftLabelGuru(g) {
+  const s = _settingsShift.settings || {}
+  const ids = [...shiftsForGuru(g, s)]
+  if (ids.length === 0) return ''
+  return ids.map((id) => shiftLabelOf(s, id)).join(' + ')
+}
+
 // v.98: pita "Data Guru" (?tipe=guru) vs "Data Pegawai" (?tipe=pegawai) — pisah guru vs pegawai non-guru.
 // Heuristik (belum ada field eksplisit): jabatan mengandung guru/ustadz/pengajar/mudarris/wali kelas/kepala
 // dianggap GURU; selain itu PEGAWAI. Ganti regex / pakai field khusus bila kyai mau klasifikasi lain.
@@ -715,13 +755,6 @@ const hasFilter = computed(
     filterStatus.value !== 'aktif'
 )
 
-function isAktif(g) {
-  return (
-    String(g.status || 'Aktif')
-      .toLowerCase()
-      .trim() === 'aktif'
-  )
-}
 function cleanWa(wa) {
   return String(wa || '')
     .replace(/[^0-9]/g, '')
@@ -830,6 +863,8 @@ const _authStoreGuru = _useAuthStoreGuru() // v.100 Batch16: atribusi user utk a
 
 // v.99: ekspor LENGKAP — selaras template & impor (+ jabatan tambahan, tanggal tugas, NIG, No Rek BMT, tipe/shift/role/fingerprint)
 function _buildExcelRows(list) {
+  // v.1.2.3: kolom "Shift (nomor, pisah |)" = shift_ids guru → NOMOR posisi Master Shift.
+  const _shList = shiftList(_settingsShift.settings || {})
   return list.map((g, i) => ({
     no: i + 1,
     nama: g.nama || '',
@@ -841,13 +876,15 @@ function _buildExcelRows(list) {
     lembaga: g.lembaga || '',
     lembaga_sekolah: g.lembaga_sekolah || '',
     tanggal_tugas: g.tanggal_tugas || '',
+    tanggal_mengabdi: g.tanggal_mengabdi || '',
     nig: g.nig || g.ekgq || g.no_ekgq || g.no_syahadah || '',
-    rek_bmt: g.rek_bmt || '',
+    rek_bmt: g.rek_bmt || g.no_rek_bmt || '', // v.1.1.9: fallback field lama
     pendidikan: g.pendidikan_terakhir || '',
     wa: g.wa || g.no_wa || '',
     alamat: g.alamat || '',
     tipe_pegawai: g.tipe_pegawai || '',
     shift: g.shift || '',
+    shift_nomor: shiftNomorFromIds(g.shift_ids, _shList),
     role_sistem: g.role_sistem || '',
     id_fingerprint: g.id_fingerprint || '',
     status: g.status || 'Aktif'
@@ -863,7 +900,10 @@ const _excelColumns = [
   { key: 'jabatan_tambahan', header: 'Jabatan Tambahan', width: 16 },
   { key: 'lembaga', header: 'Lembaga', width: 14 },
   { key: 'lembaga_sekolah', header: 'Lembaga Sekolah', width: 14 },
-  { key: 'tanggal_tugas', header: 'Tanggal Tugas (DD/MM/YYYY)', width: 14 },
+  // Kyai 7 Agu 2026: judul kolom lama DIPERTAHANKAN supaya berkas impor lama tetap
+  //   mendarat di field yang benar; yang berubah cuma label di layar ("Tgl. Syahadah").
+  { key: 'tanggal_tugas', header: 'Tgl Syahadah (DD/MM/YYYY)', width: 16 },
+  { key: 'tanggal_mengabdi', header: 'Tgl Tugas/Mengabdi (DD/MM/YYYY)', width: 18 },
   { key: 'nig', header: 'NIG', width: 12 },
   { key: 'rek_bmt', header: 'No Rek BMT', width: 18 },
   { key: 'pendidikan', header: 'Pendidikan Terakhir', width: 16 },
@@ -871,6 +911,7 @@ const _excelColumns = [
   { key: 'alamat', header: 'Alamat', width: 28 },
   { key: 'tipe_pegawai', header: 'Tipe Pegawai (guru/pegawai/pegawai_guru)', width: 20 },
   { key: 'shift', header: 'Shift (pagi/sore/pagi_sore)', width: 14 },
+  { key: 'shift_nomor', header: 'Shift (nomor, pisah |)', width: 18 },
   { key: 'role_sistem', header: 'Role Sistem (user/admin/admin_keuangan/super_admin)', width: 18 },
   { key: 'id_fingerprint', header: 'ID Fingerprint', width: 14 },
   { key: 'status', header: 'Status', width: 10 }
@@ -888,7 +929,7 @@ async function exportGuruExcel() {
       sheetName: 'Data Guru',
       kop: [
         ss.kopLine1 || '',
-        ss.kopLine2 || '',
+        ss.kopLine2 || BRAND.kopLine2,
         ss.kopLine3 || '',
         ss.kopLine4 || ''
       ],
@@ -921,7 +962,7 @@ async function kirimGuruGsheet() {
       sheetName: 'Data Guru',
       kop: [
         ss.kopLine1 || '',
-        ss.kopLine2 || '',
+        ss.kopLine2 || BRAND.kopLine2,
         ss.kopLine3 || '',
         ss.kopLine4 || ''
       ].filter(Boolean),
@@ -1051,7 +1092,7 @@ async function bulkSetRole() {
 async function deleteGuru(g) {
   const ok = await confirmDialog({
     title: `Hapus ${g.nama}?`,
-    message: `Guru "${g.nama}" (${g.jabatan || '-'}) akan dihapus permanen dari Firestore. Aksi ini tidak bisa di-undo.`,
+    message: `Guru "${g.nama}" (${g.jabatan || '-'}) akan dihapus permanen. Aksi ini tidak bisa di-undo.`,
     confirmText: 'Hapus',
     danger: true
   })
@@ -1081,7 +1122,7 @@ async function resetSandiGuru(g) {
 }
 
 async function toggleAktifGuru(g) {
-  const wasAktif = isAktif(g)
+  const wasAktif = isGuruAktif(g)
   const newStatus = wasAktif ? 'Non-aktif' : 'Aktif'
   const ok = await confirmDialog({
     title: `${wasAktif ? 'Non-aktifkan' : 'Aktifkan'} ${g.nama}?`,
@@ -1103,7 +1144,7 @@ async function bulkDeleteGuru() {
   if (ids.length === 0) return
   const ok = await confirmDialog({
     title: `Hapus ${ids.length} guru?`,
-    message: `${ids.length} guru akan dihapus PERMANEN dari Firestore. Aksi ini tidak bisa di-undo. Lanjutkan?`,
+    message: `${ids.length} guru akan dihapus PERMANEN. Aksi ini tidak bisa di-undo. Lanjutkan?`,
     confirmText: 'Hapus Semua',
     danger: true
   })
@@ -1143,7 +1184,7 @@ async function bulkExportSelected() {
       sheetName: 'Data Guru Pilihan',
       kop: [
         ss.kopLine1 || '',
-        ss.kopLine2 || '',
+        ss.kopLine2 || BRAND.kopLine2,
         ss.kopLine3 || '',
         ss.kopLine4 || ''
       ],
@@ -1180,6 +1221,7 @@ async function downloadTemplateGuru() {
       'Status',
       'Tipe Pegawai (guru/pegawai/pegawai_guru)',
       'Shift (pagi/sore/pagi_sore)',
+      'Shift (nomor, pisah |)',
       'ID Fingerprint',
       'Role Sistem (user/admin/admin_keuangan/super_admin)',
       'Username (opsional)',
@@ -1191,8 +1233,13 @@ async function downloadTemplateGuru() {
       // No kop+subtitle — keep headers at row 1
       columns: headers.map((h) => ({ key: h, header: h, width: Math.max(14, h.length + 2) }))
     })
+    // v.1.2.3: legenda nomor shift (posisi Master Shift) supaya Kyai tahu nomor mana =
+    //   shift apa saat mengisi kolom "Shift (nomor, pisah |)". Contoh isi: "1|4".
+    const _leg = shiftList(_settingsShift.settings || {})
+      .map((s, i) => `${i + 1}=${s.label}`)
+      .join(' · ')
     _toastExp.success(
-      'Template guru ter-download. Nama=TitleCase, Jabatan/Lembaga=UPPERCASE saat impor.'
+      `Template guru ter-download. Kolom "Shift (nomor, pisah |)" → isi NOMOR shift dipisah "|" (mis. 1|4).${_leg ? ' Nomor: ' + _leg : ''}`
     )
   } catch (e) {
     _toastExp.error('Gagal: ' + (e.message || e))
@@ -1260,6 +1307,8 @@ async function onImportGuru(e) {
       }
       return ''
     }
+    // v.1.2.3: daftar shift (terurut) utk resolusi kolom "Shift (nomor, pisah |)".
+    const _shiftListImport = shiftList(_settingsShift.settings || {})
     for (const r of rows) {
       const namaRaw = String(
         _pick(r, 'Nama Guru (Dengan Gelar)', 'Nama Guru', 'Nama', 'NAMA', 'nama') || ''
@@ -1284,6 +1333,122 @@ async function onImportGuru(e) {
       const jabatan = String(_pick(r, 'Jabatan', 'jabatan') || 'Guru').trim()
       const lembaga = String(_pick(r, 'Lembaga', 'lembaga') || '').trim()
       const statusVal = String(_pick(r, 'Status', 'status') || 'Aktif').trim()
+      // v.1.2.6 ATURAN GABUNG (samakan dgn impor santri — lihat SantriView "ATURAN GABUNG"):
+      //   pada UPDATE, kolom KOSONG di file JANGAN menimpa nilai lama. Dulu `data` selalu
+      //   diisi ''/default paksa → mergeOne MENGHAPUS NIK / Rek BMT / ID Fingerprint dan
+      //   me-RESET Role Sistem admin jadi 'user'. Default (P/Guru/Aktif/pagi_sore/user)
+      //   kini HANYA dipakai untuk guru BARU; pada update, sel kosong dilewati.
+      const isNew = action === 'new'
+      const data = { nama }
+      const put = (key, val, def) => {
+        const v = String(val ?? '').trim()
+        if (v) data[key] = v
+        else if (isNew && def !== undefined) data[key] = def
+      }
+      put(
+        'jk',
+        String(_pick(r, 'L/P', 'JK', 'Jenis Kelamin', 'jk') || '')
+          .trim()
+          .toUpperCase()
+          .charAt(0),
+        'P'
+      )
+      put('nik', _pick(r, 'NIK', 'nik'))
+      put(
+        'tgl_lahir',
+        _parseTglGuru(_pick(r, 'Tgl Lahir (DD/MM/YYYY)', 'Tgl Lahir', 'Tanggal Lahir', 'tgl_lahir'))
+      )
+      put('jabatan', _pick(r, 'Jabatan', 'jabatan'), 'Guru')
+      put('jabatan_tambahan', _pick(r, 'Jabatan Tambahan', 'jabatan_tambahan'))
+      put('lembaga', _pick(r, 'Lembaga', 'lembaga'))
+      put('lembaga_sekolah', _pick(r, 'Lembaga Sekolah', 'lembaga_sekolah'))
+      // "Tgl Tugas" polos SENGAJA tetap memetakan ke `tanggal_tugas` (kini Tgl. Syahadah):
+      //   itulah judul di semua berkas impor lama, dan memindahkannya diam-diam ke field
+      //   masa pengabdian akan menerbitkan tunjangan atas tanggal yang keliru.
+      put(
+        'tanggal_tugas',
+        _parseTglGuru(
+          _pick(
+            r,
+            'Tgl Syahadah (DD/MM/YYYY)',
+            'Tgl Syahadah',
+            'Tanggal Syahadah',
+            'Tanggal Tugas (DD/MM/YYYY)',
+            'Tgl Tugas',
+            'Tanggal Tugas',
+            'tanggal_tugas'
+          )
+        )
+      )
+      put(
+        'tanggal_mengabdi',
+        _parseTglGuru(
+          _pick(
+            r,
+            'Tgl Tugas/Mengabdi (DD/MM/YYYY)',
+            'Tgl Tugas/Mengabdi',
+            'Tgl Mengabdi',
+            'Tanggal Mengabdi',
+            'tanggal_mengabdi'
+          )
+        )
+      )
+      put('nig', _pick(r, 'NIG', 'No Syahadah', 'EKGQ', 'ekgq', 'nig'))
+      // v.99: No Rekening BMT (tujuan pencairan bisyaroh) + pendidikan + fingerprint
+      put('rek_bmt', _pick(r, 'No Rek BMT', 'Rek BMT', 'rek_bmt'))
+      put(
+        'pendidikan_terakhir',
+        _pick(r, 'Pendidikan Terakhir', 'Pendidikan', 'pendidikan_terakhir')
+      )
+      put('id_fingerprint', _pick(r, 'ID Fingerprint', 'id_fingerprint'))
+      put('wa', wa)
+      put('wa_2', waList[1] || '')
+      // username ikut WA (login) bila ada; jika WA & kolom Username kosong → jangan sentuh
+      put(
+        'username',
+        wa || String(_pick(r, 'Username (opsional)', 'Username', 'username') || '').trim()
+      )
+      put('status', _pick(r, 'Status', 'status'), 'Aktif')
+      // tipe_pegawai butuh normalisasi → hanya tulis bila kolom terisi (atau guru baru)
+      const rawTipe = _pick(
+        r,
+        'Tipe Pegawai (guru/pegawai/pegawai_guru)',
+        'Tipe Pegawai',
+        'tipe_pegawai'
+      )
+      if (String(rawTipe ?? '').trim()) data.tipe_pegawai = _normTipeGuru(rawTipe)
+      else if (isNew) data.tipe_pegawai = _normTipeGuru('')
+      put(
+        'shift',
+        String(_pick(r, 'Shift (pagi/sore/pagi_sore)', 'Shift', 'shift') || '')
+          .trim()
+          .toLowerCase(),
+        'pagi_sore'
+      )
+      // v.1.2.3: shift KUSTOM via kolom "Shift (nomor, pisah |)" → shift_ids (nomor = POSISI
+      //   shift di Pengaturan → Master Shift, mis. "1|4"). Kolom nomor KOSONG → shift_ids TIDAK
+      //   disertakan → mergeOne mempertahankan penugasan dari Form Guru.
+      const _shiftNomor = (
+        _pick(r, 'Shift (nomor, pisah |)', 'Shift (nomor)', 'Shift Nomor', 'shift_nomor') || ''
+      )
+        .toString()
+        .trim()
+      if (_shiftNomor) data.shift_ids = shiftIdsFromNomor(_shiftNomor, _shiftListImport)
+      put(
+        'role_sistem',
+        String(
+          _pick(
+            r,
+            'Role Sistem (user/admin/admin_keuangan/super_admin)',
+            'Role Sistem',
+            'role_sistem'
+          ) || ''
+        )
+          .trim()
+          .toLowerCase(),
+        'user'
+      )
+      if (isNew) data.custom_fields = {}
       allMapped.push({
         existingId: idx >= 0 ? existing[idx].id : null,
         action,
@@ -1292,53 +1457,7 @@ async function onImportGuru(e) {
         lembaga,
         wa,
         status: statusVal,
-        data: {
-          nama,
-          jk: String(_pick(r, 'L/P', 'JK', 'Jenis Kelamin', 'jk') || 'P')
-            .trim()
-            .toUpperCase()
-            .charAt(0),
-          nik: String(_pick(r, 'NIK', 'nik') || '').trim(),
-          tgl_lahir: _parseTglGuru(
-            _pick(r, 'Tgl Lahir (DD/MM/YYYY)', 'Tgl Lahir', 'Tanggal Lahir', 'tgl_lahir')
-          ),
-          jabatan,
-          jabatan_tambahan: String(_pick(r, 'Jabatan Tambahan', 'jabatan_tambahan') || '').trim(),
-          lembaga,
-          lembaga_sekolah: String(_pick(r, 'Lembaga Sekolah', 'lembaga_sekolah') || '').trim(),
-          tanggal_tugas: _parseTglGuru(
-            _pick(r, 'Tanggal Tugas (DD/MM/YYYY)', 'Tgl Tugas', 'Tanggal Tugas', 'tanggal_tugas')
-          ),
-          nig: String(_pick(r, 'NIG', 'No Syahadah', 'EKGQ', 'ekgq', 'nig') || '').trim(),
-          // v.99: No Rekening BMT (tujuan pencairan bisyaroh) + pendidikan + fingerprint
-          rek_bmt: String(_pick(r, 'No Rek BMT', 'Rek BMT', 'rek_bmt') || '').trim(),
-          pendidikan_terakhir: String(
-            _pick(r, 'Pendidikan Terakhir', 'Pendidikan', 'pendidikan_terakhir') || ''
-          ).trim(),
-          id_fingerprint: String(_pick(r, 'ID Fingerprint', 'id_fingerprint') || '').trim(),
-          wa,
-          wa_2: waList[1] || '',
-          username:
-            wa || String(_pick(r, 'Username (opsional)', 'Username', 'username') || '').trim(),
-          status: statusVal,
-          tipe_pegawai: _normTipeGuru(
-            _pick(r, 'Tipe Pegawai (guru/pegawai/pegawai_guru)', 'Tipe Pegawai', 'tipe_pegawai')
-          ),
-          shift: String(_pick(r, 'Shift (pagi/sore/pagi_sore)', 'Shift', 'shift') || 'pagi_sore')
-            .trim()
-            .toLowerCase(),
-          role_sistem: String(
-            _pick(
-              r,
-              'Role Sistem (user/admin/admin_keuangan/super_admin)',
-              'Role Sistem',
-              'role_sistem'
-            ) || 'user'
-          )
-            .trim()
-            .toLowerCase(),
-          custom_fields: {}
-        }
+        data
       })
     }
     importPreviewGuru.value = {
@@ -1362,30 +1481,16 @@ async function confirmImportGuru() {
   let ok = 0,
     fail = 0
   try {
-    const {
-      setDoc: _setDoc,
-      doc: _doc,
-      serverTimestamp: _stamp
-    } = await import('firebase/firestore')
-    const { db: _db } = await import('@/services/firebase')
     for (const item of importPreviewGuru.value.rows) {
       try {
-        const numId = item.existingId
-          ? Number(item.existingId) ||
-            Number(String(item.existingId).replace(/\D/g, '')) ||
-            Date.now() + ok
-          : Date.now() + ok
-        await _setDoc(
-          _doc(_db, 'guru', String(numId)),
-          {
-            id: numId,
-            // v.105: TANPA field `password` plaintext — guru impor login dgn '1234' via
-            //   lazy-migration default (findUserByLogin strip password; field tak dipakai login).
-            ...item.data,
-            _imported_v21_26_at: _stamp()
-          },
-          { merge: true }
-        )
+        // v.110.0626 FIX duplikat: id Supabase = TEKS — JANGAN coerce ke Number (id beda →
+        //   mergeOne nulis baris baru = DUPLIKAT). Existing → update pakai id apa adanya;
+        //   baru → addOne.
+        // v.105: TANPA field `password` plaintext — guru impor login dgn '1234' via
+        //   lazy-migration default (findUserByLogin strip password; field tak dipakai login).
+        const payload = { ...item.data, _imported_v21_26_at: serverTimestamp() }
+        if (item.existingId) await mergeOne('guru', String(item.existingId), payload)
+        else await addOne('guru', payload)
         ok++
       } catch (e) {
         fail++
@@ -1404,6 +1509,15 @@ async function confirmImportGuru() {
       _toastExp.success(msg)
     } catch (e) {
       _toastExp.warning('NIG gagal digenerate ulang: ' + (e.message || e))
+    }
+    // K1-b: akun login lahir bersama datanya (senyap — impor tak boleh gagal
+    //   gara-gara pembuatan akun). Guru BERPERAN hanya ter-provision bila
+    //   pengimpornya super_admin (gerbang anti-eskalasi di RPC).
+    try {
+      const _prov = await provisionAkunSenyap()
+      if (_prov?.dibuat) _toastExp.success(`${_prov.dibuat} akun login baru dibuat`)
+    } catch (e) {
+      /* senyap */
     }
     importPreviewGuru.value = null
   } catch (e) {

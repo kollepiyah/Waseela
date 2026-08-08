@@ -15,6 +15,7 @@
 
 import { jsPDFFromCDN, imageToDataURL } from '@/services/pdf'
 import { muassisDataUrl, MUASSIS_RATIO } from './kopMuassis' // v.100: baris-1 KOP = gambar muassis
+import { BRAND } from '@/config/brand'
 
 /**
  * v.21.92.0527: Helper kanonik bangun kop dari settings.
@@ -23,8 +24,8 @@ import { muassisDataUrl, MUASSIS_RATIO } from './kopMuassis' // v.100: baris-1 K
 export function buildKopFromSettings(s = {}) {
   return {
     logoUrl: s.logoKop || s.kop_logo || s.kopLogo || s.logoUrl || '',
-    line1: s.kopLine1 || '',
-    line2: s.kopLine2 || '',
+    line1: s.kopLine1 || BRAND.kopLine1,
+    line2: s.kopLine2 || BRAND.kopLine2,
     line3: s.kopLine3 || '',
     line4: s.kopLine4 || '',
     line5: s.kopLine5 || ''

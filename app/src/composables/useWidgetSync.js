@@ -1,7 +1,7 @@
 // v.94.0626 — Jembatan ke widget home screen Android (Hijri + Kalender).
 //
 // Mengirim nilai yang SAMA dengan kartu beranda ke native (plugin WidgetBridge),
-// disimpan ke SharedPreferences widget lalu widget di-refresh.
+// disimpan ke SharedPreferences "waseela_widget" lalu widget di-refresh.
 // Aman dipanggil di web/Electron (no-op kalau bukan Android native).
 import { Capacitor, registerPlugin } from '@capacitor/core'
 

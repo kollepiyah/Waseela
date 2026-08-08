@@ -30,8 +30,8 @@
       <div v-else-if="mySantri">
         <p class="text-xs text-[var(--text-secondary)] mb-3">Kartu Kenaikan untuk:</p>
         <button
-          @click="openKartu(mySantri)"
           class="w-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] hover:from-emerald-600 dark:from-emerald-800 hover:to-teal-800 text-white rounded-xl p-4 flex items-center justify-between gap-3 cursor-pointer shadow-md hover:shadow-lg transition"
+          @click="openKartu(mySantri)"
         >
           <div class="text-left flex-1 min-w-0">
             <p class="text-base font-black truncate">{{ mySantri.nama }}</p>
@@ -69,49 +69,49 @@
     >
       <div class="flex gap-1.5 overflow-x-auto custom-scrollbar">
         <button
-          @click="activeTab = 'form'"
           :class="[
             'flex-1 whitespace-nowrap px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-black transition cursor-pointer rounded-xl flex items-center justify-center gap-1.5',
             activeTab === 'form'
               ? 'bg-teal-600 text-white shadow-md'
               : 'text-[var(--text-secondary)] hover:bg-teal-50 hover:text-teal-700'
           ]"
+          @click="activeTab = 'form'"
         >
           <i class="fas fa-edit text-sm"></i>Form Kenaikan
         </button>
         <button
           v-if="isAdmin || isGuru"
-          @click="activeTab = 'riwayat'"
           :class="[
             'flex-1 whitespace-nowrap px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-black transition cursor-pointer rounded-xl flex items-center justify-center gap-1.5',
             activeTab === 'riwayat'
               ? 'bg-cyan-600 text-white shadow-md'
               : 'text-[var(--text-secondary)] hover:bg-cyan-50 hover:text-cyan-700'
           ]"
+          @click="activeTab = 'riwayat'"
         >
           <i class="fas fa-id-card text-sm"></i>Riwayat Kenaikan
         </button>
         <button
           v-if="isAdmin"
-          @click="activeTab = 'pengaturan'"
           :class="[
             'flex-1 whitespace-nowrap px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-black transition cursor-pointer rounded-xl flex items-center justify-center gap-1.5',
             activeTab === 'pengaturan'
               ? 'bg-emerald-600 text-white shadow-md'
               : 'text-[var(--text-secondary)] hover:bg-emerald-50 hover:text-emerald-700'
           ]"
+          @click="activeTab = 'pengaturan'"
         >
           <i class="fas fa-cog text-sm"></i>Pengaturan
         </button>
         <button
-          v-if="isAdmin"
-          @click="activeTab = 'mutasi'"
+          v-if="canKelola"
           :class="[
             'flex-1 whitespace-nowrap px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-black transition cursor-pointer rounded-xl flex items-center justify-center gap-1.5',
             activeTab === 'mutasi'
               ? 'bg-amber-600 text-white shadow-md'
               : 'text-[var(--text-secondary)] hover:bg-amber-50 hover:text-amber-700'
           ]"
+          @click="activeTab = 'mutasi'"
         >
           <i class="fas fa-right-from-bracket text-sm"></i>Mutasi
         </button>
@@ -119,7 +119,7 @@
     </div>
 
     <!-- v.99: SUB-MENU MUTASI (keluar) — kategori → filter lembaga → list santri → keluarkan -->
-    <div v-if="isAdmin && activeTab === 'mutasi'" class="space-y-3">
+    <div v-if="canKelola && activeTab === 'mutasi'" class="space-y-3">
       <div
         class="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] shadow-sm p-4"
       >
@@ -128,30 +128,24 @@
         </h3>
         <div class="grid grid-cols-2 gap-2">
           <button
-            @click="
-              mutasiKategori = 'qiraati';
-              mutasiLembaga = ''
-            "
             :class="[
               'px-3 py-3 rounded-xl text-sm font-black border transition cursor-pointer',
               mutasiKategori === 'qiraati'
                 ? 'bg-teal-600 text-white border-teal-700'
                 : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-teal-900/30'
             ]"
+            @click="setMutasiKategori('qiraati')"
           >
             <i class="fas fa-book-quran mr-1"></i>Lembaga Qiraati
           </button>
           <button
-            @click="
-              mutasiKategori = 'sekolah';
-              mutasiLembaga = ''
-            "
             :class="[
               'px-3 py-3 rounded-xl text-sm font-black border transition cursor-pointer',
               mutasiKategori === 'sekolah'
                 ? 'bg-cyan-600 text-white border-cyan-700'
                 : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-cyan-50 dark:hover:bg-cyan-900/30'
             ]"
+            @click="setMutasiKategori('sekolah')"
           >
             <i class="fas fa-school mr-1"></i>Lembaga Sekolah
           </button>
@@ -217,8 +211,8 @@
             class="inline-flex items-center gap-2 text-[11px] font-bold text-[var(--text-secondary)] cursor-pointer"
           >
             <input
-              type="checkbox"
               v-model="mutasiShowKeluar"
+              type="checkbox"
               class="w-4 h-4 accent-amber-600"
             />Tampilkan yang sudah keluar
           </label>
@@ -246,17 +240,17 @@
             </div>
             <button
               v-if="!mutasiShowKeluar"
-              @click="keluarkanSantri(s)"
               :disabled="mutasiSaving"
               class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50 flex-shrink-0"
+              @click="keluarkanSantri(s)"
             >
               <i class="fas fa-right-from-bracket mr-1"></i>Keluarkan
             </button>
             <button
               v-else
-              @click="reaktifSantri(s)"
               :disabled="mutasiSaving"
               class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 flex-shrink-0"
+              @click="reaktifSantri(s)"
             >
               <i class="fas fa-rotate-left mr-1"></i>Aktifkan
             </button>
@@ -279,30 +273,24 @@
       <!-- v.99: kategori Qiraati / Sekolah -->
       <div class="flex gap-2 mb-3">
         <button
-          @click="
-            kenaikanKategori = 'qiraati';
-            filterLembaga = ''
-          "
           :class="[
             'flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
             kenaikanKategori === 'qiraati'
               ? 'bg-teal-600 text-white border-teal-700'
               : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-teal-900/30'
           ]"
+          @click="setKenaikanKategori('qiraati')"
         >
           <i class="fas fa-book-quran mr-1"></i>Lembaga Qiraati
         </button>
         <button
-          @click="
-            kenaikanKategori = 'sekolah';
-            filterLembaga = ''
-          "
           :class="[
             'flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
             kenaikanKategori === 'sekolah'
               ? 'bg-cyan-600 text-white border-cyan-700'
               : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-cyan-50 dark:hover:bg-cyan-900/30'
           ]"
+          @click="setKenaikanKategori('sekolah')"
         >
           <i class="fas fa-school mr-1"></i>Lembaga Sekolah
         </button>
@@ -314,11 +302,11 @@
         <button
           v-for="l in kenaikanLembagaOptions"
           :key="l"
-          @click="filterLembaga = l"
           :class="[
             'flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl transition cursor-pointer shadow-sm active:scale-95',
             filterLembaga === l ? lembagaColor(l, true) : lembagaColor(l, false)
           ]"
+          @click="filterLembaga = l"
         >
           <i :class="['fas', lembagaIcon(l), 'text-xl']"></i>
           <span class="text-[11px] font-black leading-tight text-center">{{ l }}</span>
@@ -334,24 +322,24 @@
       <!-- v.100b: toggle kategori untuk guru dual-role (Qiraati + Sekolah) -->
       <div v-if="isGuru && guruDual" class="flex gap-2 mb-3">
         <button
-          @click="kenaikanKategori = 'qiraati'"
           :class="[
             'flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
             kenaikanKategori === 'qiraati'
               ? 'bg-teal-600 text-white border-teal-700'
               : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-teal-900/30'
           ]"
+          @click="kenaikanKategori = 'qiraati'"
         >
           <i class="fas fa-book-quran mr-1"></i>Santri Qiraati
         </button>
         <button
-          @click="kenaikanKategori = 'sekolah'"
           :class="[
             'flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
             kenaikanKategori === 'sekolah'
               ? 'bg-cyan-600 text-white border-cyan-700'
               : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-cyan-50 dark:hover:bg-cyan-900/30'
           ]"
+          @click="kenaikanKategori = 'sekolah'"
         >
           <i class="fas fa-school mr-1"></i>Kelas Sekolah
         </button>
@@ -393,16 +381,16 @@
           </div>
           <div class="flex items-center gap-1.5 flex-shrink-0">
             <button
-              @click="openFormKenaikan(s)"
               class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-black px-3 py-2 rounded-lg text-xs cursor-pointer flex items-center gap-1.5 uppercase tracking-wider shadow-sm hover:shadow-md transition"
               title="Proses Naik (form sederhana)"
+              @click="openFormKenaikan(s)"
             >
               <i class="fas fa-arrow-up"></i>PROSES NAIK
             </button>
             <button
-              @click="openKartu(s)"
               class="bg-cyan-600 hover:bg-cyan-700 text-white font-black px-2.5 py-2 rounded-lg text-xs cursor-pointer flex items-center gap-1 shadow-sm hover:shadow-md transition"
               title="Lihat Kartu Kenaikan (matrix lengkap)"
+              @click="openKartu(s)"
             >
               <i class="fas fa-id-card"></i>
             </button>
@@ -419,30 +407,24 @@
       <!-- v.100e: filter lembaga Riwayat = KARTU IKON (samakan dgn Form Kenaikan) -->
       <div class="flex gap-2 mb-3">
         <button
-          @click="
-            riwayatKategori = 'qiraati';
-            riwayatLembaga = ''
-          "
           :class="[
             'flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
             riwayatKategori === 'qiraati'
               ? 'bg-teal-600 text-white border-teal-700'
               : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-teal-50 dark:hover:bg-teal-900/30'
           ]"
+          @click="setRiwayatKategori('qiraati')"
         >
           <i class="fas fa-book-quran mr-1"></i>Lembaga Qiraati
         </button>
         <button
-          @click="
-            riwayatKategori = 'sekolah';
-            riwayatLembaga = ''
-          "
           :class="[
             'flex-1 px-3 py-2 rounded-xl text-xs font-black border transition cursor-pointer',
             riwayatKategori === 'sekolah'
               ? 'bg-cyan-600 text-white border-cyan-700'
               : 'bg-[var(--bg-muted)] text-[var(--text-primary)] border-[var(--border-default)] hover:bg-cyan-50 dark:hover:bg-cyan-900/30'
           ]"
+          @click="setRiwayatKategori('sekolah')"
         >
           <i class="fas fa-school mr-1"></i>Lembaga Sekolah
         </button>
@@ -454,11 +436,11 @@
         <button
           v-for="l in riwayatLembagaOptions"
           :key="l"
-          @click="riwayatLembaga = l"
           :class="[
             'flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl transition cursor-pointer shadow-sm active:scale-95',
             riwayatLembaga === l ? lembagaColor(l, true) : lembagaColor(l, false)
           ]"
+          @click="riwayatLembaga = l"
         >
           <i :class="['fas', lembagaIcon(l), 'text-xl']"></i>
           <span class="text-[11px] font-black leading-tight text-center">{{ l }}</span>
@@ -478,30 +460,30 @@
           class="flex flex-nowrap md:flex-wrap items-center gap-2 overflow-x-auto md:overflow-visible hide-scrollbar [&>*]:shrink-0 md:[&>*]:shrink -mx-1 px-1 sm:mx-0 sm:px-0"
         >
           <button
-            @click="exportRiwayatExcel"
             :disabled="exportingExcel"
             aria-label="Ekspor riwayat naik kelas ke Excel"
             class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold disabled:opacity-50 transition cursor-pointer"
+            @click="exportRiwayatExcel"
           >
             <i :class="['fas', exportingExcel ? 'fa-spinner fa-spin' : 'fa-file-excel']"></i>
             {{ exportingExcel ? 'Mengeksport…' : 'Excel' }}
           </button>
           <button
             v-if="gsheetConfigured()"
-            @click="kirimRiwayatGsheet"
             :disabled="sendingGsheet"
             aria-label="Kirim riwayat naik kelas ke Google Sheet"
             class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold disabled:opacity-50 transition cursor-pointer"
+            @click="kirimRiwayatGsheet"
           >
             <i :class="['fas', sendingGsheet ? 'fa-spinner fa-spin' : 'fa-table']"></i>
             {{ sendingGsheet ? 'Mengirim…' : 'Google Sheet' }}
           </button>
           <button
-            @click="exportRiwayatPdf"
             :disabled="exportingPdf"
             aria-label="Cetak riwayat naik kelas PDF"
             title="Cetak PDF Daftar Riwayat"
             class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold disabled:opacity-50 transition cursor-pointer"
+            @click="exportRiwayatPdf"
           >
             <i :class="['fas', exportingPdf ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>
             {{ exportingPdf ? 'Mencetak…' : 'PDF' }}
@@ -523,19 +505,32 @@
           >
             <div class="flex items-center justify-between gap-2 p-3">
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-bold text-[var(--text-primary)] truncate">
-                  {{ s.nama }}
+                <p
+                  class="text-sm font-bold text-[var(--text-primary)] truncate flex items-center gap-1.5"
+                >
+                  <span class="truncate">{{ s.nama }}</span>
+                  <!-- v.1.2.2 (Kyai): santri yang sudah pindah lembaga tapi kartunya di
+                       lembaga ini masih ada isinya. Ditandai supaya tak dikira santri aktif. -->
+                  <span
+                    v-if="isAlumniRiwayat(s)"
+                    class="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                    title="Sudah pindah lembaga — kartu di lembaga ini tetap bisa dibuka"
+                    >Alumni</span
+                  >
                 </p>
                 <p class="text-[11px] text-[var(--text-secondary)] truncate">
+                  <span v-if="isAlumniRiwayat(s)" class="text-[var(--text-tertiary)]"
+                    >sekarang:
+                  </span>
                   {{ s.lembaga }}{{ s.kelas ? ' · ' + s.kelas : '' }}
                   <span class="ml-1 text-emerald-600 font-bold">
                     · {{ countTanggalTerisi(s, riwayatLembaga) }} tanggal terisi
                   </span>
                   <button
                     v-if="countCatatan(s, riwayatLembaga) > 0"
-                    @click="toggleExpand(s.id)"
                     class="ml-2 inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-cyan-100 hover:bg-cyan-200 text-cyan-700 cursor-pointer transition"
                     :title="expanded.has(s.id) ? 'Sembunyikan catatan' : 'Lihat catatan'"
+                    @click="toggleExpand(s.id)"
                   >
                     <i
                       :class="['fas', expanded.has(s.id) ? 'fa-chevron-up' : 'fa-comment-dots']"
@@ -545,21 +540,29 @@
                 </p>
               </div>
               <button
+                class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer flex items-center gap-1 flex-shrink-0"
                 @click="
                   () => {
                     filterLembaga = riwayatLembaga
                     openKartu(s)
                   }
                 "
-                class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer flex items-center gap-1 flex-shrink-0"
               >
                 <i class="fas fa-eye"></i>Lihat
               </button>
+              <!-- v.1.2.6 (task 3): PDF riwayat pendidikan LENGKAP (lintas lembaga) -->
+              <button
+                class="bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 dark:bg-teal-900/30 dark:text-teal-300 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer flex items-center gap-1 flex-shrink-0"
+                title="Ekspor PDF riwayat pendidikan (semua lembaga)"
+                @click="cetakRiwayatPendidikan(s)"
+              >
+                <i class="fas fa-file-pdf"></i>Riwayat
+              </button>
               <button
                 v-if="canCrud && (s.riwayat_kenaikan || []).length"
-                @click="batalKenaikanTerakhir(s)"
                 class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer flex items-center gap-1 flex-shrink-0"
                 title="Batalkan kenaikan terakhir (super_admin)"
+                @click="batalKenaikanTerakhir(s)"
               >
                 <i class="fas fa-rotate-left"></i>Batal
               </button>
@@ -602,6 +605,16 @@
             </div>
           </div>
         </div>
+        <!-- v.1.2.2 (Kyai): keterangan alumni — kartunya memang tersimpan per lembaga,
+             jadi santri yang sudah pindah tetap bisa dibuka kartunya di sini. -->
+        <p
+          v-if="riwayatAlumniCount"
+          class="mt-2 text-[10px] text-[var(--text-tertiary)] italic border-t border-[var(--border-subtle)] pt-2"
+        >
+          <i class="fas fa-graduation-cap mr-1"></i><b>{{ riwayatAlumniCount }} santri</b> sudah
+          pindah ke lembaga lain, tapi kartu kenaikannya di {{ riwayatLembaga }} tetap tersimpan dan
+          bisa dibuka.
+        </p>
       </template>
       <p v-else class="text-center text-[var(--text-tertiary)] italic text-xs py-8">
         <i
@@ -624,13 +637,13 @@
         <button
           v-for="l in pengaturanLembagaList"
           :key="l"
-          @click="selectPengaturanLembaga(l)"
           :class="[
             'bg-white dark:bg-slate-900 border-2 rounded-xl p-3 md:p-4 text-center font-black transition cursor-pointer shadow-sm',
             pengaturanLembaga === l
               ? 'border-cyan-500 text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-900/30 ring-2 ring-cyan-200'
               : 'border-[var(--border-subtle)] text-slate-700 dark:text-[var(--text-tertiary)] hover:border-cyan-300 hover:bg-cyan-50/50'
           ]"
+          @click="selectPengaturanLembaga(l)"
         >
           <p class="text-sm md:text-base">{{ l }}</p>
         </button>
@@ -694,9 +707,9 @@
             </div>
             <div class="flex justify-end mt-3">
               <button
-                @click="saveKop"
                 :disabled="savingKop"
                 class="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-4 py-2 rounded-lg text-xs cursor-pointer disabled:opacity-50"
+                @click="saveKop"
               >
                 <i :class="['fas', savingKop ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i>
                 {{ savingKop ? 'Menyimpan...' : 'Simpan KOP' }}
@@ -714,15 +727,15 @@
               </h4>
               <div class="flex gap-1">
                 <button
-                  @click="resetSchema"
                   class="text-[10px] font-bold px-2 py-1 rounded bg-cyan-100 text-cyan-800 hover:bg-cyan-200"
+                  @click="resetSchema"
                 >
                   <i class="fas fa-undo mr-0.5"></i>Reset Default
                 </button>
                 <button
-                  @click="saveSchema"
                   :disabled="savingSchema"
                   class="text-[10px] font-black px-3 py-1 rounded bg-cyan-600 hover:bg-cyan-700 text-white disabled:opacity-50"
+                  @click="saveSchema"
                 >
                   <i :class="['fas', savingSchema ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i>
                   Simpan Schema
@@ -748,8 +761,8 @@
                   Daftar Kelas/Level/Jilid:
                 </p>
                 <button
-                  @click="addKelas"
                   class="text-[10px] bg-teal-200 hover:bg-teal-300 text-teal-800 font-bold px-2 py-0.5 rounded"
+                  @click="addKelas"
                 >
                   <i class="fas fa-plus mr-0.5"></i>Tambah Kelas
                 </button>
@@ -777,9 +790,9 @@
                     Ceremonial
                   </label>
                   <button
-                    @click="schemaDraft.kelasList.splice(ki, 1)"
                     class="text-rose-500 hover:bg-rose-50 text-xs px-1.5 rounded"
                     title="Hapus kelas"
+                    @click="schemaDraft.kelasList.splice(ki, 1)"
                   >
                     <i class="fas fa-trash"></i>
                   </button>
@@ -798,16 +811,16 @@
                         v-model="it.label"
                         class="bg-transparent border-0 outline-none text-[11px] w-14"
                       />
-                      <button @click="k.items.splice(ii, 1)" class="text-rose-400 text-[10px]">
+                      <button class="text-rose-400 text-[10px]" @click="k.items.splice(ii, 1)">
                         <i class="fas fa-times"></i>
                       </button>
                     </span>
                     <button
+                      class="bg-teal-200 hover:bg-teal-300 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded"
                       @click="
                         (k.items = k.items || []) &&
                         k.items.push({ id: 'it_' + Date.now(), label: '' })
                       "
-                      class="bg-teal-200 hover:bg-teal-300 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded"
                     >
                       + Item
                     </button>
@@ -914,35 +927,44 @@
                     >
                       {{ schema.itemHeader || 'Item' }}
                     </div>
-                    <table class="w-full text-[10px]">
-                      <thead>
-                        <tr class="bg-[var(--bg-card)]">
-                          <th
-                            v-for="it in k.items"
-                            :key="it.id"
-                            class="border border-[var(--border-default)] px-1 py-1 font-bold text-center text-[var(--text-primary)]"
-                          >
-                            {{ it.label }}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr class="bg-[var(--bg-card)]">
-                          <td
-                            v-for="it in k.items"
-                            :key="it.id"
-                            class="border border-[var(--border-default)] px-1 py-1"
-                          >
-                            <input
-                              type="date"
-                              :value="getCell(k.id, it.id)"
-                              @input="(e) => setCell(k.id, it.id, e.target.value)"
-                              class="w-full text-[9px] py-0.5 px-1 border-0 outline-none bg-transparent text-[var(--text-primary)]"
-                            />
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                    <!-- v.1.1.9 FIX (Kyai): juz TERAKHIR tiap kelas tak tampil.
+                         `input[type=date]` punya lebar minimum bawaan browser (~120px),
+                         jadi 5 kolom melebihi lebar blok; pembungkus ber-overflow-hidden
+                         lalu MEMOTONGNYA diam-diam — tanpa scrollbar, jadi tak kelihatan
+                         ada yang hilang. Sekarang: table-fixed (5 kolom bagi rata) +
+                         pembungkus sendiri yang bisa digeser, supaya kalau pun sempit
+                         datanya tetap bisa dicapai, bukan lenyap. -->
+                    <div class="overflow-x-auto">
+                      <table class="w-full table-fixed min-w-[300px] text-[10px]">
+                        <thead>
+                          <tr class="bg-[var(--bg-card)]">
+                            <th
+                              v-for="it in k.items"
+                              :key="it.id"
+                              class="border border-[var(--border-default)] px-1 py-1 font-bold text-center text-[var(--text-primary)]"
+                            >
+                              {{ it.label }}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr class="bg-[var(--bg-card)]">
+                            <td
+                              v-for="it in k.items"
+                              :key="it.id"
+                              class="border border-[var(--border-default)] px-0.5 py-1"
+                            >
+                              <input
+                                type="date"
+                                :value="getCell(k.id, it.id)"
+                                class="w-full min-w-0 text-[9px] py-0.5 px-0.5 border-0 outline-none bg-transparent text-[var(--text-primary)]"
+                                @input="(e) => setCell(k.id, it.id, e.target.value)"
+                              />
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                     <!-- Ceremonial -->
                     <div
                       v-if="k.ceremonial"
@@ -954,8 +976,8 @@
                       <input
                         type="date"
                         :value="getCeremonial(k.id)"
-                        @input="(e) => setCeremonial(k.id, e.target.value)"
                         class="flex-1 py-0.5 px-1 text-[10px] border border-cyan-200 dark:border-cyan-700 rounded bg-white dark:bg-slate-900 text-[var(--text-primary)]"
+                        @input="(e) => setCeremonial(k.id, e.target.value)"
                       />
                     </div>
                     <!-- Catatan & Rekomendasi per kelas -->
@@ -971,8 +993,8 @@
                         </p>
                         <button
                           type="button"
-                          @click="() => toggleNoteForm(k.id)"
                           class="text-[9px] font-bold px-2 py-1 rounded bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer"
+                          @click="() => toggleNoteForm(k.id)"
                         >
                           <i class="fas fa-plus mr-0.5"></i>Tambah
                         </button>
@@ -1014,15 +1036,15 @@
                         <div class="flex justify-end gap-1">
                           <button
                             type="button"
-                            @click="() => toggleNoteForm(k.id)"
                             class="text-[9px] font-bold px-2 py-1 rounded bg-slate-200 dark:bg-slate-700 text-[var(--text-primary)]"
+                            @click="() => toggleNoteForm(k.id)"
                           >
                             Batal
                           </button>
                           <button
                             type="button"
-                            @click="() => saveNoteEntry(k.id)"
                             class="text-[9px] font-bold px-2 py-1 rounded bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white"
+                            @click="() => saveNoteEntry(k.id)"
                           >
                             <i class="fas fa-check mr-0.5"></i>Simpan Entry
                           </button>
@@ -1061,9 +1083,9 @@
                           </div>
                           <button
                             type="button"
-                            @click="() => removeEntry(k.id, ci)"
                             class="text-rose-500 hover:text-rose-700 text-[10px] flex-shrink-0"
                             title="Hapus entry"
+                            @click="() => removeEntry(k.id, ci)"
                           >
                             <i class="fas fa-times"></i>
                           </button>
@@ -1091,26 +1113,26 @@
               class="px-4 md:px-6 py-3 border-t border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] flex items-center justify-end gap-2 rounded-b-2xl"
             >
               <button
-                @click="closeKartu"
                 class="px-4 py-2 text-sm font-bold rounded-xl bg-slate-200 dark:bg-slate-700 text-[var(--text-primary)] hover:bg-slate-300 dark:hover:bg-slate-600 cursor-pointer"
+                @click="closeKartu"
               >
                 Batal
               </button>
               <!-- v.21.115.0528: standardize per design-tokens — Ekspor PDF cyan -->
               <button
-                @click="eksporKartuPdf"
                 :disabled="exportingKartuPdf"
                 aria-label="Ekspor kartu kenaikan PDF A4"
                 title="Download Kartu Kenaikan sebagai PDF (A4 portrait)"
                 class="h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white text-xs font-bold transition cursor-pointer no-print"
+                @click="eksporKartuPdf"
               >
                 <i :class="['fas', exportingKartuPdf ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>
                 {{ exportingKartuPdf ? 'Mengekspor…' : 'Ekspor PDF' }}
               </button>
               <button
-                @click="saveKartu"
                 :disabled="savingKartu"
                 class="px-4 py-2 text-sm font-black rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white disabled:opacity-50 cursor-pointer flex items-center gap-1.5 no-print"
+                @click="saveKartu"
               >
                 <i :class="['fas', savingKartu ? 'fa-spinner fa-spin' : 'fa-save']"></i>
                 {{ savingKartu ? 'Menyimpan...' : 'Simpan Kartu' }}
@@ -1139,8 +1161,8 @@
                 <i class="fas fa-arrow-up mr-2 text-cyan-600"></i>Form Kenaikan
               </h3>
               <button
-                @click="formOpen = false"
                 class="text-[var(--text-tertiary)] hover:text-rose-500 text-2xl font-bold w-8 h-8 rounded-full bg-[var(--bg-muted)] flex items-center justify-center cursor-pointer"
+                @click="formOpen = false"
               >
                 ×
               </button>
@@ -1209,18 +1231,97 @@
               </div>
 
               <div>
-                <label
-                  class="block text-xs font-black text-cyan-800 dark:text-cyan-300 mb-1 uppercase tracking-wide"
-                >
-                  Guru Kelas Baru (Perbarui Jika Pindah Kelas)
-                </label>
+                <div class="flex items-center justify-between gap-2 mb-1">
+                  <label
+                    class="block text-xs font-black text-cyan-800 dark:text-cyan-300 uppercase tracking-wide"
+                  >
+                    {{ formIsSekolah ? 'Guru Kelas Baru' : 'Kelas Baru (Pasangan Guru)' }}
+                  </label>
+                  <!-- Qiraati: 1 kelas = sepasang guru (pagi & sore). "Atur sendiri" untuk
+                       pasangan yang belum pernah ada di data santri. -->
+                  <button
+                    v-if="!formIsSekolah"
+                    type="button"
+                    class="text-[10px] font-bold text-cyan-700 dark:text-cyan-300 hover:underline"
+                    @click="guruManual = !guruManual"
+                  >
+                    {{ guruManual ? '← Pilih dari daftar kelas' : 'Atur sendiri…' }}
+                  </button>
+                </div>
+
+                <!-- Sekolah: tetap satu guru (wali kelas) -->
                 <select
+                  v-if="formIsSekolah"
                   v-model="formData.guru"
                   class="w-full px-3 py-2 text-sm border border-cyan-300 dark:border-cyan-700 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 text-cyan-900 dark:text-cyan-100 cursor-pointer"
                 >
                   <option value="">-- Pilih Guru --</option>
                   <option v-for="g in guruOptions" :key="g" :value="g">{{ g }}</option>
                 </select>
+
+                <!-- Qiraati, mode daftar: 1 baris = 1 kelas (dua nama sekaligus) -->
+                <template v-else-if="!guruManual">
+                  <select
+                    v-model="pasanganKey"
+                    class="w-full px-3 py-2 text-sm border border-cyan-300 dark:border-cyan-700 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 text-cyan-900 dark:text-cyan-100 cursor-pointer"
+                  >
+                    <option value="">-- Pilih Kelas --</option>
+                    <option v-for="p in pasanganOptions" :key="p.key" :value="p.key">
+                      {{ p.label }} · {{ p.jumlah }} santri
+                    </option>
+                  </select>
+                  <p
+                    v-if="pasanganOptions.length === 0"
+                    class="text-[10px] italic text-amber-600 dark:text-amber-400 mt-1"
+                  >
+                    <i class="fas fa-triangle-exclamation mr-1"></i>Belum ada kelas berguru di
+                    {{ formData.lembaga || 'lembaga ini' }} — pakai <b>Atur sendiri</b>.
+                  </p>
+                </template>
+
+                <!-- Qiraati, mode manual: pagi & sore terpisah -->
+                <div v-else class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[10px] font-bold text-[var(--text-secondary)] mb-0.5"
+                      >Guru Pagi</label
+                    >
+                    <select
+                      v-model="formData.guru_pagi"
+                      class="w-full px-2 py-2 text-sm border border-cyan-300 dark:border-cyan-700 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 text-cyan-900 dark:text-cyan-100 cursor-pointer"
+                      @change="autoIsiPasanganSore"
+                    >
+                      <option value="">— kosong —</option>
+                      <option v-for="g in guruOptions" :key="g" :value="g">{{ g }}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-[var(--text-secondary)] mb-0.5"
+                      >Guru Sore</label
+                    >
+                    <select
+                      v-model="formData.guru_sore"
+                      class="w-full px-2 py-2 text-sm border border-cyan-300 dark:border-cyan-700 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 text-cyan-900 dark:text-cyan-100 cursor-pointer"
+                      @change="autoIsiPasanganPagi"
+                    >
+                      <option value="">— kosong —</option>
+                      <option v-for="g in guruOptions" :key="g" :value="g">{{ g }}</option>
+                    </select>
+                  </div>
+                </div>
+                <p
+                  v-if="guruManual && !formIsSekolah"
+                  class="text-[10px] italic text-[var(--text-tertiary)] mt-1"
+                >
+                  <i class="fas fa-wand-magic-sparkles mr-1"></i>Pilih satu guru — pasangannya
+                  terisi otomatis (masih bisa diubah).
+                </p>
+
+                <p
+                  v-if="!formIsSekolah && (formData.guru_pagi || formData.guru_sore)"
+                  class="text-[10px] text-[var(--text-secondary)] mt-1"
+                >
+                  Akan disimpan: <b>{{ pasanganTerpilihLabel }}</b>
+                </p>
               </div>
 
               <div
@@ -1280,16 +1381,16 @@
             >
               <button
                 type="button"
-                @click="formOpen = false"
                 class="text-xs font-bold px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-500 text-[var(--text-primary)] cursor-pointer"
+                @click="formOpen = false"
               >
                 Batal
               </button>
               <button
                 type="button"
-                @click="saveFormKenaikan"
                 :disabled="savingForm"
                 class="text-xs font-black px-4 py-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                @click="saveFormKenaikan"
               >
                 <i v-if="savingForm" class="fas fa-spinner fa-spin"></i>
                 <i v-else class="fas fa-check"></i>
@@ -1304,21 +1405,24 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, reactive, computed, onUnmounted, watch } from 'vue'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
-import { collection, doc, getDocs, setDoc, updateDoc, query, where } from 'firebase/firestore'
-import { db } from '@/services/firebase'
-import { deleteOne } from '@/services/firestore'
+import { queryColl, setOne, mergeOne, updateOne, deleteOne } from '@/services/db'
+// v.1.1.9: masa tempuh per juz di kartu kenaikan PTPT (definisi "hari aktif" sama
+//   dengan menu Tes Kenaikan — kalender minus Jumat minus libur Kalender Kegiatan).
+import { hariEfektif } from '@/utils/masaTempuh'
+import { expandLiburDates } from '@/utils/liburNasional'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { isSuperAdmin } from '@/utils/roleScope'
 import { useGuru } from '@/composables/useGuru'
+import { useSantri } from '@/composables/useSantri'
 import { useExcel } from '@/composables/useExcel'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
-import { useLembaga, getPkbmSubTier } from '@/composables/useLembaga'
+import { useLembaga, getPkbmSubTier, sekolahTierList } from '@/composables/useLembaga'
 import { sortSantri } from '@/utils/santriSort'
 import {
   LEMBAGA_KENAIKAN_LIST,
@@ -1326,15 +1430,30 @@ import {
   getKartuKenaikanSchema,
   getKopKartuLembaga
 } from '@/utils/kenaikan'
+// v.1.2.2: jejak kartu per lembaga — dipakai memunculkan "alumni" di tab Riwayat.
+import { countTanggalKartu, countCatatanKartu, adaJejakKartu } from '@/utils/kartuJejak'
+// v.1.2.3: daftar jenjang Pra PTPT DIBACA dari master/lembaga (bukan hardcoded 'Level 1'..'Level 5').
+import { jenjangLembaga, indexJenjang } from '@/utils/jenjangQiraati'
 import {
   buildKenaikanQiraatiPayload,
   writeKenaikan,
   resolveKenaikanSchemaPath
 } from '@/utils/promosiKenaikan' // v.100d: logika naik bersama
 import { juzNum } from '@/utils/format' // v.100e: normalisasi tampilan juz (anti dobel "Juz JUZ n")
-import { ownsNgaji, ownsSekolah, deteksiTipeGuru } from '@/utils/guruScope' // v.100b: scope guru qiraati/sekolah
+import { ownsNgaji, ownsSekolah, deteksiTipeGuru, guruAktifSaja } from '@/utils/guruScope' // v.100b: scope guru qiraati/sekolah
+// v.1.1.9: 1 kelas Qiraati = sepasang guru (pagi & sore) — dropdown menampilkan 2 nama.
+import {
+  pasanganQiraati,
+  cariPasangan,
+  labelPasangan,
+  petaPasangan,
+  partnerSore,
+  partnerPagi
+} from '@/utils/pasanganGuru'
 import { buildListPdf, createPdf, drawTable, savePdf } from '@/utils/pdfBuilder'
+import { cetakRiwayatPendidikanPdf } from '@/utils/riwayatPendidikanPdf' // v.1.2.6: PDF jurnal lintas-lembaga
 import { imageToDataURL } from '@/services/pdf'
+import { BRAND } from '@/config/brand'
 
 const authStore = useAuthStore()
 const settingsStore = useSettingsStore()
@@ -1359,26 +1478,53 @@ const isGuru = computed(() => {
   return sa?.role === 'guru' && sa?.role_sistem !== 'super_admin' && sa?.id !== 'admin'
 })
 const isSantriRole = computed(() => authStore.sesiAktif?.role === 'santri')
+// v.1.1.9: guru kelas boleh Form Kenaikan & Mutasi untuk SANTRI AMPUANNYA saja.
+//   Batasnya dari 2 lapis: (1) `santriList` sudah discope useSantri (guru hanya lihat
+//   santri kelasnya), (2) RLS `santri_upd_pengampu` (migrasi 20260719120000) menolak
+//   UPDATE santri yang bukan ampuannya. Tab "Pengaturan" TETAP admin-only.
+const canKelola = computed(() => isAdmin.value || isGuru.value)
 // v.100b: tipe guru (Qiraati / Sekolah) dari assignment santri → toggle kategori untuk guru dual-role.
 const myNamaGuru = computed(() => authStore.sesiAktif?.guru || authStore.sesiAktif?.nama || '')
 const guruTipe = computed(() => deteksiTipeGuru(santriList.value, myNamaGuru.value))
 const guruDual = computed(() => guruTipe.value.qiraati && guruTipe.value.sekolah)
 
 // ────────── STATE: santri list ──────────
-const santriList = ref([])
-const loadingSantri = ref(true)
+// v.F6e (Supabase): baca santri dari STORE terpusat (useSantri → collections.ensure), SAMA
+//   seperti useGuru di atas & semua view lain. Store di-populate shell pasca-auth (resilient
+//   thd race init), pengganti getAll one-shot di onMounted yang bisa balik 0 saat sesi blm siap.
+const { santriRaw: santriList, loading: loadingSantri } = useSantri()
 const searchFormSantri = ref('')
 const filterLembaga = ref('')
 // v.99: kenaikan kategori (Qiraati / Sekolah) — sekolah pakai lembaga_sekolah (SMP/SMA = sub-tier PKBM)
 const kenaikanKategori = ref('qiraati')
-const SEKOLAH_KENAIKAN = ['TK', 'SDI', 'SMP', 'SMA']
+// F6e: handler tunggal (hindari @click multi-statement yg prettier semi:false pecah → invalid expr)
+function setKenaikanKategori(kat) {
+  kenaikanKategori.value = kat
+  filterLembaga.value = ''
+}
+/**
+ * v.1.2.1 — daftar lembaga SEKOLAH untuk kenaikan, DIBACA dari master/lembaga
+ * (tipe 'Formal'). Dulu konstanta ['TK','SDI','SMP','SMA'] di tiga tempat, jadi
+ * sekolah yang Kyai tambah sendiri tak pernah muncul di dropdown mana pun.
+ *
+ * PKBM tetap dipecah jadi dua sub-tier SMP & SMA — kenaikan sekolah dipilih per
+ * tingkat, bukan per lembaga payung.
+ *
+ * Untuk data seed sekarang (TK, SDI, PKBM) hasilnya PERSIS sama dengan konstanta
+ * lama LEMBAGA_KENAIKAN_SEKOLAH, urutan ikut sama. Dijaga tes di
+ * tests/unit/lembagaSekolah.test.js.
+ */
+const sekolahKenaikanList = computed(() => {
+  const list = sekolahTierList(lembagaRaw.value)
+  return list.length ? list : LEMBAGA_KENAIKAN_SEKOLAH
+})
 const kenaikanLembagaOptions = computed(() =>
-  kenaikanKategori.value === 'sekolah' ? SEKOLAH_KENAIKAN : LEMBAGA_KENAIKAN_LIST
+  kenaikanKategori.value === 'sekolah' ? sekolahKenaikanList.value : LEMBAGA_KENAIKAN_LIST
 )
 // v.100 Batch6: Pengaturan KOP/Schema kini mencakup lembaga Qiraati + Sekolah
 const pengaturanLembagaList = computed(() => [
   ...LEMBAGA_KENAIKAN_LIST,
-  ...LEMBAGA_KENAIKAN_SEKOLAH
+  ...sekolahKenaikanList.value
 ])
 const activeTab = ref('form')
 
@@ -1413,7 +1559,7 @@ definePageActions(() => {
         activeTab.value = 'pengaturan'
       }
     })
-  if (isAdmin.value)
+  if (canKelola.value)
     acts.push({
       label: 'Mutasi',
       icon: 'logout',
@@ -1446,8 +1592,12 @@ const mutasiAlasanLain = ref('')
 const mutasiSearch = ref('')
 const mutasiShowKeluar = ref(false)
 const mutasiSaving = ref(false)
+// F6e: handler tunggal (hindari @click multi-statement yg prettier semi:false pecah → invalid expr)
+function setMutasiKategori(kat) {
+  mutasiKategori.value = kat
+  mutasiLembaga.value = ''
+}
 const QIRAATI_MUT = ['TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH']
-const SEKOLAH_MUT = ['TK', 'SDI', 'SMP', 'SMA']
 const mutasiLembagaOptions = computed(() => {
   if (mutasiKategori.value === 'qiraati') {
     const fromM = (lembagaRaw.value || [])
@@ -1455,7 +1605,7 @@ const mutasiLembagaOptions = computed(() => {
       .map((l) => l.lembaga)
     return fromM.length ? [...new Set(fromM)] : QIRAATI_MUT
   }
-  if (mutasiKategori.value === 'sekolah') return SEKOLAH_MUT
+  if (mutasiKategori.value === 'sekolah') return sekolahKenaikanList.value
   return []
 })
 function mutasiMatch(s) {
@@ -1514,15 +1664,11 @@ async function keluarkanSantri(s) {
   }
   mutasiSaving.value = true
   try {
-    await setDoc(
-      doc(db, 'santri', String(s.id)),
-      {
-        aktif: false,
-        tgl_keluar: mutasiTgl.value || new Date().toISOString().slice(0, 10),
-        alasan_keluar: alasan
-      },
-      { merge: true }
-    )
+    await mergeOne('santri', String(s.id), {
+      aktif: false,
+      tgl_keluar: mutasiTgl.value || new Date().toISOString().slice(0, 10),
+      alasan_keluar: alasan
+    })
     s.aktif = false
     s.tgl_keluar = mutasiTgl.value
     s.alasan_keluar = alasan
@@ -1537,11 +1683,7 @@ async function keluarkanSantri(s) {
 async function reaktifSantri(s) {
   mutasiSaving.value = true
   try {
-    await setDoc(
-      doc(db, 'santri', String(s.id)),
-      { aktif: true, tgl_keluar: '', alasan_keluar: '' },
-      { merge: true }
-    )
+    await mergeOne('santri', String(s.id), { aktif: true, tgl_keluar: '', alasan_keluar: '' })
     s.aktif = true
     s.tgl_keluar = ''
     s.alasan_keluar = ''
@@ -1671,7 +1813,9 @@ const filteredFormSantri = computed(() => {
         .trim()
       return (lmb === 'PPPH' || lmb === 'P3H') && s.aktif !== false
     })
-  } else if (['TK', 'SDI', 'SMP', 'SMA', 'PKBM'].includes(fl)) {
+  } else if (fl === 'PKBM' || sekolahKenaikanList.value.includes(fl)) {
+    // v.1.2.1: 'PKBM' dicek terpisah — sekolahKenaikanList memecahnya jadi SMP/SMA,
+    //   sementara nilai filter bisa saja 'PKBM' (lembaga payungnya).
     // v.99: kenaikan lembaga SEKOLAH — match lembaga_sekolah (SMP/SMA = sub-tier PKBM dari kelas)
     list = santriList.value.filter((s) => {
       if (s.aktif === false) return false
@@ -1682,10 +1826,11 @@ const filteredFormSantri = computed(() => {
             .trim() === 'PKBM' && getPkbmSubTier(s.kelas_sekolah || s.kelas) === fl
         )
       }
+      // v.1.2.6: case-insensitive — sekolah kustom "Kelas Baca" (mixed-case) dulu tak cocok
       return (
         String(s.lembaga_sekolah || '')
-          .toUpperCase()
-          .trim() === fl
+          .trim()
+          .toUpperCase() === String(fl).trim().toUpperCase()
       )
     })
   } else {
@@ -1721,109 +1866,122 @@ const filteredFormSantri = computed(() => {
 // ────────── Riwayat tab ──────────
 const riwayatLembaga = ref('')
 const riwayatKategori = ref('qiraati') // v.100e: kategori filter Riwayat (samakan dgn Form Kenaikan)
+// F6e: handler tunggal (hindari @click multi-statement yg prettier semi:false pecah → invalid expr)
+function setRiwayatKategori(kat) {
+  riwayatKategori.value = kat
+  riwayatLembaga.value = ''
+}
 const riwayatLembagaOptions = computed(() =>
-  riwayatKategori.value === 'sekolah' ? SEKOLAH_KENAIKAN : LEMBAGA_KENAIKAN_LIST
+  riwayatKategori.value === 'sekolah' ? sekolahKenaikanList.value : LEMBAGA_KENAIKAN_LIST
 )
 const riwayatSearch = ref('')
-const riwayatList = computed(() => {
-  if (!riwayatLembaga.value) return []
-  let list
+
+// Santri ini SEKARANG ada di lembaga tsb? (dipisah jadi predikat supaya penanda
+// "alumni" di bawah memakai aturan pencocokan yang PERSIS sama, tak mungkin beda)
+function cocokLembagaRiwayat(s, rl) {
+  if (!s || s.aktif === false) return false
   // v.21.74: shift-aware untuk TPQ Pagi/Sore (santri.lembaga = 'TPQ' + shift, atau langsung 'TPQ Pagi'/'TPQ Sore')
-  if (riwayatLembaga.value === 'TPQ Pagi') {
-    list = santriList.value.filter(
-      (s) =>
-        s.aktif !== false &&
-        (s.lembaga === 'TPQ Pagi' ||
-          (s.lembaga === 'TPQ' &&
-            String(s.shift || '')
-              .toLowerCase()
-              .trim() === 'pagi'))
+  if (rl === 'TPQ Pagi') {
+    return (
+      s.lembaga === 'TPQ Pagi' ||
+      (s.lembaga === 'TPQ' &&
+        String(s.shift || '')
+          .toLowerCase()
+          .trim() === 'pagi')
     )
-  } else if (riwayatLembaga.value === 'TPQ Sore') {
-    list = santriList.value.filter(
-      (s) =>
-        s.aktif !== false &&
-        (s.lembaga === 'TPQ Sore' ||
-          (s.lembaga === 'TPQ' &&
-            String(s.shift || '')
-              .toLowerCase()
-              .trim() === 'sore'))
+  }
+  if (rl === 'TPQ Sore') {
+    return (
+      s.lembaga === 'TPQ Sore' ||
+      (s.lembaga === 'TPQ' &&
+        String(s.shift || '')
+          .toLowerCase()
+          .trim() === 'sore')
     )
-  } else if (riwayatLembaga.value === 'TPQ') {
-    list = santriList.value.filter(
-      (s) =>
-        (s.lembaga === 'TPQ Pagi' || s.lembaga === 'TPQ Sore' || s.lembaga === 'TPQ') &&
-        s.aktif !== false
-    )
-  } else if (riwayatLembaga.value === 'PPPH') {
-    list = santriList.value.filter(
-      (s) => (s.lembaga === 'PPPH' || s.lembaga === 'P3H') && s.aktif !== false
-    )
-  } else if (LEMBAGA_KENAIKAN_SEKOLAH.includes(riwayatLembaga.value)) {
+  }
+  if (rl === 'TPQ') {
+    return s.lembaga === 'TPQ Pagi' || s.lembaga === 'TPQ Sore' || s.lembaga === 'TPQ'
+  }
+  if (rl === 'PPPH') return s.lembaga === 'PPPH' || s.lembaga === 'P3H'
+  if (sekolahKenaikanList.value.includes(rl)) {
     // v.100 Batch6: riwayat lembaga SEKOLAH — match lembaga_sekolah (SMP/SMA = sub-tier PKBM dari kelas)
-    const rl = riwayatLembaga.value
-    list = santriList.value.filter((s) => {
-      if (s.aktif === false) return false
-      if (rl === 'SMP' || rl === 'SMA') {
-        return (
-          String(s.lembaga_sekolah || '')
-            .toUpperCase()
-            .trim() === 'PKBM' && getPkbmSubTier(s.kelas_sekolah || s.kelas) === rl
-        )
-      }
+    if (rl === 'SMP' || rl === 'SMA') {
       return (
         String(s.lembaga_sekolah || '')
           .toUpperCase()
-          .trim() === rl
+          .trim() === 'PKBM' && getPkbmSubTier(s.kelas_sekolah || s.kelas) === rl
       )
-    })
-  } else {
-    list = santriList.value.filter((s) => s.lembaga === riwayatLembaga.value && s.aktif !== false)
+    }
+    // v.1.2.6: bandingkan case-insensitive — sekolah kustom mixed-case ("Kelas Baca")
+    //   dulu tak muncul santrinya karena hanya sisi kiri di-uppercase (rl mentah).
+    return (
+      String(s.lembaga_sekolah || '')
+        .trim()
+        .toUpperCase() === String(rl).trim().toUpperCase()
+    )
   }
+  return s.lembaga === rl
+}
+
+// v.1.2.2 (Kyai 22 Jul 2026) — "kalau santri pindah lembaga apakah data riwayatnya
+//   masih tercatat?" Tercatat: `kartu_kenaikan` disimpan PER LEMBAGA dan kunci lama
+//   tak pernah dihapus. Tapi daftar ini dulu menyaring santri ke lembaga SEKARANG,
+//   jadi begitu santri naik ke lembaga berikutnya kartu lamanya tak punya pintu
+//   masuk sama sekali. Sekarang santri yang punya JEJAK kartu di lembaga terpilih
+//   tetap muncul, ditandai "alumni".
+// Ada isi kartu (tanggal/catatan) di lembaga ini? Blok kosong TIDAK dihitung —
+// kalau tidak, santri yang sekadar lewat ikut memenuhi daftar. Aturan hitungnya
+// SATU SUMBER dengan angka yang tampil di baris (utils/kartuJejak).
+function jejakKartu(s, rl) {
+  return adaJejakKartu(s?.kartu_kenaikan, rl)
+}
+function isAlumniRiwayat(s) {
+  return !!riwayatLembaga.value && !cocokLembagaRiwayat(s, riwayatLembaga.value)
+}
+const riwayatAlumniCount = computed(() => riwayatList.value.filter(isAlumniRiwayat).length)
+
+const riwayatList = computed(() => {
+  const rl = riwayatLembaga.value
+  if (!rl) return []
+  let list = santriList.value.filter((s) => cocokLembagaRiwayat(s, rl))
+  // Alumni: sudah pindah lembaga tapi kartunya di lembaga ini masih ada isinya.
+  //   `aktif !== false` tetap dihormati, sama seperti daftar aktifnya.
+  const sudah = new Set(list.map((s) => String(s.id)))
+  let alumni = santriList.value.filter(
+    (s) => s && s.aktif !== false && !sudah.has(String(s.id)) && jejakKartu(s, rl)
+  )
   // v.100c-fix: GURU hanya lihat santri ampuannya di riwayat (sebelumnya tampil SEMUA santri lembaga).
   //   Sekolah → guru_sekolah; Qiraati → guru ngaji.
   if (isGuru.value) {
     const nm = myNamaGuru.value
-    const isSek = LEMBAGA_KENAIKAN_SEKOLAH.includes(riwayatLembaga.value)
-    list = list.filter((s) => (isSek ? ownsSekolah(s, nm) : ownsNgaji(s, nm)))
+    const isSek = sekolahKenaikanList.value.includes(riwayatLembaga.value)
+    const punya = (s) => (isSek ? ownsSekolah(s, nm) : ownsNgaji(s, nm))
+    list = list.filter(punya)
+    alumni = alumni.filter(punya)
   }
   if (riwayatSearch.value) {
     const kw = riwayatSearch.value.toLowerCase()
-    list = list.filter((s) =>
+    const cocok = (s) =>
       String(s.nama || '')
         .toLowerCase()
         .includes(kw)
-    )
+    list = list.filter(cocok)
+    alumni = alumni.filter(cocok)
   }
-  return sortSantri(list, { lembagaField: 'lembaga', kelasField: 'kelas' })
+  const urut = (arr) => sortSantri(arr, { lembagaField: 'lembaga', kelasField: 'kelas' })
+  // Alumni diurutkan sendiri & ditaruh PALING BAWAH — kalau ikut diurutkan bersama,
+  // mereka menyelip di tengah santri aktif dan daftarnya jadi membingungkan.
+  return alumni.length ? [...urut(list), ...urut(alumni)] : urut(list)
 })
 
+// v.1.2.2: hitungannya pindah ke utils/kartuJejak (pure + teruji); di sini tinggal
+//   pembungkus supaya pemanggil di template tak berubah.
 function countTanggalTerisi(s, lembaga) {
-  const block = s.kartu_kenaikan?.[lembaga]
-  if (!block) return 0
-  let n = 0
-  for (const kls of Object.values(block)) {
-    if (!kls || typeof kls !== 'object') continue
-    for (const v of Object.values(kls)) {
-      if (v) n++
-    }
-  }
-  return n
+  return countTanggalKartu(s?.kartu_kenaikan, lembaga)
 }
 
 function countCatatan(s, lembaga) {
-  const block = s.kartu_kenaikan?.[lembaga]
-  if (!block) return 0
-  let n = 0
-  for (const kls of Object.values(block)) {
-    if (!kls || typeof kls !== 'object') continue
-    if (Array.isArray(kls.entries)) {
-      n += kls.entries.filter((e) => e && e.text).length
-    }
-    if (typeof kls.catatan === 'string' && kls.catatan.trim()) n++
-    if (typeof kls.rekomendasi === 'string' && kls.rekomendasi.trim()) n++
-  }
-  return n
+  return countCatatanKartu(s?.kartu_kenaikan, lembaga)
 }
 
 function latestCatatan(s, lembaga, max = 3) {
@@ -2033,8 +2191,8 @@ async function saveSchema() {
   try {
     const all = { ...(settingsStore.settings?.kartuKenaikanSchema || {}) }
     all[pengaturanLembaga.value] = JSON.parse(JSON.stringify(schemaDraft.value))
-    await setDoc(doc(db, 'settings', 'general'), { kartuKenaikanSchema: all }, { merge: true })
-    await setDoc(doc(db, 'settings', 'web'), { kartuKenaikanSchema: all }, { merge: true })
+    await mergeOne('settings', 'general', { kartuKenaikanSchema: all })
+    await mergeOne('settings', 'web', { kartuKenaikanSchema: all })
     settingsStore.settings.kartuKenaikanSchema = all
     toast.success('Schema kartu kenaikan tersimpan')
   } catch (e) {
@@ -2071,16 +2229,8 @@ async function saveKop() {
     }
     all1[pengaturanLembaga.value] = payload
     all2[pengaturanLembaga.value] = payload
-    await setDoc(
-      doc(db, 'settings', 'general'),
-      { kopKartuKenaikan: all1, kartuKenaikanKop: all2 },
-      { merge: true }
-    )
-    await setDoc(
-      doc(db, 'settings', 'web'),
-      { kopKartuKenaikan: all1, kartuKenaikanKop: all2 },
-      { merge: true }
-    )
+    await mergeOne('settings', 'general', { kopKartuKenaikan: all1, kartuKenaikanKop: all2 })
+    await mergeOne('settings', 'web', { kopKartuKenaikan: all1, kartuKenaikanKop: all2 })
     settingsStore.settings.kopKartuKenaikan = all1
     settingsStore.settings.kartuKenaikanKop = all2
     toast.success(`KOP ${pengaturanLembaga.value} tersimpan`)
@@ -2104,7 +2254,7 @@ const savingKartu = ref(false)
 const kopHeader = computed(() => getKopKartuLembaga(kartuLembaga.value, settingsStore.settings))
 // v.100 Batch6: kartu lembaga sekolah → ceremonial ditampilkan sebagai "Kelulusan"
 const kartuCeremonialLabel = computed(() =>
-  LEMBAGA_KENAIKAN_SEKOLAH.includes(kartuLembaga.value) ? 'Kelulusan' : 'Ceremonial'
+  sekolahKenaikanList.value.includes(kartuLembaga.value) ? 'Kelulusan' : 'Ceremonial'
 )
 
 function openKartu(s) {
@@ -2145,7 +2295,7 @@ async function saveKartu() {
       ...(kartuSantri.value.kartu_kenaikan || {}),
       [kartuLembaga.value]: cellData.value
     }
-    await updateDoc(doc(db, 'santri', String(sid)), { kartu_kenaikan: merged })
+    await updateOne('santri', String(sid), { kartu_kenaikan: merged })
     kartuSantri.value.kartu_kenaikan = merged
     const idx = santriList.value.findIndex((x) => x.id === sid)
     if (idx >= 0) santriList.value[idx].kartu_kenaikan = merged
@@ -2293,7 +2443,9 @@ const formData = ref({
   kelas_sekolah: '',
   lembaga: '',
   kelas: '',
-  guru: '',
+  guru: '', // sekolah: wali kelas · qiraati: cermin field lama (= guru_pagi || guru_sore)
+  guru_pagi: '', // v.1.1.9: pasangan guru Qiraati (1 kelas = pagi + sore)
+  guru_sore: '',
   juz: '',
   khotam_ke: '',
   catatan: '',
@@ -2303,7 +2455,7 @@ const savingForm = ref(false)
 // v.100 Batch6: mode form sekolah (kenaikan kelas sekolah, bukan jilid/juz Qiraati)
 const formIsSekolah = ref(false)
 const formLembagaOptions = computed(() =>
-  formIsSekolah.value ? LEMBAGA_KENAIKAN_SEKOLAH : LEMBAGA_KENAIKAN_LIST
+  formIsSekolah.value ? sekolahKenaikanList.value : LEMBAGA_KENAIKAN_LIST
 )
 // v.100 Batch9: identitas form & label baris ikut KATEGORI — mode sekolah baca
 //   lembaga_sekolah/kelas_sekolah (sebelumnya selalu lembaga/kelas ngaji → form sekolah
@@ -2406,7 +2558,14 @@ const kelasOptions = computed(() => {
       'Persiapan Khotaman'
     ]
   }
-  if (lmb === 'pra ptpt') return ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5']
+  if (lmb === 'pra ptpt') {
+    // v.1.2.3: nama level DIBACA dari master/lembaga (Pengaturan Lembaga) — dulu hardcoded
+    //   'Level 1'..'Level 5' yang tak cocok dengan data nyata ('Level ½ Juz'..'Level 3 Juz').
+    const dariMaster = jenjangLembaga('Pra PTPT', lembagaRaw.value)
+    return dariMaster.length
+      ? dariMaster
+      : ['Level ½ Juz', 'Level 1 Juz', 'Level 1½ Juz', 'Level 2 Juz', 'Level 3 Juz']
+  }
   if (lmb === 'ptpt') return ['Kelas 1', 'Kelas 2', 'Kelas 3', 'Kelas 4', 'Kelas 5', 'Kelas 6']
   if (lmb === 'ppph' || lmb === 'p3h')
     return [
@@ -2443,6 +2602,53 @@ const juzRangeForKelas = computed(() => {
   return Array.from({ length: 5 }, (_, i) => start + i)
 })
 
+// ── v.1.1.9: pasangan guru Qiraati (1 kelas = guru pagi + guru sore) ──────────
+//   Kyai: "guru yg berpasangan (pagi & sore berbeda guru) itu jadi satu kelas,
+//   jadi pilihnya juga ada muncul 2 nama." Daftar pasangan diturunkan dari data
+//   santri (utils/pasanganGuru) — tanpa master baru yang harus dirawat manual.
+const guruManual = ref(false) // true = atur guru pagi/sore sendiri
+const pasanganOptions = computed(() =>
+  formIsSekolah.value ? [] : pasanganQiraati(santriList.value, { lembaga: formData.value.lembaga })
+)
+// Nilai <option> pasangan; menulis balik ke formData.guru_pagi/guru_sore.
+const pasanganKey = computed({
+  get() {
+    const p = pasanganOptions.value.find(
+      (x) =>
+        x.guru_pagi === (formData.value.guru_pagi || '') &&
+        x.guru_sore === (formData.value.guru_sore || '')
+    )
+    return p ? p.key : ''
+  },
+  set(key) {
+    const p = cariPasangan(pasanganOptions.value, key)
+    formData.value.guru_pagi = p ? p.guru_pagi : ''
+    formData.value.guru_sore = p ? p.guru_sore : ''
+  }
+})
+const pasanganTerpilihLabel = computed(() =>
+  labelPasangan({ guru_pagi: formData.value.guru_pagi, guru_sore: formData.value.guru_sore })
+)
+
+// v.1.2.6 (Kyai): mode "Atur sendiri" — pilih SATU guru, pasangannya terisi OTOMATIS
+//   dari peta pasangan pagi↔sore seluruh santri. Dulu harus pilih pagi & sore satu-satu
+//   tiap kali pindah ke pasangan yang belum ada di lembaga tujuan.
+const petaPasanganGuru = computed(() => petaPasangan(santriList.value))
+function autoIsiPasanganSore() {
+  const pagi = String(formData.value.guru_pagi || '').trim()
+  if (pagi && !String(formData.value.guru_sore || '').trim()) {
+    const p = partnerSore(petaPasanganGuru.value, pagi)
+    if (p) formData.value.guru_sore = p
+  }
+}
+function autoIsiPasanganPagi() {
+  const sore = String(formData.value.guru_sore || '').trim()
+  if (sore && !String(formData.value.guru_pagi || '').trim()) {
+    const p = partnerPagi(petaPasanganGuru.value, sore)
+    if (p) formData.value.guru_pagi = p
+  }
+}
+
 const guruOptions = computed(() => {
   const lmb = formData.value.lembaga
   if (!lmb) return []
@@ -2450,7 +2656,7 @@ const guruOptions = computed(() => {
   if (formIsSekolah.value) {
     const m = String(lmb).toUpperCase().trim()
     const target = m === 'SMP' || m === 'SMA' ? 'PKBM' : m
-    return (guruRaw.value || [])
+    return guruAktifSaja(guruRaw.value)
       .filter(
         (g) =>
           String(g.lembaga_sekolah || '')
@@ -2463,7 +2669,9 @@ const guruOptions = computed(() => {
       .map((g) => g.nama)
       .filter(Boolean)
   }
-  return (guruRaw.value || [])
+  // v.1.2.0: guru NONAKTIF tak lagi ikut muncul — dulu penyaringnya lembaga saja,
+  //   jadi nama guru lama terus nongol di dropdown "pilih guru pengajar".
+  return guruAktifSaja(guruRaw.value)
     .filter((g) => g.lembaga === lmb || g.lembaga_sekolah === lmb)
     .map((g) => g.nama)
     .filter(Boolean)
@@ -2515,29 +2723,39 @@ function openFormKenaikan(s) {
   }
   // v.21.73: Auto-resolve kelas current untuk Pra PTPT & PTPT
   let resolvedKelas = s.kelas || ''
-  if (matched === 'PTPT' || matched === 'Pra PTPT') {
-    const num = String(s.kelas || '').match(/(\d+)/)
-    if (num) {
-      const label = matched === 'PTPT' ? 'Kelas' : 'Level'
-      // Pra PTPT format pakai range juz suffix
-      if (matched === 'Pra PTPT') {
-        const labels = ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5']
-        resolvedKelas = labels[parseInt(num[1], 10) - 1] || s.kelas || ''
-      } else {
-        resolvedKelas = `${label} ${num[1]}`
-      }
+  if (matched === 'Pra PTPT') {
+    // v.1.2.3: normalkan kelas santri ke label master. Label master ('Level 3 Juz')
+    //   dibiarkan apa adanya; data lama bare ('Level 5') dipetakan lewat INDEX → 'Level 3 Juz'.
+    const list = jenjangLembaga('Pra PTPT', lembagaRaw.value)
+    const i = indexJenjang(list, s.kelas)
+    if (i >= 0) {
+      resolvedKelas = list[i]
+    } else {
+      const m = String(s.kelas || '').match(/(\d+)/)
+      resolvedKelas = (m && list[parseInt(m[1], 10) - 1]) || s.kelas || ''
     }
+  } else if (matched === 'PTPT') {
+    const num = String(s.kelas || '').match(/(\d+)/)
+    if (num) resolvedKelas = `Kelas ${num[1]}`
   }
+  const guruLama = Array.isArray(s.guru) ? s.guru[0] || '' : s.guru || ''
+  const pagiLama = String(s.guru_pagi || '').trim()
+  const soreLama = String(s.guru_sore || '').trim()
   formData.value = {
     tanggal: new Date().toISOString().slice(0, 10),
     kelas_sekolah: s.kelas_sekolah || '',
     lembaga: matched, // auto-fill current lembaga
     kelas: resolvedKelas, // auto-fill current kelas (PTPT/Pra PTPT normalized)
-    guru: Array.isArray(s.guru) ? s.guru[0] || '' : s.guru || '',
+    guru: guruLama,
+    // v.1.1.9: pasangan guru saat ini jadi nilai awal. `guru` lama dianggap guru
+    //   PAGI bila pagi & sore kosong (asumsi sama dgn useSantriForm & pasanganGuru).
+    guru_pagi: pagiLama || (!soreLama && guruLama ? guruLama : ''),
+    guru_sore: soreLama,
     juz: s.juz ? String(s.juz).replace(/\D/g, '') : '',
     khotam_ke: '',
     catatan: ''
   }
+  guruManual.value = false
   formOpen.value = true
 }
 
@@ -2626,11 +2844,11 @@ async function saveFormKenaikanSekolah() {
     payload.riwayat_kenaikan = Array.isArray(s.riwayat_kenaikan)
       ? [...s.riwayat_kenaikan, rkEntry]
       : [rkEntry]
-    await updateDoc(doc(db, 'santri', String(s.id)), payload)
+    await updateOne('santri', String(s.id), payload)
     // Event kenaikan (sumber notif wali). Best-effort.
     try {
       const evId = `rk_${s.id}_${Date.now()}`
-      await setDoc(doc(db, 'riwayat_kenaikan', evId), {
+      await setOne('riwayat_kenaikan', evId, {
         id: evId,
         santri_id: String(s.id),
         santri_nama: s.nama || '',
@@ -2693,6 +2911,10 @@ async function saveFormKenaikan() {
       juz: formData.value.juz,
       khotam_ke: formData.value.khotam_ke,
       guru: formData.value.guru || '',
+      // v.1.1.9: pasangan guru ikut disimpan — tanpa ini `guru_pagi`/`guru_sore`
+      //   tetap nilai lama dan "pindah guru" tak berefek di statistik & filter ampuan.
+      guru_pagi: formData.value.guru_pagi || '',
+      guru_sore: formData.value.guru_sore || '',
       kelas_sekolah: formData.value.kelas_sekolah || '',
       catatan: formData.value.catatan || ''
     }
@@ -2775,18 +2997,15 @@ async function batalKenaikanTerakhir(s) {
       }
       patch.riwayat = r
     }
-    await updateDoc(doc(db, 'santri', String(s.id)), patch)
+    await updateOne('santri', String(s.id), patch)
     Object.assign(s, patch)
     const idx = santriList.value.findIndex((x) => String(x.id) === String(s.id))
     if (idx >= 0) Object.assign(santriList.value[idx], patch)
     // hapus event doc riwayat_kenaikan TERBARU milik santri ini (backup ke audit_log)
     try {
-      const snap = await getDocs(
-        query(collection(db, 'riwayat_kenaikan'), where('santri_id', '==', String(s.id)))
+      const evs = (await queryColl('riwayat_kenaikan', [['santri_id', '==', String(s.id)]])).sort(
+        (a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))
       )
-      const evs = snap.docs
-        .map((d) => ({ id: d.id, ...d.data() }))
-        .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
       if (evs[0]) {
         await deleteOne('riwayat_kenaikan', evs[0].id, {
           alasan: 'Batalkan kenaikan terakhir (super_admin)'
@@ -2859,7 +3078,7 @@ async function exportRiwayatPdf() {
     const settingsObj = settingsStore.settings || {}
     const kop = {
       logoUrl: settingsObj.kop_logo || settingsObj.kopLogo || settingsObj.logoKop || '',
-      line1: settingsObj.kopLine1 || '',
+      line1: settingsObj.kopLine1 || BRAND.kopLine1,
       line2: settingsObj.kopLine2 || '',
       line3: settingsObj.kopLine3 || '',
       line4: settingsObj.kopLine4 || '',
@@ -2889,6 +3108,16 @@ async function exportRiwayatPdf() {
 }
 
 // ────────── PDF Export Kartu Kenaikan per-santri ──────────
+// v.1.2.6 (task 3): PDF riwayat pendidikan lintas-lembaga (semua lembaga santri)
+async function cetakRiwayatPendidikan(s) {
+  try {
+    await cetakRiwayatPendidikanPdf(s, settingsStore.settings || {})
+    toast.success('PDF riwayat pendidikan dibuat.')
+  } catch (e) {
+    toast.error('Gagal cetak: ' + (e.message || e))
+  }
+}
+
 const exportingKartuPdf = ref(false)
 async function eksporKartuPdf() {
   if (!kartuSantri.value || !schema.value) {
@@ -2903,7 +3132,7 @@ async function eksporKartuPdf() {
     const _kop = kopHeader.value
     const settingsObj = settingsStore.settings || {}
     // v.100 Batch6: kartu lembaga SEKOLAH — identitas pakai kelas_sekolah + guru sekolah, ceremonial = Kelulusan
-    const isSekolahKartu = LEMBAGA_KENAIKAN_SEKOLAH.includes(kartuLembaga.value)
+    const isSekolahKartu = sekolahKenaikanList.value.includes(kartuLembaga.value)
     // Build rows: one row per (kelas, item) combo so the matrix is flattened
     const rows = []
     for (const k of sch.kelasList || []) {
@@ -2968,7 +3197,7 @@ async function eksporKartuPdf() {
     const kopLine2 = (
       _kop.subjudul ||
       settingsObj.kopLine1 ||
-      ''
+      BRAND.kopLine1
     ).toUpperCase()
     doc.text(kopLine2, pageW / 2, startY + 12, { align: 'center' })
     doc.setFont('helvetica', 'normal')
@@ -3011,23 +3240,65 @@ async function eksporKartuPdf() {
           ['TGL MASUK', s.tgl_masuk || '-'],
           ['ALAMAT', (s.alamat || '-').toUpperCase()]
         ]
+    // v.1.1.9: rapikan blok identitas — titik dua disejajarkan dari label TERPANJANG
+    //   (dulu dipaku di x=38; label "GURU KELAS" hampir menyentuhnya), jarak baris
+    //   sedikit dilonggarkan, dan nilainya di-bold supaya beda tegas dari labelnya.
+    const labelW = Math.max(...identitasRows.map(([k]) => doc.getTextWidth(k)))
+    const colonX = 14 + labelW + 3
     for (const [k, v] of identitasRows) {
+      doc.setFont('helvetica', 'normal')
       doc.text(k, 14, yId)
-      doc.text(':', 38, yId)
-      doc.text(String(v), 41, yId)
-      yId += 4.8
+      doc.text(':', colonX, yId)
+      doc.setFont('helvetica', 'bold')
+      doc.text(String(v), colonX + 3, yId)
+      yId += 5.2
     }
+    doc.setFont('helvetica', 'normal')
 
     // v.21.73: Conditional layout — PTPT pakai MATRIX 3 kelas/blok (match kartu fisik PTPT MU)
     const tableStartY = yId + 4
 
     if (kartuLembaga.value === 'PTPT') {
+      // ── v.1.1.9 (Kyai): MASA TEMPUH per juz, satu baris tipis di bawah tanggal ──
+      //   Dihitung dari TANGGAL DI KARTU INI sendiri (bukan tes_kenaikan) supaya angkanya
+      //   selalu cocok dengan tanggal yang tercetak persis di atasnya — dan tetap jalan
+      //   untuk santri lama yang kartunya diisi manual tanpa baris tes_kenaikan.
+      //   Definisi "hari aktif" sama dengan di menu Tes Kenaikan: hari kalender dikurangi
+      //   AHAD/Minggu (v.1.2.1, dulu Jumat) dan tanggal libur Kalender Kegiatan.
+      const tglJuz = {} // { <juz>: 'YYYY-MM-DD' }
+      for (let k = 1; k <= 6; k++) {
+        const kData = data[`kelas_${k}`] || {}
+        for (let j = (k - 1) * 5 + 1; j <= k * 5; j++) {
+          const v = kData[`juz_${j}`]
+          const t = typeof v === 'object' ? v?.tanggal || v?.tgl || '' : v || ''
+          if (t) tglJuz[j] = String(t).slice(0, 10)
+        }
+      }
+      // Libur kalender: ambil sekali saat ekspor (view ini tak berlangganan `kegiatan`).
+      let liburSet = new Set()
+      try {
+        liburSet = expandLiburDates(await queryColl('kegiatan'))
+      } catch (_e) {
+        /* tanpa kalender: cukup buang Ahad/Minggu — jangan gagalkan cetak kartu */
+      }
+      // v.1.2.1: libur mingguan = Ahad (default ON di hariEfektif).
+      const optHari = { libur: liburSet }
+      // masaJuz[j] = hari efektif sejak juz BERTANGGAL sebelumnya. Juz pertama = null.
+      const masaJuz = {}
+      let prevJuz = 0
+      for (let j = 1; j <= 30; j++) {
+        if (!tglJuz[j]) continue
+        if (prevJuz) masaJuz[j] = hariEfektif(tglJuz[prevJuz], tglJuz[j], optHari)
+        prevJuz = j
+      }
+
       // Matrix PTPT: 6 kelas dibagi 2 blok (Kelas 1-3 + Kelas 4-6), masing-masing 15 juz
       const buildBlok = (kelasStart) => {
         const headers = []
         const subHeaders = []
         const juzRow = []
         const tanggalRow = []
+        const masaRow = []
         for (let k = kelasStart; k < kelasStart + 3; k++) {
           headers.push({
             content: `Kelas ${k}`,
@@ -3046,6 +3317,7 @@ async function eksporKartuPdf() {
             const v = kData[`juz_${j}`]
             const tgl = typeof v === 'object' ? v?.tanggal || v?.tgl || '' : v || ''
             tanggalRow.push(tgl ? formatDate(tgl) : '')
+            masaRow.push(Number.isFinite(masaJuz[j]) ? String(masaJuz[j]) : '')
           }
         }
         const cerRow = []
@@ -3059,7 +3331,8 @@ async function eksporKartuPdf() {
             styles: { halign: 'left', fontStyle: 'normal', fontSize: 9 }
           })
         }
-        return { head: [headers, subHeaders, juzRow], body: [tanggalRow, cerRow] }
+        // Baris 1 = tanggal (tinggi, tulis tangan) · baris 2 = masa tempuh · baris 3 = ceremonial
+        return { head: [headers, subHeaders, juzRow], body: [tanggalRow, masaRow, cerRow] }
       }
 
       const cellW = 182 / 15
@@ -3073,6 +3346,8 @@ async function eksporKartuPdf() {
           fontSize: 10,
           cellPadding: 1.5,
           lineColor: [80, 80, 80],
+          // v.1.1.9: SATU ketebalan garis untuk seluruh kartu. Dulu body 0.2 & head 0.25 —
+          //   bedanya tipis tapi bikin kotak header terlihat "dobel" di cetakan.
           lineWidth: 0.2,
           textColor: [0, 0, 0],
           valign: 'middle'
@@ -3084,7 +3359,7 @@ async function eksporKartuPdf() {
           fontStyle: 'bold',
           halign: 'center',
           lineColor: [80, 80, 80],
-          lineWidth: 0.25
+          lineWidth: 0.2
         },
         bodyStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0] },
         columnStyles: colStyles,
@@ -3095,10 +3370,15 @@ async function eksporKartuPdf() {
       const pageH = doc.internal.pageSize.getHeight()
       const bottomMargin = 14
       const availableH = pageH - tableStartY - bottomMargin
-      // Per blok struktur: 3 header rows (~7mm each = 21) + 1 body row + 1 ceremonial row (~6mm) + gap (4mm) = ~31mm + body
-      // 2 blok: 2 × (31mm + body) + 4mm gap-between = 62 + 2×body + 4 = 66 + 2body
-      // Solve: 66 + 2body = availableH → body = (availableH - 66) / 2
-      const bodyRowH = Math.max(25, Math.min(60, (availableH - 70) / 2))
+      // Per blok: 3 baris header (~7mm) + baris tanggal + baris masa tempuh (~5mm) +
+      //   baris ceremonial (~6mm). Dua blok + jarak antar-blok.
+      const MASA_H = 5 // tinggi baris masa tempuh
+      const GAP_BLOK = 6 // v.1.1.9: jarak antar blok 4 -> 6mm supaya tak terlihat dempet
+      const overheadPerBlok = 21 + MASA_H + 6
+      const availForBody = availableH - (2 * overheadPerBlok + GAP_BLOK)
+      // v.1.1.9: batas atas 60 -> 38mm. Baris tulis-tangan tetap ada, tapi kartu tak lagi
+      //   didominasi ruang kosong seperti keluhan Kyai. Batas bawah 22mm masih cukup ditulisi.
+      const bodyRowH = Math.max(22, Math.min(38, availForBody / 2))
 
       // v.107: baris tanggal (body row 0) digambar VERTIKAL (rotate down, -90°) — kolom Juz sempit,
       //   DD-MM-YYYY tak muat horizontal. didParseCell kosongkan teks default; didDrawCell gambar manual.
@@ -3112,6 +3392,16 @@ async function eksporKartuPdf() {
               : String(d.cell.text || '').trim()
             d.cell._vtext = t
             if (t) d.cell.text = [''] // jangan gambar horizontal; vertikal di didDrawCell
+          }
+          // v.1.1.9: baris MASA TEMPUH — tipis, angka kecil, abu-abu supaya jelas ini
+          //   keterangan turunan, bukan isian yang harus ditulis tangan.
+          if (d.section === 'body' && d.row.index === 1) {
+            d.cell.styles.minCellHeight = MASA_H
+            d.cell.styles.halign = 'center'
+            d.cell.styles.valign = 'middle'
+            d.cell.styles.fontSize = 7
+            d.cell.styles.cellPadding = 0.6
+            d.cell.styles.textColor = [90, 90, 90]
           }
         },
         didDrawCell: (d) => {
@@ -3147,11 +3437,23 @@ async function eksporKartuPdf() {
       const blokB = buildBlok(4)
       drawTable(doc, {
         ...commonOpts,
-        startY: lastY + 4,
+        startY: lastY + GAP_BLOK,
         head: blokB.head,
         body: blokB.body,
         ...dateCellHooks
       })
+
+      // Keterangan baris masa tempuh — tanpa ini angka "42" tak jelas satuannya.
+      doc.setFont('helvetica', 'italic')
+      doc.setFontSize(7.5)
+      doc.setTextColor(90, 90, 90)
+      doc.text(
+        'Angka kecil di bawah tanggal = masa tempuh (hari aktif) sejak juz sebelumnya; Jumat & libur kalender tidak dihitung.',
+        14,
+        doc.lastAutoTable.finalY + 4
+      )
+      doc.setTextColor(0, 0, 0)
+      doc.setFont('helvetica', 'normal')
     } else {
       // Flat layout dengan rowspan kelas (TPQ, Pra PTPT, PPPH)
       const pageH = doc.internal.pageSize.getHeight()
@@ -3232,23 +3534,9 @@ async function eksporKartuPdf() {
   }
 }
 
-// ────────── Lifecycle: load santri ──────────
+// ────────── Lifecycle ──────────
 // v.100d: badge "siap naik" dihapus — Lulus tes kini langsung menaikkan santri (lihat TesKenaikanView).
-
-onMounted(async () => {
-  if (!isAdmin.value && !isGuru.value && !isSantriRole.value) {
-    loadingSantri.value = false
-    return
-  }
-  try {
-    const snap = await getDocs(collection(db, 'santri'))
-    santriList.value = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-  } catch (e) {
-    toast.error('Gagal load santri: ' + e.message)
-  } finally {
-    loadingSantri.value = false
-  }
-})
+// v.F6e: load santri dipindah ke store terpusat (useSantri, lihat STATE di atas).
 </script>
 
 <style scoped>

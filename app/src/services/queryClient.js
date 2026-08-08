@@ -1,5 +1,5 @@
-// queryClient.js — WASEELA Fase 4 (migrasi Supabase): instance @tanstack/vue-query.
-// SWR cache + dedup + invalidasi utk view yang sudah cutover ke db.js (Fase 6).
+// queryClient.js — F4 (migrasi Supabase): instance @tanstack/vue-query.
+// SWR cache + dedup + invalidasi utk view yang sudah cutover ke db.js (F6).
 // Dipasang di main.js (VueQueryPlugin). Aman dipasang walau belum ada konsumen.
 import { QueryClient } from '@tanstack/vue-query'
 

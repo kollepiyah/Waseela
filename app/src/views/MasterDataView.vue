@@ -1,13 +1,11 @@
 <script setup>
 // v.72.8.0526 Master Data restructure ke 7 tabs match legacy
-import { ref, computed, reactive, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSettingsStore } from '@/stores/settings'
 // v.21.12.0526: + subscribeDoc untuk master/jabatan
-import { subscribeColl, subscribeDoc } from '@/services/firestore'
+import { queryColl, mergeOne } from '@/services/db'
 import { useToast } from '@/composables/useToast'
-import { doc, setDoc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import LembagaView from './LembagaView.vue'
 // v.21.85.0527: KelasView read-only diganti KelasGuruView (assign santri↔guru) + JabatanKelolaView (ACF)
@@ -25,6 +23,7 @@ import { planRegenerateNis, applyNisChanges } from '@/utils/nisGenerator' // v.1
 import { planRegenerateNig, applyNigChanges } from '@/utils/nigGenerator' // v.100 Batch16: auto-generate NIG (manual + preview)
 import { scanLembagaFix, applyLembagaFix, LEMBAGA_QIRAATI_OPSI } from '@/utils/v100_lembagaFix'
 import { useAuthStore } from '@/stores/auth'
+import { provisionAkunSemua } from '@/services/authSupabase' // K1-b: buat akun login yang belum ada
 // v.100 Batch8: audit kesehatan data (integritas + kandidat duplikat fuzzy)
 import { useDataAudit } from '@/composables/useDataAudit'
 import { useGuru } from '@/composables/useGuru'
@@ -34,22 +33,61 @@ const router = useRouter()
 const settings = useSettingsStore()
 
 // v.20.79: M6 — Audit Log subscribe (50 latest)
+// K1-b: tombol "Buat akun yang belum ada" — jaring pengaman kalau ada baris masuk
+//   lewat jalur yang tak memanggil provision otomatis (mis. SQL/Dashboard), dan
+//   sekaligus alat backfill sekali jalan. Aman diklik berulang: Edge Function hanya
+//   MEMBUAT yang belum ada, tak pernah menyentuh sandi akun yang sudah ada.
+const provisiJalan = ref(false)
+const provisiPesan = ref('')
+async function buatAkunBelumAda() {
+  provisiJalan.value = true
+  provisiPesan.value = ''
+  try {
+    const r = await provisionAkunSemua(({ dibuat, sisa }) => {
+      provisiPesan.value = `Membuat akun… ${dibuat} selesai${sisa ? `, ${sisa} menunggu` : ''}`
+    })
+    const bagian = [`${r.dibuat} akun dibuat`]
+    if (r.dilewati) bagian.push(`${r.dilewati} sudah ada (dilewati)`)
+    if (r.gagal.length) bagian.push(`${r.gagal.length} gagal`)
+    provisiPesan.value = bagian.join(' · ')
+    if (r.gagal.length) {
+      console.warn('[provision-akun] gagal:', r.gagal)
+      toast.warning(`${r.gagal.length} akun gagal dibuat — lihat konsol untuk detail`)
+    } else if (r.dibuat) {
+      toast.success(`${r.dibuat} akun login baru dibuat (sandi awal 1234)`)
+    } else {
+      toast.info('Semua santri & guru aktif sudah punya akun login')
+    }
+  } catch (e) {
+    provisiPesan.value = ''
+    toast.error('Gagal membuat akun: ' + (e?.message || e))
+  } finally {
+    provisiJalan.value = false
+  }
+}
+
 const auditLogs = ref([])
-let _unsubAudit = null
-onMounted(() => {
-  _unsubAudit = subscribeColl('audit_log', (rows) => {
-    // v.100e: 2 penulis pakai format timestamp beda (Firestore Timestamp vs string ISO) →
-    //   sort lama `tb - ta` jadi NaN utk entri ISO → urutan kacau → entri hapus terbaru
-    //   terlempar dari 50 teratas ("tidak update"). auditTsMs() normalkan ke epoch ms.
-    const sorted = [...(rows || [])]
-      .sort((a, b) => auditTsMs(b.timestamp) - auditTsMs(a.timestamp))
-      .slice(0, 50)
-    auditLogs.value = sorted
-  })
-})
-// v.98: cleanup listener audit_log (cegah leak tiap mount Master Data)
+// AUDIT AGU 2026 (P6): dulu `subscribeColl('audit_log')` lalu `.slice(0, 50)` di klien.
+//   audit_log tak ada di whitelist REALTIME, jadi itu = queryColl TANPA batas →
+//   db.js _pageAll menarik 1000 baris per halaman sampai habis. Terukur 3 Agu:
+//   7.334 baris ≈ 11,7 MB (8 permintaan berurutan) hanya untuk menampilkan 50 —
+//   dan tabelnya append-only, jadi terus tumbuh. Kini 1 query, 50 baris, urut di DB
+//   pakai kolom `created_at` yang SUDAH ber-index (audit_log_created_idx).
+//   Sengaja TIDAK memakai data->>timestamp untuk order: penulis lama menyimpan
+//   Timestamp Firestore (objek) di situ, dan '{' > '2' secara teks sehingga baris
+//   TERTUA justru menang saat DESC. Urutan tampil tetap dihaluskan auditTsMs().
+async function muatAuditLog() {
+  try {
+    const rows = await queryColl('audit_log', [], [['created_at', 'desc']], 50)
+    auditLogs.value = [...(rows || [])].sort(
+      (a, b) => auditTsMs(b.timestamp) - auditTsMs(a.timestamp)
+    )
+  } catch (e) {
+    console.warn('[master-data] audit log gagal dimuat:', e?.message || e)
+  }
+}
+onMounted(muatAuditLog)
 const { isElectron: isDesktop } = useDesktopShell()
-onUnmounted(() => { if (_unsubAudit) _unsubAudit() })
 function formatTanggal(ts) {
   if (!ts) return '-'
   try {
@@ -98,20 +136,61 @@ const { santriRaw: santriRawForMigration } = useSantri()
 const { guruRaw: guruRawForMigration } = useGuru()
 
 // v.99: Analisis Data Duplikat (audit) — santri (Nama/NIS/NISN) + guru (Nama/WA)
-function _normDup(v) { return String(v || '').trim().toLowerCase() }
+function _normDup(v) {
+  return String(v || '')
+    .trim()
+    .toLowerCase()
+}
 function _findDup(list, keyFn, labelFn) {
   const map = new Map()
-  for (const it of list) { const k = keyFn(it); if (!k) continue; if (!map.has(k)) map.set(k, []); map.get(k).push(it) }
+  for (const it of list) {
+    const k = keyFn(it)
+    if (!k) continue
+    if (!map.has(k)) map.set(k, [])
+    map.get(k).push(it)
+  }
   const groups = []
   // v.100 Batch9: bawa records mentah utk tombol "Gabung Grup Ini" (merge manual per-grup)
-  for (const [key, arr] of map) if (arr.length > 1) groups.push({ key, count: arr.length, items: arr.map(labelFn), records: arr })
+  for (const [key, arr] of map)
+    if (arr.length > 1)
+      groups.push({ key, count: arr.length, items: arr.map(labelFn), records: arr })
   return groups
 }
-const dupSantriNama = computed(() => _findDup(santriRawForMigration.value || [], (s) => _normDup(s.nama), (s) => `${s.nama} · No. Induk ${s.nis || '-'} · ${s.lembaga || s.lembaga_sekolah || '-'}`))
-const dupSantriNis = computed(() => _findDup((santriRawForMigration.value || []).filter((s) => _normDup(s.nis)), (s) => _normDup(s.nis), (s) => `${s.nama} · No. Induk ${s.nis}`))
-const dupSantriNisn = computed(() => _findDup((santriRawForMigration.value || []).filter((s) => _normDup(s.nisn)), (s) => _normDup(s.nisn), (s) => `${s.nama} · NISN ${s.nisn}`))
-const dupGuruNama = computed(() => _findDup(guruRawForMigration.value || [], (g) => _normDup(g.nama), (g) => `${g.nama} · ${g.jabatan || '-'}`))
-const dupGuruWa = computed(() => _findDup((guruRawForMigration.value || []).filter((g) => _normDup(g.wa)), (g) => String(g.wa || '').replace(/\D/g, ''), (g) => `${g.nama} · WA ${g.wa}`))
+const dupSantriNama = computed(() =>
+  _findDup(
+    santriRawForMigration.value || [],
+    (s) => _normDup(s.nama),
+    (s) => `${s.nama} · No. Induk ${s.nis || '-'} · ${s.lembaga || s.lembaga_sekolah || '-'}`
+  )
+)
+const dupSantriNis = computed(() =>
+  _findDup(
+    (santriRawForMigration.value || []).filter((s) => _normDup(s.nis)),
+    (s) => _normDup(s.nis),
+    (s) => `${s.nama} · No. Induk ${s.nis}`
+  )
+)
+const dupSantriNisn = computed(() =>
+  _findDup(
+    (santriRawForMigration.value || []).filter((s) => _normDup(s.nisn)),
+    (s) => _normDup(s.nisn),
+    (s) => `${s.nama} · NISN ${s.nisn}`
+  )
+)
+const dupGuruNama = computed(() =>
+  _findDup(
+    guruRawForMigration.value || [],
+    (g) => _normDup(g.nama),
+    (g) => `${g.nama} · ${g.jabatan || '-'}`
+  )
+)
+const dupGuruWa = computed(() =>
+  _findDup(
+    (guruRawForMigration.value || []).filter((g) => _normDup(g.wa)),
+    (g) => String(g.wa || '').replace(/\D/g, ''),
+    (g) => `${g.nama} · WA ${g.wa}`
+  )
+)
 const dupKategori = computed(() => [
   { label: 'Santri — Nama sama', kind: 'santri', groups: dupSantriNama.value },
   { label: 'Santri — No. Induk sama', kind: 'santri', groups: dupSantriNis.value },
@@ -130,7 +209,9 @@ const { auditGroups, fuzzyDup, totalIssues, totalFuzzy } = useDataAudit(
   lembagaRaw
 )
 const healthOpen = reactive({})
-function toggleHealth(key) { healthOpen[key] = !healthOpen[key] }
+function toggleHealth(key) {
+  healthOpen[key] = !healthOpen[key]
+}
 const showFuzzy = ref(false)
 
 // v.100 Batch14: Generate NIS otomatis (MANUAL + preview). Format NNNN+DDMMYY, urut tgl lahir
@@ -139,7 +220,9 @@ const nisPlan = ref(null) // { changes, skipped, total, max } | null
 const nisGenerating = ref(false)
 const nisProgress = ref({ i: 0, total: 0 })
 const nisResult = ref(null)
-const nisChangedCount = computed(() => (nisPlan.value?.changes || []).filter((c) => c.changed).length)
+const nisChangedCount = computed(
+  () => (nisPlan.value?.changes || []).filter((c) => c.changed).length
+)
 function scanNis() {
   nisResult.value = null
   nisPlan.value = planRegenerateNis(santriRawForMigration.value || [])
@@ -147,7 +230,10 @@ function scanNis() {
 async function applyNis() {
   if (!nisPlan.value || nisGenerating.value) return
   const n = nisChangedCount.value
-  if (n === 0) { toast.success('Tidak ada No. Induk yang perlu diubah — semua sudah sesuai.'); return }
+  if (n === 0) {
+    toast.success('Tidak ada No. Induk yang perlu diubah — semua sudah sesuai.')
+    return
+  }
   const ok = await confirmDlg({
     title: 'Terapkan Generate No. Induk?',
     message: `${n} No. Induk santri akan diperbarui (urut tgl lahir TERTUA → nama A–Z). ${nisPlan.value.skipped.length} santri tanpa tgl lahir DILEWATI (No. Induk lama dibiarkan). No. Induk = field; riwayat keuangan/rapor pakai ID santri → TIDAK terpengaruh. NIS & NISN Dinas (santri sekolah) TIDAK disentuh. Lanjutkan?`,
@@ -161,10 +247,15 @@ async function applyNis() {
     const res = await applyNisChanges(nisPlan.value.changes, {
       sesi: authStore?.sesiAktif,
       mode: 'manual',
-      onProgress: (i, total) => { nisProgress.value = { i, total } }
+      onProgress: (i, total) => {
+        nisProgress.value = { i, total }
+      }
     })
     nisResult.value = res
-    if (res.fail) toast.warning(`Generate No. Induk: ${res.ok} OK, ${res.fail} gagal — ${res.errors.join('; ')}`)
+    if (res.fail)
+      toast.warning(
+        `Generate No. Induk: ${res.ok} OK, ${res.fail} gagal — ${res.errors.join('; ')}`
+      )
     else toast.success(`Generate No. Induk selesai: ${res.changed} No. Induk diperbarui.`)
     nisPlan.value = null
   } catch (e) {
@@ -180,7 +271,9 @@ const nigPlan = ref(null)
 const nigGenerating = ref(false)
 const nigProgress = ref({ i: 0, total: 0 })
 const nigResult = ref(null)
-const nigChangedCount = computed(() => (nigPlan.value?.changes || []).filter((c) => c.changed).length)
+const nigChangedCount = computed(
+  () => (nigPlan.value?.changes || []).filter((c) => c.changed).length
+)
 function scanNig() {
   nigResult.value = null
   nigPlan.value = planRegenerateNig(guruRawForMigration.value || [])
@@ -188,7 +281,10 @@ function scanNig() {
 async function applyNig() {
   if (!nigPlan.value || nigGenerating.value) return
   const n = nigChangedCount.value
-  if (n === 0) { toast.success('Tidak ada NIG yang perlu diubah — semua sudah sesuai.'); return }
+  if (n === 0) {
+    toast.success('Tidak ada NIG yang perlu diubah — semua sudah sesuai.')
+    return
+  }
   const ok = await confirmDlg({
     title: 'Terapkan Generate NIG?',
     message: `${n} NIG guru akan diperbarui (urut tgl TUGAS terlama → nama A–Z). ${nigPlan.value.skipped.length} guru tanpa tgl tugas DILEWATI (NIG lama dibiarkan). NIG = field, tak dipakai kunci lintas-koleksi → aman. Lanjutkan?`,
@@ -201,10 +297,13 @@ async function applyNig() {
   try {
     const res = await applyNigChanges(nigPlan.value.changes, {
       sesi: authStore?.sesiAktif,
-      onProgress: (i, total) => { nigProgress.value = { i, total } }
+      onProgress: (i, total) => {
+        nigProgress.value = { i, total }
+      }
     })
     nigResult.value = res
-    if (res.fail) toast.warning(`Generate NIG: ${res.ok} OK, ${res.fail} gagal — ${res.errors.join('; ')}`)
+    if (res.fail)
+      toast.warning(`Generate NIG: ${res.ok} OK, ${res.fail} gagal — ${res.errors.join('; ')}`)
     else toast.success(`Generate NIG selesai: ${res.changed} NIG diperbarui.`)
     nigPlan.value = null
   } catch (e) {
@@ -219,17 +318,22 @@ async function applyNig() {
 //   lalu gabung ke record terlengkap (reuse mergeGroupManual: backup audit_log, guard identitas dilewati sadar).
 const _santriById = computed(() => {
   const m = new Map()
-  for (const s of (santriRawForMigration.value || [])) m.set(String(s.id), s)
+  for (const s of santriRawForMigration.value || []) m.set(String(s.id), s)
   return m
 })
 const _guruById = computed(() => {
   const m = new Map()
-  for (const g of (guruRawForMigration.value || [])) m.set(String(g.id), g)
+  for (const g of guruRawForMigration.value || []) m.set(String(g.id), g)
   return m
 })
 const fuzzyChecked = reactive({}) // id → bool (undefined = tercentang/ikut gabung)
 const fuzzyMerging = ref('')
-function fuzzyGrpKey(grp) { return grp.items.map((i) => i.id).sort().join('|') }
+function fuzzyGrpKey(grp) {
+  return grp.items
+    .map((i) => i.id)
+    .sort()
+    .join('|')
+}
 async function gabungFuzzy(grp) {
   if (fuzzyMerging.value) return
   const picked = grp.items.filter((it) => fuzzyChecked[it.id] !== false)
@@ -254,8 +358,10 @@ async function gabungFuzzy(grp) {
   fuzzyMerging.value = fuzzyGrpKey(grp)
   try {
     const result = await mergeGroupManual(grp.kind, recs)
-    if (result.fail > 0) toast.warning(`Gabung: ${result.ok} OK, ${result.fail} gagal — ${result.errors.join('; ')}`)
-    else toast.success(`Digabung (${result.removedIds.length} duplikat dihapus, backup di audit_log).`)
+    if (result.fail > 0)
+      toast.warning(`Gabung: ${result.ok} OK, ${result.fail} gagal — ${result.errors.join('; ')}`)
+    else
+      toast.success(`Digabung (${result.removedIds.length} duplikat dihapus, backup di audit_log).`)
   } catch (e) {
     toast.error('Gagal gabung: ' + (e.message || e))
   } finally {
@@ -263,9 +369,18 @@ async function gabungFuzzy(grp) {
   }
 }
 const HEALTH_SEV = {
-  danger: { dot: 'bg-rose-500', badge: 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200' },
-  warn: { dot: 'bg-amber-500', badge: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200' },
-  info: { dot: 'bg-cyan-500', badge: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-200' }
+  danger: {
+    dot: 'bg-rose-500',
+    badge: 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200'
+  },
+  warn: {
+    dot: 'bg-amber-500',
+    badge: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
+  },
+  info: {
+    dot: 'bg-cyan-500',
+    badge: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-200'
+  }
 }
 
 // v.100: Migrate (Gabung Duplikat) — gabung duplikat identitas (NIS/NISN santri, WA guru).
@@ -300,10 +415,15 @@ async function dedupeExecute() {
   try {
     const result = await runDedupe(
       { santriList: santriRawForMigration.value || [], guruList: guruRawForMigration.value || [] },
-      { onProgress: (i, total) => { dedupeProgress.value = { i, total } } }
+      {
+        onProgress: (i, total) => {
+          dedupeProgress.value = { i, total }
+        }
+      }
     )
     dedupeResult.value = result
-    if (result.fail > 0) toast.warning(`Selesai: ${result.ok} operasi OK, ${result.fail} gagal. Cek errors.`)
+    if (result.fail > 0)
+      toast.warning(`Selesai: ${result.ok} operasi OK, ${result.fail} gagal. Cek errors.`)
     else toast.success(`Gabung duplikat sukses: ${result.ok} operasi.`)
     dedupeScan.value = scanDedupe({
       santriList: santriRawForMigration.value || [],
@@ -337,8 +457,14 @@ async function gabungGrupManual(kat, g) {
   manualMerging.value = kat.label + '|' + g.key
   try {
     const result = await mergeGroupManual(kat.kind, recs)
-    if (result.fail > 0) toast.warning(`Gabung "${nama}": ${result.ok} OK, ${result.fail} gagal — ${result.errors.join('; ')}`)
-    else toast.success(`Grup "${nama}" digabung (${result.removedIds.length} duplikat dihapus, backup di audit_log).`)
+    if (result.fail > 0)
+      toast.warning(
+        `Gabung "${nama}": ${result.ok} OK, ${result.fail} gagal — ${result.errors.join('; ')}`
+      )
+    else
+      toast.success(
+        `Grup "${nama}" digabung (${result.removedIds.length} duplikat dihapus, backup di audit_log).`
+      )
   } catch (e) {
     toast.error('Gagal gabung grup: ' + (e.message || e))
   } finally {
@@ -353,20 +479,28 @@ const lfixChecked = reactive({})
 const lfixRunning = ref(false)
 const lfixProgress = ref({ i: 0, total: 0 })
 const lfixResult = ref(null)
-function lfixKey(f) { return f.type + '|' + f.id }
+function lfixKey(f) {
+  return f.type + '|' + f.id
+}
+// v.1.2.6: lembagaRaw WAJIB dilewatkan — Rule B menilai "ini sekolah?" dari `tipe:'Formal'`
+//   di master/lembaga, bukan daftar nama. Tanpa daftar itu Rule B mati (nol temuan).
+const lfixMasterSiap = computed(() => (lembagaRaw.value || []).length > 0)
 function lfixScan() {
-  const found = scanLembagaFix(santriRawForMigration.value || [])
+  const found = scanLembagaFix(santriRawForMigration.value || [], lembagaRaw.value || [])
   lfixFindings.value = found
   for (const k of Object.keys(lfixChecked)) delete lfixChecked[k]
   for (const f of found) lfixChecked[lfixKey(f)] = !!f.defaultOn
   lfixResult.value = null
 }
-const lfixSelectedCount = computed(() =>
-  (lfixFindings.value || []).filter((f) => lfixChecked[lfixKey(f)]).length
+const lfixSelectedCount = computed(
+  () => (lfixFindings.value || []).filter((f) => lfixChecked[lfixKey(f)]).length
 )
 async function lfixApply() {
   const items = (lfixFindings.value || []).filter((f) => lfixChecked[lfixKey(f)])
-  if (!items.length) { toast.warning('Tidak ada temuan yang dicentang.'); return }
+  if (!items.length) {
+    toast.warning('Tidak ada temuan yang dicentang.')
+    return
+  }
   const ok = await confirmDlg({
     title: 'Terapkan Migrasi Lembaga?',
     message: `${items.length} santri akan diperbarui sesuai saran (lembaga diganti / lembaga sekolah dikosongkan). Nilai LAMA di-backup ke audit_log. Lanjutkan?`,
@@ -379,10 +513,13 @@ async function lfixApply() {
   try {
     const res = await applyLembagaFix(items, {
       sesi: authStore.sesiAktif,
-      onProgress: (i, total) => { lfixProgress.value = { i, total } }
+      onProgress: (i, total) => {
+        lfixProgress.value = { i, total }
+      }
     })
     lfixResult.value = res
-    if (res.fail > 0) toast.warning(`Selesai: ${res.ok} OK, ${res.fail} gagal — ${res.errors.join('; ')}`)
+    if (res.fail > 0)
+      toast.warning(`Selesai: ${res.ok} OK, ${res.fail} gagal — ${res.errors.join('; ')}`)
     else toast.success(`Migrasi lembaga: ${res.ok} santri diperbarui (backup di audit_log).`)
     lfixScan()
   } catch (e) {
@@ -394,6 +531,7 @@ async function lfixApply() {
 
 const TABS = [
   { id: 'lembaga', label: 'Lembaga/Divisi', icon: 'fa-sitemap', color: 'blue' },
+  { id: 'gedung', label: 'Gedung', icon: 'fa-building', color: 'teal' },
   { id: 'tp', label: 'Tahun Pelajaran', icon: 'fa-calendar', color: 'orange' },
   { id: 'guru', label: 'Guru/Pegawai', icon: 'fa-user-tie', color: 'purple' },
   { id: 'santri', label: 'Data Santri', icon: 'fa-user-graduate', color: 'teal' },
@@ -493,8 +631,8 @@ async function simpanTp() {
       }
       arr.push(tpForm.value.trim())
     }
-    await setDoc(doc(db, 'settings', 'general'), { master_tp: arr }, { merge: true })
-    await setDoc(doc(db, 'settings', 'web'), { master_tp: arr }, { merge: true })
+    await mergeOne('settings', 'general', { master_tp: arr })
+    await mergeOne('settings', 'web', { master_tp: arr })
     settings.settings.master_tp = arr
     toast.success(tpForm.idx !== null ? 'Diperbarui' : 'Tersimpan')
     resetTp()
@@ -517,9 +655,74 @@ async function hapusTp(idx) {
   try {
     const arr = [...tpList.value]
     arr.splice(idx, 1)
-    await setDoc(doc(db, 'settings', 'general'), { master_tp: arr }, { merge: true })
-    await setDoc(doc(db, 'settings', 'web'), { master_tp: arr }, { merge: true })
+    await mergeOne('settings', 'general', { master_tp: arr })
+    await mergeOne('settings', 'web', { master_tp: arr })
     settings.settings.master_tp = arr
+    toast.success('Dihapus')
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  }
+}
+
+// v.111: KELOLA GEDUNG (penataan administrasi: scope keuangan Buku Kas + akademik)
+const gedungMaster = computed(() => {
+  const arr = settings.settings?.gedung_list
+  return Array.isArray(arr) && arr.length ? arr : ['Gedung TPQ Pagi', 'Gedung Induk']
+})
+const gedungForm = reactive({ value: '', idx: null })
+const savingGedung = ref(false)
+function editGedung(idx) {
+  gedungForm.value = gedungMaster.value[idx] || ''
+  gedungForm.idx = idx
+}
+function resetGedung() {
+  gedungForm.value = ''
+  gedungForm.idx = null
+}
+async function _saveGedung(arr) {
+  await mergeOne('settings', 'general', { gedung_list: arr })
+  await mergeOne('settings', 'web', { gedung_list: arr })
+  settings.settings.gedung_list = arr
+}
+async function simpanGedung() {
+  if (!gedungForm.value.trim()) {
+    toast.warning('Nama gedung wajib diisi')
+    return
+  }
+  savingGedung.value = true
+  try {
+    const arr = [...gedungMaster.value]
+    if (gedungForm.idx !== null) {
+      arr[gedungForm.idx] = gedungForm.value.trim()
+    } else {
+      if (arr.includes(gedungForm.value.trim())) {
+        toast.warning('Gedung sudah ada')
+        return
+      }
+      arr.push(gedungForm.value.trim())
+    }
+    await _saveGedung(arr)
+    toast.success(gedungForm.idx !== null ? 'Diperbarui' : 'Tersimpan')
+    resetGedung()
+  } catch (e) {
+    toast.error('Gagal: ' + (e.message || e))
+  } finally {
+    savingGedung.value = false
+  }
+}
+async function hapusGedung(idx) {
+  const ok = await confirmDlg({
+    title: 'Hapus Gedung?',
+    message: `Gedung "${gedungMaster.value[idx]}" akan dihapus. Santri yang sudah ter-assign tak otomatis berubah.`,
+    confirmText: 'Hapus',
+    cancelText: 'Batal',
+    danger: true
+  })
+  if (!ok) return
+  try {
+    const arr = [...gedungMaster.value]
+    arr.splice(idx, 1)
+    await _saveGedung(arr)
     toast.success('Dihapus')
   } catch (e) {
     toast.error('Gagal: ' + (e.message || e))
@@ -527,8 +730,8 @@ async function hapusTp(idx) {
 }
 async function setTpAktif(tp) {
   try {
-    await setDoc(doc(db, 'settings', 'general'), { tp_aktif: tp }, { merge: true })
-    await setDoc(doc(db, 'settings', 'web'), { tp_aktif: tp }, { merge: true })
+    await mergeOne('settings', 'general', { tp_aktif: tp })
+    await mergeOne('settings', 'web', { tp_aktif: tp })
     settings.settings.tp_aktif = tp
     toast.success(`TP Aktif: ${tp}`)
   } catch (e) {
@@ -588,13 +791,13 @@ async function uploadBgRapor(event, target) {
         )
         if (target === 'tpq') {
           bgRaporTPQ.value = url
-          await setDoc(doc(db, 'settings', 'general'), { bgRaporTPQ: url }, { merge: true })
-          await setDoc(doc(db, 'settings', 'web'), { bgRaporTPQ: url }, { merge: true })
+          await mergeOne('settings', 'general', { bgRaporTPQ: url })
+          await mergeOne('settings', 'web', { bgRaporTPQ: url })
           settings.settings.bgRaporTPQ = url
         } else {
           bgRaporDiniyah.value = url
-          await setDoc(doc(db, 'settings', 'general'), { bgRaporDiniyah: url }, { merge: true })
-          await setDoc(doc(db, 'settings', 'web'), { bgRaporDiniyah: url }, { merge: true })
+          await mergeOne('settings', 'general', { bgRaporDiniyah: url })
+          await mergeOne('settings', 'web', { bgRaporDiniyah: url })
           settings.settings.bgRaporDiniyah = url
         }
         toast.success(`BG Rapor ${target.toUpperCase()} terupload`)
@@ -613,13 +816,13 @@ async function hapusBgRapor(target) {
   try {
     if (target === 'tpq') {
       bgRaporTPQ.value = ''
-      await setDoc(doc(db, 'settings', 'general'), { bgRaporTPQ: '' }, { merge: true })
-      await setDoc(doc(db, 'settings', 'web'), { bgRaporTPQ: '' }, { merge: true })
+      await mergeOne('settings', 'general', { bgRaporTPQ: '' })
+      await mergeOne('settings', 'web', { bgRaporTPQ: '' })
       settings.settings.bgRaporTPQ = ''
     } else {
       bgRaporDiniyah.value = ''
-      await setDoc(doc(db, 'settings', 'general'), { bgRaporDiniyah: '' }, { merge: true })
-      await setDoc(doc(db, 'settings', 'web'), { bgRaporDiniyah: '' }, { merge: true })
+      await mergeOne('settings', 'general', { bgRaporDiniyah: '' })
+      await mergeOne('settings', 'web', { bgRaporDiniyah: '' })
       settings.settings.bgRaporDiniyah = ''
     }
     toast.success('Dihapus')
@@ -631,16 +834,8 @@ async function hapusBgRapor(target) {
 async function simpanPengaturanRapor() {
   savingRapor.value = true
   try {
-    await setDoc(
-      doc(db, 'settings', 'general'),
-      { raporPredikat: predikatRules.value },
-      { merge: true }
-    )
-    await setDoc(
-      doc(db, 'settings', 'web'),
-      { raporPredikat: predikatRules.value },
-      { merge: true }
-    )
+    await mergeOne('settings', 'general', { raporPredikat: predikatRules.value })
+    await mergeOne('settings', 'web', { raporPredikat: predikatRules.value })
     settings.settings.raporPredikat = predikatRules.value
     toast.success('Pengaturan rapor tersimpan')
   } catch (e) {
@@ -678,16 +873,8 @@ function setMapelDiniyah(lemb, val) {
 async function simpanPengaturanRekap() {
   savingRekap.value = true
   try {
-    await setDoc(
-      doc(db, 'settings', 'general'),
-      { rekapDiniyahMapel: rekapMapelPerLembaga.value },
-      { merge: true }
-    )
-    await setDoc(
-      doc(db, 'settings', 'web'),
-      { rekapDiniyahMapel: rekapMapelPerLembaga.value },
-      { merge: true }
-    )
+    await mergeOne('settings', 'general', { rekapDiniyahMapel: rekapMapelPerLembaga.value })
+    await mergeOne('settings', 'web', { rekapDiniyahMapel: rekapMapelPerLembaga.value })
     settings.settings.rekapDiniyahMapel = { ...rekapMapelPerLembaga.value }
     toast.success('Pengaturan rekap prestasi tersimpan')
   } catch (e) {
@@ -727,11 +914,11 @@ async function simpanPengaturanRekap() {
         <button
           v-for="tab in TABS"
           :key="tab.id"
-          @click="switchTab(tab.id)"
           :class="[
             'whitespace-nowrap h-10 px-3 text-xs font-bold transition cursor-pointer rounded-xl inline-flex items-center gap-1.5',
             tabClass(tab)
           ]"
+          @click="switchTab(tab.id)"
         >
           <i :class="['fas', tab.icon, 'text-sm']"></i>
           <span>{{ tab.label }}</span>
@@ -745,37 +932,37 @@ async function simpanPengaturanRekap() {
         class="bg-white dark:bg-slate-800 rounded-xl p-2 md:p-3 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-wrap gap-2"
       >
         <button
-          @click="lembagaSubTab = 'lembaga'"
           :class="[
             'px-3 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
             lembagaSubTab === 'lembaga'
               ? 'bg-cyan-500 text-white border-cyan-600'
               : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-cyan-50'
           ]"
+          @click="lembagaSubTab = 'lembaga'"
         >
           <i class="fas fa-building mr-1"></i>Daftar Lembaga
         </button>
         <!-- v.21.85.0527: Kelas & Guru -->
         <button
-          @click="lembagaSubTab = 'kelas-guru'"
           :class="[
             'px-3 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
             lembagaSubTab === 'kelas-guru'
               ? 'bg-cyan-500 text-white border-cyan-600'
               : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-cyan-50'
           ]"
+          @click="lembagaSubTab = 'kelas-guru'"
         >
           <i class="fas fa-user-friends mr-1"></i>Kelas &amp; Guru
         </button>
         <!-- v.21.85.0527: Jabatan ACF -->
         <button
-          @click="lembagaSubTab = 'jabatan'"
           :class="[
             'px-3 py-1.5 text-xs font-bold rounded-lg border transition cursor-pointer',
             lembagaSubTab === 'jabatan'
               ? 'bg-cyan-500 text-white border-cyan-600'
               : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-cyan-50'
           ]"
+          @click="lembagaSubTab = 'jabatan'"
         >
           <i class="fas fa-id-badge mr-1"></i>Jabatan
         </button>
@@ -861,8 +1048,8 @@ async function simpanPengaturanRekap() {
             <i class="fas fa-star mr-1 text-cyan-600"></i>Aturan Predikat Nilai
           </h5>
           <button
-            @click="tambahPredikat"
             class="text-[11px] font-bold text-cyan-600 hover:text-cyan-800 cursor-pointer"
+            @click="tambahPredikat"
           >
             <i class="fas fa-plus mr-1"></i>Tambah Aturan
           </button>
@@ -896,9 +1083,9 @@ async function simpanPengaturanRekap() {
               class="col-span-4 px-2 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
             />
             <button
-              @click="hapusPredikat(idx)"
               class="col-span-1 text-rose-500 hover:text-rose-700 text-sm cursor-pointer"
               title="Hapus"
+              @click="hapusPredikat(idx)"
             >
               <i class="fas fa-trash"></i>
             </button>
@@ -936,15 +1123,19 @@ async function simpanPengaturanRekap() {
         class="bg-teal-50 dark:bg-teal-900/20 rounded-xl p-4 border border-teal-200 dark:border-teal-700"
       >
         <h5 class="text-xs font-black text-slate-700 dark:text-slate-200 uppercase mb-2">
-          <i class="fas fa-puzzle-piece mr-1 text-teal-600"></i>Field Tambahan (ACF - Tanpa
-          Koding)
+          <i class="fas fa-puzzle-piece mr-1 text-teal-600"></i>Field Tambahan (ACF - Tanpa Koding)
         </h5>
         <p class="text-[11px] text-slate-600 dark:text-slate-400 mb-3">
           Tambah field custom di form Santri/Guru/Lembaga.
         </p>
         <button
-          @click="activeTab = 'lembaga'; lembagaSubTab = 'field-schema'"
           class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
+          @click="
+            () => {
+              activeTab = 'lembaga'
+              lembagaSubTab = 'field-schema'
+            }
+          "
         >
           <i class="fas fa-external-link-alt mr-1"></i>Buka Field Schema Editor
         </button>
@@ -970,8 +1161,8 @@ async function simpanPengaturanRekap() {
             <input
               type="file"
               accept="image/png,image/jpeg"
-              @change="uploadBgRapor($event, 'tpq')"
               class="block w-full text-xs text-slate-600 dark:text-slate-400"
+              @change="uploadBgRapor($event, 'tpq')"
             />
             <img
               v-if="bgRaporTPQ"
@@ -980,8 +1171,8 @@ async function simpanPengaturanRekap() {
             />
             <button
               v-if="bgRaporTPQ"
-              @click="hapusBgRapor('tpq')"
               class="text-[10px] text-rose-600 hover:text-rose-800 mt-1 cursor-pointer font-bold"
+              @click="hapusBgRapor('tpq')"
             >
               <i class="fas fa-trash mr-1"></i>Hapus
             </button>
@@ -995,8 +1186,8 @@ async function simpanPengaturanRekap() {
             <input
               type="file"
               accept="image/png,image/jpeg"
-              @change="uploadBgRapor($event, 'diniyah')"
               class="block w-full text-xs text-slate-600 dark:text-slate-400"
+              @change="uploadBgRapor($event, 'diniyah')"
             />
             <img
               v-if="bgRaporDiniyah"
@@ -1005,8 +1196,8 @@ async function simpanPengaturanRekap() {
             />
             <button
               v-if="bgRaporDiniyah"
-              @click="hapusBgRapor('diniyah')"
               class="text-[10px] text-rose-600 hover:text-rose-800 mt-1 cursor-pointer font-bold"
+              @click="hapusBgRapor('diniyah')"
             >
               <i class="fas fa-trash mr-1"></i>Hapus
             </button>
@@ -1015,9 +1206,9 @@ async function simpanPengaturanRekap() {
       </div>
 
       <button
-        @click="simpanPengaturanRapor"
         :disabled="savingRapor"
         class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-xl shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+        @click="simpanPengaturanRapor"
       >
         <i :class="['fas', savingRapor ? 'fa-spinner fa-spin' : 'fa-save']"></i>
         {{ savingRapor ? 'Menyimpan...' : 'SIMPAN PENGATURAN RAPOR' }}
@@ -1079,10 +1270,10 @@ async function simpanPengaturanRekap() {
             </label>
             <textarea
               :value="getMapelDiniyah(lemb)"
-              @input="setMapelDiniyah(lemb, $event.target.value)"
               rows="2"
               :placeholder="`Default: ${DEFAULT_MAPEL_DINIYAH} (kalau kosong)`"
               class="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white resize-none"
+              @input="setMapelDiniyah(lemb, $event.target.value)"
             ></textarea>
             <p class="text-[10px] text-slate-400 italic mt-1">
               <i class="fas fa-info-circle mr-1"></i>Contoh: Nahwu, Fiqh, Tafsir, Akhlaq
@@ -1106,9 +1297,9 @@ async function simpanPengaturanRekap() {
       </div>
 
       <button
-        @click="simpanPengaturanRekap"
         :disabled="savingRekap || lembagaDiniyah.length === 0"
         class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-black py-3 rounded-xl shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+        @click="simpanPengaturanRekap"
       >
         <i :class="['fas', savingRekap ? 'fa-spinner fa-spin' : 'fa-save']"></i>
         {{ savingRekap ? 'Menyimpan...' : 'SIMPAN PENGATURAN REKAP' }}
@@ -1140,16 +1331,16 @@ async function simpanPengaturanRekap() {
           class="flex-1 px-3 py-2 text-sm rounded-lg border border-cyan-300 bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
         />
         <button
-          @click="simpanTp"
           :disabled="savingTp"
           class="bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-bold px-4 py-2 rounded-lg disabled:opacity-50"
+          @click="simpanTp"
         >
           <i class="fas fa-save mr-1"></i>{{ tpForm.idx !== null ? 'Update' : 'Tambah' }}
         </button>
         <button
           v-if="tpForm.idx !== null"
-          @click="resetTp"
           class="bg-slate-300 hover:bg-slate-400 text-slate-700 text-sm font-bold px-3 py-2 rounded-lg"
+          @click="resetTp"
         >
           Batal
         </button>
@@ -1177,26 +1368,91 @@ async function simpanPengaturanRekap() {
           <div class="flex gap-1">
             <button
               v-if="tp !== tpAktif"
-              @click="setTpAktif(tp)"
               aria-label="Set sebagai TP Aktif"
               title="Set sebagai TP Aktif"
               class="text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 px-2 py-1 rounded text-xs font-bold"
+              @click="setTpAktif(tp)"
             >
               <i class="fas fa-check"></i>
             </button>
             <button
-              @click="editTp(idx)"
               aria-label="Edit Tahun Pelajaran"
               title="Edit Tahun Pelajaran"
               class="text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 px-2 py-1 rounded text-xs"
+              @click="editTp(idx)"
             >
               <i class="fas fa-edit"></i>
             </button>
             <button
-              @click="hapusTp(idx)"
               aria-label="Hapus Tahun Pelajaran"
               title="Hapus Tahun Pelajaran"
               class="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 px-2 py-1 rounded text-xs"
+              @click="hapusTp(idx)"
+            >
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- TAB: GEDUNG (v.111 — penataan administrasi scope keuangan + akademik) -->
+    <div
+      v-else-if="activeTab === 'gedung'"
+      class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border border-slate-200 dark:border-slate-700 shadow-sm"
+    >
+      <p class="text-sm font-black text-teal-700 dark:text-teal-300 mb-1">
+        <i class="fas fa-building text-teal-600 mr-1"></i>Kelola Gedung
+      </p>
+      <p class="text-xs text-slate-700 dark:text-slate-300 mb-3">
+        Gedung menentukan scope admin keuangan (Buku Kas) &amp; akademik tiap santri. Isi field
+        "Gedung" per santri di Data Santri atau lewat template impor.
+      </p>
+      <div class="flex gap-2 mb-3">
+        <input
+          v-model="gedungForm.value"
+          type="text"
+          placeholder="mis. Gedung TPQ Pagi"
+          class="flex-1 px-3 py-2 text-sm rounded-lg border border-teal-300 bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
+        />
+        <button
+          :disabled="savingGedung"
+          class="bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold px-4 py-2 rounded-lg disabled:opacity-50"
+          @click="simpanGedung"
+        >
+          <i class="fas fa-save mr-1"></i>{{ gedungForm.idx !== null ? 'Update' : 'Tambah' }}
+        </button>
+        <button
+          v-if="gedungForm.idx !== null"
+          class="bg-slate-300 hover:bg-slate-400 text-slate-700 text-sm font-bold px-3 py-2 rounded-lg"
+          @click="resetGedung"
+        >
+          Batal
+        </button>
+      </div>
+      <ul class="space-y-2">
+        <li
+          v-for="(g, idx) in gedungMaster"
+          :key="idx"
+          class="flex justify-between items-center bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700"
+        >
+          <span class="text-sm font-bold text-slate-800 dark:text-white">
+            <i class="fas fa-building text-teal-500 mr-2"></i>{{ g }}
+          </span>
+          <div class="flex gap-1">
+            <button
+              aria-label="Edit Gedung"
+              title="Edit Gedung"
+              class="text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 px-2 py-1 rounded text-xs"
+              @click="editGedung(idx)"
+            >
+              <i class="fas fa-edit"></i>
+            </button>
+            <button
+              aria-label="Hapus Gedung"
+              title="Hapus Gedung"
+              class="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 px-2 py-1 rounded text-xs"
+              @click="hapusGedung(idx)"
             >
               <i class="fas fa-times"></i>
             </button>
@@ -1208,21 +1464,54 @@ async function simpanPengaturanRekap() {
     <!-- TAB 7: AUDIT LOG (M6 v.20.79 — replace placeholder) -->
     <div v-else-if="activeTab === 'audit'" class="space-y-4">
       <!-- v.100 Batch14: Generate No. Induk Otomatis (field nis) -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-teal-300 dark:border-teal-700 shadow-sm">
+      <div
+        class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-teal-300 dark:border-teal-700 shadow-sm"
+      >
         <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div class="min-w-0">
-            <p class="text-sm font-black text-teal-700 dark:text-teal-300"><i class="fas fa-hashtag mr-1"></i>Generate No. Induk Otomatis</p>
-            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Format <b>NNNN+DDMMYY</b> (mis. <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded">0001120399</code>): nomor urut global dari <b>tgl lahir TERTUA → termuda</b>, seri tgl sama → <b>nama A–Z</b>. Santri tanpa tgl lahir dilewati (No. Induk lama dibiarkan). No. Induk = field; riwayat keuangan/rapor pakai ID santri → tidak terpengaruh. <b>NIS &amp; NISN dari Dinas (santri TK/SDI/PKBM) diinput manual &amp; tidak disentuh.</b> <i>(Pasca impor santri, regenerate ini juga jalan otomatis.)</i></p>
+            <p class="text-sm font-black text-teal-700 dark:text-teal-300">
+              <i class="fas fa-hashtag mr-1"></i>Generate No. Induk Otomatis
+            </p>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">
+              Format <b>NNNN+DDMMYY</b> (mis.
+              <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded">0001120399</code>): nomor
+              urut global dari <b>tgl lahir TERTUA → termuda</b>, seri tgl sama → <b>nama A–Z</b>.
+              Santri tanpa tgl lahir dilewati (No. Induk lama dibiarkan). No. Induk = field; riwayat
+              keuangan/rapor pakai ID santri → tidak terpengaruh.
+              <b
+                >NIS &amp; NISN dari Dinas (santri TK/SDI/PKBM) diinput manual &amp; tidak
+                disentuh.</b
+              >
+              <i>(Pasca impor santri, regenerate ini juga jalan otomatis.)</i>
+            </p>
           </div>
-          <button @click="scanNis" :disabled="nisGenerating" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-black rounded-lg whitespace-nowrap"><i class="fas fa-magnifying-glass mr-1"></i>Pratinjau</button>
+          <button
+            :disabled="nisGenerating"
+            class="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-black rounded-lg whitespace-nowrap"
+            @click="scanNis"
+          >
+            <i class="fas fa-magnifying-glass mr-1"></i>Pratinjau
+          </button>
         </div>
         <div v-if="nisPlan" class="space-y-2">
           <div class="flex flex-wrap gap-2 text-xs">
-            <span class="px-2 py-1 rounded-lg bg-teal-50 text-teal-800 dark:bg-teal-900/30 dark:text-teal-200 font-bold">{{ nisChangedCount }} berubah</span>
-            <span class="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200 font-bold">{{ nisPlan.total - nisChangedCount }} tetap</span>
-            <span class="px-2 py-1 rounded-lg bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200 font-bold">{{ nisPlan.skipped.length }} tanpa tgl lahir</span>
+            <span
+              class="px-2 py-1 rounded-lg bg-teal-50 text-teal-800 dark:bg-teal-900/30 dark:text-teal-200 font-bold"
+              >{{ nisChangedCount }} berubah</span
+            >
+            <span
+              class="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200 font-bold"
+              >{{ nisPlan.total - nisChangedCount }} tetap</span
+            >
+            <span
+              class="px-2 py-1 rounded-lg bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200 font-bold"
+              >{{ nisPlan.skipped.length }} tanpa tgl lahir</span
+            >
           </div>
-          <div v-if="nisChangedCount" class="max-h-64 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-lg">
+          <div
+            v-if="nisChangedCount"
+            class="max-h-64 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-lg"
+          >
             <table class="w-full text-[11px]">
               <thead class="sticky top-0 bg-slate-100 dark:bg-slate-700">
                 <tr>
@@ -1233,41 +1522,93 @@ async function simpanPengaturanRekap() {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(c, ci) in nisPlan.changes.filter((x) => x.changed)" :key="c.id" class="border-t border-slate-100 dark:border-slate-700">
+                <tr
+                  v-for="(c, ci) in nisPlan.changes.filter((x) => x.changed)"
+                  :key="c.id"
+                  class="border-t border-slate-100 dark:border-slate-700"
+                >
                   <td class="p-1.5 text-slate-400">{{ ci + 1 }}</td>
                   <td class="p-1.5 font-bold text-slate-800 dark:text-white">{{ c.nama }}</td>
                   <td class="p-1.5 font-mono text-slate-400 line-through">{{ c.oldNis || '—' }}</td>
-                  <td class="p-1.5 font-mono font-black text-teal-700 dark:text-teal-300">{{ c.newNis }}</td>
+                  <td class="p-1.5 font-mono font-black text-teal-700 dark:text-teal-300">
+                    {{ c.newNis }}
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
-            <button @click="applyNis" :disabled="nisGenerating || !nisChangedCount" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-black rounded-lg">
-              <i :class="['fas', nisGenerating ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i>{{ nisGenerating ? `Menulis ${nisProgress.i}/${nisProgress.total}…` : `Terapkan (${nisChangedCount})` }}
+            <button
+              :disabled="nisGenerating || !nisChangedCount"
+              class="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-black rounded-lg"
+              @click="applyNis"
+            >
+              <i :class="['fas', nisGenerating ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i
+              >{{
+                nisGenerating
+                  ? `Menulis ${nisProgress.i}/${nisProgress.total}…`
+                  : `Terapkan (${nisChangedCount})`
+              }}
             </button>
-            <button @click="nisPlan = null" :disabled="nisGenerating" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg">Batal</button>
+            <button
+              :disabled="nisGenerating"
+              class="px-3 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg"
+              @click="nisPlan = null"
+            >
+              Batal
+            </button>
           </div>
         </div>
-        <p v-if="nisResult" class="text-xs font-bold text-emerald-700 dark:text-emerald-300 mt-2"><i class="fas fa-circle-check mr-1"></i>{{ nisResult.changed }} No. Induk diperbarui{{ nisResult.fail ? `, ${nisResult.fail} gagal` : '' }}.</p>
+        <p v-if="nisResult" class="text-xs font-bold text-emerald-700 dark:text-emerald-300 mt-2">
+          <i class="fas fa-circle-check mr-1"></i>{{ nisResult.changed }} No. Induk diperbarui{{
+            nisResult.fail ? `, ${nisResult.fail} gagal` : ''
+          }}.
+        </p>
       </div>
 
       <!-- v.100 Batch16: Generate NIG Otomatis -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-indigo-300 dark:border-indigo-700 shadow-sm">
+      <div
+        class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-indigo-300 dark:border-indigo-700 shadow-sm"
+      >
         <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div class="min-w-0">
-            <p class="text-sm font-black text-indigo-700 dark:text-indigo-300"><i class="fas fa-id-badge mr-1"></i>Generate NIG Otomatis</p>
-            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Nomor Induk Guru. Format <b>NNN+DDMMYY</b> (9 digit): nomor urut dari <b>tgl TUGAS terlama → terbaru</b>, seri → <b>nama A–Z</b>; DDMMYY = tgl tugas. Guru tanpa tgl tugas dilewati. <i>(Pasca impor guru jalan otomatis; guru baru via form = lanjut nomor.)</i></p>
+            <p class="text-sm font-black text-indigo-700 dark:text-indigo-300">
+              <i class="fas fa-id-badge mr-1"></i>Generate NIG Otomatis
+            </p>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">
+              Nomor Induk Guru. Format <b>NNN+DDMMYY</b> (9 digit): nomor urut dari
+              <b>tgl TUGAS terlama → terbaru</b>, seri → <b>nama A–Z</b>; DDMMYY = tgl tugas. Guru
+              tanpa tgl tugas dilewati.
+              <i>(Pasca impor guru jalan otomatis; guru baru via form = lanjut nomor.)</i>
+            </p>
           </div>
-          <button @click="scanNig" :disabled="nigGenerating" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-black rounded-lg whitespace-nowrap"><i class="fas fa-magnifying-glass mr-1"></i>Pratinjau</button>
+          <button
+            :disabled="nigGenerating"
+            class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-black rounded-lg whitespace-nowrap"
+            @click="scanNig"
+          >
+            <i class="fas fa-magnifying-glass mr-1"></i>Pratinjau
+          </button>
         </div>
         <div v-if="nigPlan" class="space-y-2">
           <div class="flex flex-wrap gap-2 text-xs">
-            <span class="px-2 py-1 rounded-lg bg-indigo-50 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-200 font-bold">{{ nigChangedCount }} berubah</span>
-            <span class="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200 font-bold">{{ nigPlan.total - nigChangedCount }} tetap</span>
-            <span class="px-2 py-1 rounded-lg bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200 font-bold">{{ nigPlan.skipped.length }} tanpa tgl tugas</span>
+            <span
+              class="px-2 py-1 rounded-lg bg-indigo-50 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-200 font-bold"
+              >{{ nigChangedCount }} berubah</span
+            >
+            <span
+              class="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200 font-bold"
+              >{{ nigPlan.total - nigChangedCount }} tetap</span
+            >
+            <span
+              class="px-2 py-1 rounded-lg bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200 font-bold"
+              >{{ nigPlan.skipped.length }} tanpa tgl tugas</span
+            >
           </div>
-          <div v-if="nigChangedCount" class="max-h-64 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-lg">
+          <div
+            v-if="nigChangedCount"
+            class="max-h-64 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-lg"
+          >
             <table class="w-full text-[11px]">
               <thead class="sticky top-0 bg-slate-100 dark:bg-slate-700">
                 <tr>
@@ -1278,67 +1619,152 @@ async function simpanPengaturanRekap() {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(c, ci) in nigPlan.changes.filter((x) => x.changed)" :key="c.id" class="border-t border-slate-100 dark:border-slate-700">
+                <tr
+                  v-for="(c, ci) in nigPlan.changes.filter((x) => x.changed)"
+                  :key="c.id"
+                  class="border-t border-slate-100 dark:border-slate-700"
+                >
                   <td class="p-1.5 text-slate-400">{{ ci + 1 }}</td>
                   <td class="p-1.5 font-bold text-slate-800 dark:text-white">{{ c.nama }}</td>
                   <td class="p-1.5 font-mono text-slate-400 line-through">{{ c.oldNig || '—' }}</td>
-                  <td class="p-1.5 font-mono font-black text-indigo-700 dark:text-indigo-300">{{ c.newNig }}</td>
+                  <td class="p-1.5 font-mono font-black text-indigo-700 dark:text-indigo-300">
+                    {{ c.newNig }}
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
-            <button @click="applyNig" :disabled="nigGenerating || !nigChangedCount" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-black rounded-lg">
-              <i :class="['fas', nigGenerating ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i>{{ nigGenerating ? `Menulis ${nigProgress.i}/${nigProgress.total}…` : `Terapkan (${nigChangedCount})` }}
+            <button
+              :disabled="nigGenerating || !nigChangedCount"
+              class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-black rounded-lg"
+              @click="applyNig"
+            >
+              <i :class="['fas', nigGenerating ? 'fa-spinner fa-spin' : 'fa-check', 'mr-1']"></i
+              >{{
+                nigGenerating
+                  ? `Menulis ${nigProgress.i}/${nigProgress.total}…`
+                  : `Terapkan (${nigChangedCount})`
+              }}
             </button>
-            <button @click="nigPlan = null" :disabled="nigGenerating" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg">Batal</button>
+            <button
+              :disabled="nigGenerating"
+              class="px-3 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg"
+              @click="nigPlan = null"
+            >
+              Batal
+            </button>
           </div>
         </div>
-        <p v-if="nigResult" class="text-xs font-bold text-emerald-700 dark:text-emerald-300 mt-2"><i class="fas fa-circle-check mr-1"></i>{{ nigResult.changed }} NIG diperbarui{{ nigResult.fail ? `, ${nigResult.fail} gagal` : '' }}.</p>
+        <p v-if="nigResult" class="text-xs font-bold text-emerald-700 dark:text-emerald-300 mt-2">
+          <i class="fas fa-circle-check mr-1"></i>{{ nigResult.changed }} NIG diperbarui{{
+            nigResult.fail ? `, ${nigResult.fail} gagal` : ''
+          }}.
+        </p>
       </div>
 
       <!-- v.99: Analisis Data Duplikat -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-rose-300 dark:border-rose-700 shadow-sm">
+      <div
+        class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-rose-300 dark:border-rose-700 shadow-sm"
+      >
         <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
-            <p class="text-sm font-black text-rose-700 dark:text-rose-300"><i class="fas fa-clone mr-1"></i>Analisis Data Duplikat</p>
-            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Deteksi santri (Nama / No. Induk / NISN sama) &amp; guru (Nama / WA sama). <b>Migrate</b> menggabung: (1) identitas unik (No. Induk/NISN/WA sama) + (2) nama sama yang punya sinyal penguat (NIK/tgl lahir/lembaga+kelas sama). Nama sama tanpa sinyal / yang konflik identitas TIDAK digabung otomatis — buka <b>Lihat Detail</b> lalu pakai tombol <b>Gabung Grup Ini</b> (keputusan manual per grup), atau rapikan via Edit/Hapus.</p>
+            <p class="text-sm font-black text-rose-700 dark:text-rose-300">
+              <i class="fas fa-clone mr-1"></i>Analisis Data Duplikat
+            </p>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">
+              Deteksi santri (Nama / No. Induk / NISN sama) &amp; guru (Nama / WA sama).
+              <b>Migrate</b> menggabung: (1) identitas unik (No. Induk/NISN/WA sama) + (2) nama sama
+              yang punya sinyal penguat (NIK/tgl lahir/lembaga+kelas sama). Nama sama tanpa sinyal /
+              yang konflik identitas TIDAK digabung otomatis — buka <b>Lihat Detail</b> lalu pakai
+              tombol <b>Gabung Grup Ini</b> (keputusan manual per grup), atau rapikan via
+              Edit/Hapus.
+            </p>
           </div>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase" :class="totalDupGroups > 0 ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'">{{ totalDupGroups }} grup duplikat</span>
+          <span
+            class="text-[10px] font-bold px-2 py-0.5 rounded uppercase"
+            :class="
+              totalDupGroups > 0 ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'
+            "
+            >{{ totalDupGroups }} grup duplikat</span
+          >
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <button @click="showDupDetail = !showDupDetail" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-lg">
-            <i class="fas fa-search mr-1"></i>{{ showDupDetail ? 'Sembunyikan Detail' : 'Lihat Detail' }}
+          <button
+            class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-lg"
+            @click="showDupDetail = !showDupDetail"
+          >
+            <i class="fas fa-search mr-1"></i
+            >{{ showDupDetail ? 'Sembunyikan Detail' : 'Lihat Detail' }}
           </button>
-          <button @click="dedupeDryRun" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-black rounded-lg">
+          <button
+            class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-black rounded-lg"
+            @click="dedupeDryRun"
+          >
             <i class="fas fa-vial mr-1"></i>Dry-Run Migrate
           </button>
-          <button @click="dedupeExecute" :disabled="dedupeRunning || !dedupeScan || dedupeScan.total === 0" class="px-3 py-1.5 bg-rose-700 hover:bg-rose-800 disabled:opacity-50 text-white text-xs font-black rounded-lg">
-            <i class="fas fa-code-merge mr-1"></i>{{ dedupeRunning ? `Menggabung… ${dedupeProgress.i}/${dedupeProgress.total}` : 'Migrate (Gabung Duplikat)' }}
+          <button
+            :disabled="dedupeRunning || !dedupeScan || dedupeScan.total === 0"
+            class="px-3 py-1.5 bg-rose-700 hover:bg-rose-800 disabled:opacity-50 text-white text-xs font-black rounded-lg"
+            @click="dedupeExecute"
+          >
+            <i class="fas fa-code-merge mr-1"></i
+            >{{
+              dedupeRunning
+                ? `Menggabung… ${dedupeProgress.i}/${dedupeProgress.total}`
+                : 'Migrate (Gabung Duplikat)'
+            }}
           </button>
         </div>
-        <div v-if="dedupeScan" class="mt-2 text-xs rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-2 text-amber-800 dark:text-amber-200">
-          <p class="font-bold"><i class="fas fa-circle-info mr-1"></i>Rencana Migrate: {{ dedupeScan.santriToRemove }} santri + {{ dedupeScan.guruToRemove }} guru akan digabung (identitas unik + nama-sama bersinyal penguat). Nama sama tanpa sinyal / konflik identitas diabaikan (manual).</p>
+        <div
+          v-if="dedupeScan"
+          class="mt-2 text-xs rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-2 text-amber-800 dark:text-amber-200"
+        >
+          <p class="font-bold">
+            <i class="fas fa-circle-info mr-1"></i>Rencana Migrate:
+            {{ dedupeScan.santriToRemove }} santri + {{ dedupeScan.guruToRemove }} guru akan
+            digabung (identitas unik + nama-sama bersinyal penguat). Nama sama tanpa sinyal /
+            konflik identitas diabaikan (manual).
+          </p>
           <ul v-if="dedupeScan.examples.length" class="list-disc ml-5 mt-1">
-            <li v-for="(ex, ei) in dedupeScan.examples" :key="ei">Simpan {{ ex.keep }} · hapus {{ ex.remove.join(', ') }}<span v-if="ex.fill.length"> · isi: {{ ex.fill.join(', ') }}</span></li>
+            <li v-for="(ex, ei) in dedupeScan.examples" :key="ei">
+              Simpan {{ ex.keep }} · hapus {{ ex.remove.join(', ')
+              }}<span v-if="ex.fill.length"> · isi: {{ ex.fill.join(', ') }}</span>
+            </li>
           </ul>
-          <p v-if="dedupeResult" class="mt-1 font-bold">Hasil: {{ dedupeResult.ok }} OK, {{ dedupeResult.fail }} gagal.</p>
+          <p v-if="dedupeResult" class="mt-1 font-bold">
+            Hasil: {{ dedupeResult.ok }} OK, {{ dedupeResult.fail }} gagal.
+          </p>
         </div>
         <div v-if="showDupDetail" class="mt-3 space-y-3">
-          <p v-if="totalDupGroups === 0" class="text-xs text-emerald-700 dark:text-emerald-300 font-bold"><i class="fas fa-circle-check mr-1"></i>Tidak ada duplikat terdeteksi.</p>
-          <div v-for="kat in dupKategori" :key="kat.label" v-show="kat.groups.length">
-            <p class="text-xs font-black text-slate-800 dark:text-white mb-1">{{ kat.label }} ({{ kat.groups.length }})</p>
-            <div v-for="(g, gi) in kat.groups" :key="gi" class="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg p-2 mb-1.5 text-xs">
+          <p
+            v-if="totalDupGroups === 0"
+            class="text-xs text-emerald-700 dark:text-emerald-300 font-bold"
+          >
+            <i class="fas fa-circle-check mr-1"></i>Tidak ada duplikat terdeteksi.
+          </p>
+          <div v-for="kat in dupKategori" v-show="kat.groups.length" :key="kat.label">
+            <p class="text-xs font-black text-slate-800 dark:text-white mb-1">
+              {{ kat.label }} ({{ kat.groups.length }})
+            </p>
+            <div
+              v-for="(g, gi) in kat.groups"
+              :key="gi"
+              class="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg p-2 mb-1.5 text-xs"
+            >
               <div class="flex items-center justify-between gap-2 flex-wrap">
                 <p class="font-bold text-rose-700 dark:text-rose-300">{{ g.count }}× sama:</p>
                 <!-- v.100 Batch9: gabung manual per-grup (utk grup yang auto-Migrate tolak, mis. NIS beda) -->
                 <button
-                  @click="gabungGrupManual(kat, g)"
                   :disabled="manualMerging !== ''"
                   class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-[11px] font-black rounded-lg"
                   title="Gabung grup ini ke record terlengkap (lewati guard identitas — keputusan manual)"
+                  @click="gabungGrupManual(kat, g)"
                 >
-                  <i class="fas fa-code-merge mr-1"></i>{{ manualMerging === kat.label + '|' + g.key ? 'Menggabung…' : 'Gabung Grup Ini' }}
+                  <i class="fas fa-code-merge mr-1"></i
+                  >{{
+                    manualMerging === kat.label + '|' + g.key ? 'Menggabung…' : 'Gabung Grup Ini'
+                  }}
                 </button>
               </div>
               <ul class="list-disc ml-5 text-slate-700 dark:text-slate-200">
@@ -1349,28 +1775,86 @@ async function simpanPengaturanRekap() {
         </div>
       </div>
       <!-- v.100 Batch10: Migrasi Lembaga — perbaiki salah impor penempatan lembaga -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-amber-300 dark:border-amber-700 shadow-sm">
+      <div
+        class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-amber-300 dark:border-amber-700 shadow-sm"
+      >
         <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
-            <p class="text-sm font-black text-amber-700 dark:text-amber-300"><i class="fas fa-route mr-1"></i>Migrasi Lembaga (Salah Impor)</p>
-            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Deteksi penempatan lembaga yang salah dari impor: (A) kelas pola <b>Level → Pra PTPT</b>, <b>Juz (utuh) → PTPT</b>, <b>Pra PTPT → Pra PTPT</b>, <b>Jilid/KPI → TPQ</b> tapi lembaga tak cocok — saran bisa DIUBAH per baris; (B) <b>Lembaga Sekolah berisi nilai ngaji</b> (mis. "TPQ Pagi") → dikosongkan; (C) lembaga TPQ <b>Pagi</b> tapi sekolah TK (bentrok jam pagi) → cek manual (default tidak dicentang). Nilai lama di-backup ke audit_log.</p>
+            <p class="text-sm font-black text-amber-700 dark:text-amber-300">
+              <i class="fas fa-route mr-1"></i>Migrasi Lembaga (Salah Impor)
+            </p>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">
+              Deteksi penempatan lembaga yang salah dari impor: (A) kelas pola
+              <b>Level → Pra PTPT</b>, <b>Juz (utuh) → PTPT</b>, <b>Pra PTPT → Pra PTPT</b>,
+              <b>Jilid/KPI → TPQ</b> tapi lembaga tak cocok — saran bisa DIUBAH per baris; (B)
+              <b>Lembaga Sekolah berisi nama lembaga ngaji/asrama</b> (mis. "TPQ Pagi") →
+              dikosongkan; (C) lembaga ngaji <b>pagi</b> tapi sekolahnya juga pagi (bentrok jam) →
+              cek manual (default tidak dicentang). Nilai lama di-backup ke audit_log.
+            </p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              Aturan (B) &amp; (C) membaca <b>Tab Lembaga/Divisi</b>: yang bertipe <b>Formal</b>
+              dihitung sekolah sah dan TIDAK diutak-utik — jadi sekolah yang Anda tambah sendiri
+              (mis. "Kelas Baca") aman.
+            </p>
           </div>
-          <span v-if="lfixFindings" class="text-[10px] font-bold px-2 py-0.5 rounded uppercase" :class="lfixFindings.length ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'">{{ lfixFindings.length }} temuan</span>
+          <span
+            v-if="lfixFindings"
+            class="text-[10px] font-bold px-2 py-0.5 rounded uppercase"
+            :class="
+              lfixFindings.length
+                ? 'bg-amber-100 text-amber-800'
+                : 'bg-emerald-100 text-emerald-800'
+            "
+            >{{ lfixFindings.length }} temuan</span
+          >
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <button @click="lfixScan" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-black rounded-lg">
+          <button
+            class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-black rounded-lg"
+            @click="lfixScan"
+          >
             <i class="fas fa-magnifying-glass mr-1"></i>Scan Salah Impor
           </button>
-          <button @click="lfixApply" :disabled="lfixRunning || !lfixFindings || lfixSelectedCount === 0" class="px-3 py-1.5 bg-amber-700 hover:bg-amber-800 disabled:opacity-50 text-white text-xs font-black rounded-lg">
-            <i class="fas fa-wand-magic-sparkles mr-1"></i>{{ lfixRunning ? `Memproses… ${lfixProgress.i}/${lfixProgress.total}` : `Terapkan (${lfixSelectedCount})` }}
+          <button
+            :disabled="lfixRunning || !lfixFindings || lfixSelectedCount === 0"
+            class="px-3 py-1.5 bg-amber-700 hover:bg-amber-800 disabled:opacity-50 text-white text-xs font-black rounded-lg"
+            @click="lfixApply"
+          >
+            <i class="fas fa-wand-magic-sparkles mr-1"></i
+            >{{
+              lfixRunning
+                ? `Memproses… ${lfixProgress.i}/${lfixProgress.total}`
+                : `Terapkan (${lfixSelectedCount})`
+            }}
           </button>
         </div>
-        <div v-if="lfixFindings && lfixFindings.length === 0" class="mt-2 text-xs text-emerald-700 dark:text-emerald-300 font-bold">
+        <div
+          v-if="!lfixMasterSiap"
+          class="mt-2 text-xs text-amber-800 dark:text-amber-200 font-bold"
+        >
+          <i class="fas fa-triangle-exclamation mr-1"></i>Daftar Lembaga/Divisi belum termuat —
+          aturan (B) &amp; (C) dimatikan sementara supaya tidak salah mengosongkan sekolah yang sah.
+        </div>
+        <div
+          v-if="lfixFindings && lfixFindings.length === 0"
+          class="mt-2 text-xs text-emerald-700 dark:text-emerald-300 font-bold"
+        >
           <i class="fas fa-circle-check mr-1"></i>Tidak ada salah penempatan lembaga terdeteksi.
         </div>
-        <div v-if="lfixFindings && lfixFindings.length" class="mt-3 space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
-          <label v-for="f in lfixFindings" :key="lfixKey(f)" class="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 text-xs cursor-pointer">
-            <input type="checkbox" v-model="lfixChecked[lfixKey(f)]" class="mt-0.5 accent-amber-600" />
+        <div
+          v-if="lfixFindings && lfixFindings.length"
+          class="mt-3 space-y-1.5 max-h-[420px] overflow-y-auto pr-1"
+        >
+          <label
+            v-for="f in lfixFindings"
+            :key="lfixKey(f)"
+            class="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 text-xs cursor-pointer"
+          >
+            <input
+              v-model="lfixChecked[lfixKey(f)]"
+              type="checkbox"
+              class="mt-0.5 accent-amber-600"
+            />
             <span class="flex-1 min-w-0">
               <b class="text-slate-800 dark:text-white">{{ f.nama }}</b>
               <span class="text-slate-500 dark:text-slate-400"> · No. Induk {{ f.nis }}</span>
@@ -1379,41 +1863,109 @@ async function simpanPengaturanRekap() {
             <select
               v-if="f.type === 'kelas_lembaga'"
               v-model="f.saranLembaga"
-              @click.stop
               class="text-[11px] px-2 py-1 rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white flex-shrink-0"
               title="Lembaga tujuan (bisa diubah)"
+              @click.stop
             >
               <option v-for="o in LEMBAGA_QIRAATI_OPSI" :key="o" :value="o">{{ o }}</option>
             </select>
-            <span v-else class="text-[10px] font-bold text-amber-700 dark:text-amber-300 flex-shrink-0">kosongkan sekolah</span>
+            <span
+              v-else
+              class="text-[10px] font-bold text-amber-700 dark:text-amber-300 flex-shrink-0"
+              >kosongkan sekolah</span
+            >
           </label>
-          <p v-if="lfixResult" class="text-xs font-bold text-slate-700 dark:text-slate-200">Hasil: {{ lfixResult.ok }} OK, {{ lfixResult.fail }} gagal.</p>
+          <p v-if="lfixResult" class="text-xs font-bold text-slate-700 dark:text-slate-200">
+            Hasil: {{ lfixResult.ok }} OK, {{ lfixResult.fail }} gagal.
+          </p>
         </div>
       </div>
 
       <!-- v.100 Batch8: Kesehatan Data (pro audit) — integritas + kandidat duplikat fuzzy -->
-      <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-cyan-300 dark:border-cyan-700 shadow-sm">
+      <div
+        class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border-2 border-cyan-300 dark:border-cyan-700 shadow-sm"
+      >
         <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
-            <p class="text-sm font-black text-cyan-700 dark:text-cyan-300"><i class="fas fa-heart-pulse mr-1"></i>Kesehatan Data</p>
-            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">Audit integritas data santri / guru / lembaga (read-only). Klik baris bermasalah untuk lihat detail.</p>
+            <p class="text-sm font-black text-cyan-700 dark:text-cyan-300">
+              <i class="fas fa-heart-pulse mr-1"></i>Kesehatan Data
+            </p>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">
+              Audit integritas data santri / guru / lembaga (read-only). Klik baris bermasalah untuk
+              lihat detail.
+            </p>
           </div>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase" :class="totalIssues > 0 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'">{{ totalIssues }} temuan</span>
+          <span
+            class="text-[10px] font-bold px-2 py-0.5 rounded uppercase"
+            :class="
+              totalIssues > 0 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+            "
+            >{{ totalIssues }} temuan</span
+          >
         </div>
         <div class="space-y-1.5">
-          <div v-for="g in auditGroups" :key="g.key" class="rounded-lg border" :class="g.items.length ? 'border-slate-200 dark:border-slate-700' : 'border-emerald-100 dark:border-emerald-800/40'">
-            <button type="button" @click="g.items.length && toggleHealth(g.key)" :class="['w-full flex items-center gap-2 px-3 py-2 text-left', g.items.length ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/30' : 'cursor-default']">
-              <span v-if="g.items.length" class="w-2 h-2 rounded-full flex-shrink-0" :class="HEALTH_SEV[g.sev].dot"></span>
+          <div
+            v-for="g in auditGroups"
+            :key="g.key"
+            class="rounded-lg border"
+            :class="
+              g.items.length
+                ? 'border-slate-200 dark:border-slate-700'
+                : 'border-emerald-100 dark:border-emerald-800/40'
+            "
+          >
+            <button
+              type="button"
+              :class="[
+                'w-full flex items-center gap-2 px-3 py-2 text-left',
+                g.items.length
+                  ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/30'
+                  : 'cursor-default'
+              ]"
+              @click="g.items.length && toggleHealth(g.key)"
+            >
+              <span
+                v-if="g.items.length"
+                class="w-2 h-2 rounded-full flex-shrink-0"
+                :class="HEALTH_SEV[g.sev].dot"
+              ></span>
               <i v-else class="fas fa-circle-check text-emerald-500 text-xs flex-shrink-0"></i>
-              <i :class="['fas', g.icon, 'text-slate-400 text-xs flex-shrink-0 w-4 text-center']"></i>
-              <span class="flex-1 text-xs font-bold text-slate-700 dark:text-slate-200">{{ g.label }}</span>
-              <span class="text-[10px] font-black px-2 py-0.5 rounded" :class="g.items.length ? HEALTH_SEV[g.sev].badge : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200'">{{ g.items.length }}</span>
-              <i v-if="g.items.length" :class="['fas text-[10px] text-slate-400', healthOpen[g.key] ? 'fa-chevron-up' : 'fa-chevron-down']"></i>
+              <i
+                :class="['fas', g.icon, 'text-slate-400 text-xs flex-shrink-0 w-4 text-center']"
+              ></i>
+              <span class="flex-1 text-xs font-bold text-slate-700 dark:text-slate-200">{{
+                g.label
+              }}</span>
+              <span
+                class="text-[10px] font-black px-2 py-0.5 rounded"
+                :class="
+                  g.items.length
+                    ? HEALTH_SEV[g.sev].badge
+                    : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200'
+                "
+                >{{ g.items.length }}</span
+              >
+              <i
+                v-if="g.items.length"
+                :class="[
+                  'fas text-[10px] text-slate-400',
+                  healthOpen[g.key] ? 'fa-chevron-up' : 'fa-chevron-down'
+                ]"
+              ></i>
             </button>
-            <div v-if="g.items.length && healthOpen[g.key]" class="px-3 pb-2 border-t border-slate-100 dark:border-slate-700/50 pt-1.5 max-h-60 overflow-y-auto">
+            <div
+              v-if="g.items.length && healthOpen[g.key]"
+              class="px-3 pb-2 border-t border-slate-100 dark:border-slate-700/50 pt-1.5 max-h-60 overflow-y-auto"
+            >
               <ul class="space-y-0.5">
-                <li v-for="it in g.items" :key="it.id" class="text-[11px] text-slate-600 dark:text-slate-300 flex items-center gap-2">
-                  <span class="font-bold text-slate-800 dark:text-white truncate">{{ it.nama }}</span>
+                <li
+                  v-for="it in g.items"
+                  :key="it.id"
+                  class="text-[11px] text-slate-600 dark:text-slate-300 flex items-center gap-2"
+                >
+                  <span class="font-bold text-slate-800 dark:text-white truncate">{{
+                    it.nama
+                  }}</span>
                   <span class="text-slate-400 truncate">· {{ it.detail }}</span>
                 </li>
               </ul>
@@ -1426,33 +1978,103 @@ async function simpanPengaturanRekap() {
           <div class="flex items-center justify-between gap-2 flex-wrap">
             <p class="text-xs font-black text-slate-700 dark:text-slate-200">
               <i class="fas fa-clone text-amber-500 mr-1"></i>Kandidat Nama Mirip
-              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ml-1" :class="totalFuzzy ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700'">{{ totalFuzzy }}</span>
+              <span
+                class="text-[10px] font-bold px-1.5 py-0.5 rounded ml-1"
+                :class="
+                  totalFuzzy ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700'
+                "
+                >{{ totalFuzzy }}</span
+              >
             </p>
-            <button v-if="totalFuzzy" @click="showFuzzy = !showFuzzy" class="text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:underline">{{ showFuzzy ? 'Sembunyikan' : 'Lihat' }}</button>
+            <button
+              v-if="totalFuzzy"
+              class="text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:underline"
+              @click="showFuzzy = !showFuzzy"
+            >
+              {{ showFuzzy ? 'Sembunyikan' : 'Lihat' }}
+            </button>
           </div>
-          <p class="text-[11px] text-slate-500 mt-1">Nama yang ditulis beda tapi mirip (gelar / spasi / ejaan, jarak edit), atau <b>tgl lahir sama</b>. <b>Tidak</b> memakai No. WA (wali bisa punya banyak anak). Auto-Migrate TIDAK menggabung ini — <b>centang record yang ORANG SAMA</b> lalu <b>Gabung yang dicentang</b> (sisanya rapikan via Edit/Hapus). Cek No. Induk &amp; tgl lahir dulu — pasangan bisa ternyata beda orang.</p>
+          <p class="text-[11px] text-slate-500 mt-1">
+            Nama yang ditulis beda tapi mirip (gelar / spasi / ejaan, jarak edit), atau
+            <b>tgl lahir sama</b>. <b>Tidak</b> memakai No. WA (wali bisa punya banyak anak).
+            Auto-Migrate TIDAK menggabung ini — <b>centang record yang ORANG SAMA</b> lalu
+            <b>Gabung yang dicentang</b> (sisanya rapikan via Edit/Hapus). Cek No. Induk &amp; tgl
+            lahir dulu — pasangan bisa ternyata beda orang.
+          </p>
           <div v-if="showFuzzy" class="mt-2 space-y-1.5">
-            <div v-for="(grp, gi) in fuzzyDup" :key="gi" class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 text-[11px]">
+            <div
+              v-for="(grp, gi) in fuzzyDup"
+              :key="gi"
+              class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 text-[11px]"
+            >
               <div class="flex items-center justify-between gap-2 flex-wrap mb-1">
-                <p class="font-bold text-amber-700 dark:text-amber-300 uppercase text-[9px]">{{ grp.kind }}<span v-if="grp.reason" class="normal-case text-amber-600 dark:text-amber-400"> · {{ grp.reason }}</span></p>
+                <p class="font-bold text-amber-700 dark:text-amber-300 uppercase text-[9px]">
+                  {{ grp.kind
+                  }}<span v-if="grp.reason" class="normal-case text-amber-600 dark:text-amber-400">
+                    · {{ grp.reason }}</span
+                  >
+                </p>
                 <button
-                  @click="gabungFuzzy(grp)"
                   :disabled="fuzzyMerging !== ''"
                   class="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-[10px] font-black rounded-md"
                   title="Gabung record yang dicentang ke yang terlengkap (keputusan manual, lewati guard identitas)"
+                  @click="gabungFuzzy(grp)"
                 >
-                  <i class="fas fa-code-merge mr-1"></i>{{ fuzzyMerging === fuzzyGrpKey(grp) ? 'Menggabung…' : 'Gabung yang dicentang' }}
+                  <i class="fas fa-code-merge mr-1"></i
+                  >{{ fuzzyMerging === fuzzyGrpKey(grp) ? 'Menggabung…' : 'Gabung yang dicentang' }}
                 </button>
               </div>
               <ul class="space-y-0.5">
-                <li v-for="it in grp.items" :key="it.id" class="flex items-start gap-1.5 text-slate-700 dark:text-slate-200">
-                  <input type="checkbox" :checked="fuzzyChecked[it.id] !== false" @change="fuzzyChecked[it.id] = $event.target.checked" class="mt-0.5 accent-rose-600 cursor-pointer" />
-                  <span><span class="font-bold">{{ it.nama }}</span> <span class="text-slate-400">· {{ it.detail }}</span></span>
+                <li
+                  v-for="it in grp.items"
+                  :key="it.id"
+                  class="flex items-start gap-1.5 text-slate-700 dark:text-slate-200"
+                >
+                  <input
+                    type="checkbox"
+                    :checked="fuzzyChecked[it.id] !== false"
+                    class="mt-0.5 accent-rose-600 cursor-pointer"
+                    @change="fuzzyChecked[it.id] = $event.target.checked"
+                  />
+                  <span
+                    ><span class="font-bold">{{ it.nama }}</span>
+                    <span class="text-slate-400">· {{ it.detail }}</span></span
+                  >
                 </li>
               </ul>
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- K1-b: buat akun login yang belum ada (jaring pengaman + backfill sekali jalan) -->
+      <div
+        class="bg-white dark:bg-slate-800 rounded-2xl p-5 md:p-6 border border-slate-200 dark:border-slate-700 shadow-sm"
+      >
+        <p class="text-sm font-black text-teal-700 dark:text-teal-300 mb-1">
+          <i class="fas fa-user-shield mr-1"></i>Akun Login
+        </p>
+        <p class="text-xs text-slate-700 dark:text-slate-300 mb-3">
+          Membuat akun login untuk santri &amp; guru/pegawai aktif yang belum punya, dengan sandi
+          awal <b>1234</b>. Akun yang <b>sudah ada tidak disentuh</b> &mdash; sandi yang pernah
+          diganti tetap aman. Biasanya berjalan otomatis sesudah impor atau simpan data; tombol ini
+          untuk menyapu sisanya.
+        </p>
+        <button
+          type="button"
+          class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold disabled:opacity-60"
+          :disabled="provisiJalan"
+          @click="buatAkunBelumAda"
+        >
+          <i
+            :class="provisiJalan ? 'fas fa-spinner fa-spin' : 'fas fa-user-plus'"
+            class="mr-1.5"
+          ></i>
+          {{ provisiJalan ? 'Membuat akun…' : 'Buat akun yang belum ada' }}
+        </button>
+        <p v-if="provisiPesan" class="text-xs mt-2.5 text-slate-600 dark:text-slate-300">
+          {{ provisiPesan }}
+        </p>
       </div>
 
       <!-- Audit Log table -->

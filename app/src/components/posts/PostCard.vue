@@ -1,8 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
-
-const settings = useSettingsStore()
+import { BRAND } from '@/config/brand'
 
 const props = defineProps({
   judul: { type: String, default: '' },
@@ -14,6 +13,12 @@ const props = defineProps({
 })
 
 defineEmits(['edit', 'delete'])
+
+// White-label: nama lembaga penerbit pos = setting pembeli (fallback merek produk)
+const settingsStore = useSettingsStore()
+const namaLembaga = computed(
+  () => settingsStore.settings?.namaLembaga || settingsStore.settings?.kopLine2 || BRAND.namaLembaga
+)
 
 const idx = ref(0)
 const next = () => {
@@ -72,7 +77,7 @@ const formatted = computed(() => {
       <div class="hdr-l">
         <div class="ava"><img :src="'/logo.png'" alt="Logo" class="ava-img" /></div>
         <div>
-          <p class="nama">{{ settings.settings?.namaLembaga || 'Channel' }}</p>
+          <p class="nama">{{ namaLembaga }}</p>
           <p class="meta">
             {{ formatted }}<span v-if="author && author !== 'Admin'"> · {{ author }}</span>
           </p>

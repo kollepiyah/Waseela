@@ -1,26 +1,56 @@
 // v.100 Batch10: Migrasi Lembaga — perbaiki SALAH IMPOR penempatan lembaga santri.
 //   Kasus nyata kyai: (A) kelas Qiraati berisi "Level ..." tapi lembaga tak cocok
 //   (kelas "Level ..." → Pra PTPT; "Juz N" utuh → PTPT; "Pra PTPT ..." → Pra PTPT);
-//   (B) lembaga_sekolah terisi nilai NGAJI
-//   ("Sekolah: TPQ Pagi" — invalid, sekolah hanya TK/SDI/PKBM); (C) lembaga TPQ PAGI
+//   (B) lembaga_sekolah terisi nilai NGAJI ("Sekolah: TPQ Pagi"); (C) lembaga TPQ PAGI
 //   tapi lembaga_sekolah TK — bentrok jam pagi (flag cek-manual, default TIDAK dicentang).
 //   Scan = report-only. Apply = updateDoc parsial per santri + backup nilai LAMA ke
 //   audit_log (aksi 'update', bisa dipulihkan manual). Saran lembaga (rule A) EDITABLE.
-import { doc, setDoc, updateDoc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+//
+// v.1.2.6 — PERBAIKAN RULE B (data-loss). Dulu daftar NAMA hardcoded
+//   `['tk','sdi','pkbm','smp','sma']` yang memutuskan "ini sekolah?", jadi sekolah SAH
+//   yang Kyai tambah sendiri di Master Data ikut dianggap salah impor: 4 Agu 2026
+//   "Kelas Baca" (tipe Formal, 34 santri) muncul sebagai temuan siap DIKOSONGKAN.
+//   Sekarang penilaiannya lewat sumber tunggal isSekolahLembaga/groupOfLembaga —
+//   membaca `tipe: 'Formal'` dari master/lembaga, bukan cocok-nama.
+import { setOne, updateOne } from '@/services/db'
+import { groupOfLembaga, isSekolahLembaga } from '@/composables/useLembaga'
 
 export const LEMBAGA_QIRAATI_OPSI = ['TPQ Pagi', 'TPQ Sore', 'Pra PTPT', 'PTPT', 'PPPH']
-const SEKOLAH_VALID = ['tk', 'sdi', 'pkbm', 'smp', 'sma']
 
 function low(v) {
-  return String(v == null ? '' : v).trim().toLowerCase()
+  return String(v == null ? '' : v)
+    .trim()
+    .toLowerCase()
 }
 function isTpqFamily(lmb) {
   return low(lmb).startsWith('tpq')
 }
-// TPQ PAGI saja (ngaji pagi) — bentrok jam dgn sekolah TK (juga pagi).
-function isTpqPagi(lmb) {
-  return /tpq\s*pagi/.test(low(lmb))
+
+// ── Rule C: bentrok jam PAGI antara lembaga ngaji dan sekolah ────────────────
+// v.1.2.6: dulu `/tpq\s*pagi/` × `ls === 'tk'` — dua nama dikunci di kode. Master
+//   Kyai TIDAK menyimpan `shift` sama sekali (terverifikasi 4 Agu: barisnya cuma
+//   {lembaga, tipe, kelas, …}), jadi jam masuk lembaga MEMANG tak ada di data dan
+//   tak bisa diturunkan dari sana. Yang bisa dilepas dari kunci nama:
+//     - sisi NGAJI  : cukup "lembaga qiraati yang namanya menyebut pagi" — lembaga
+//                     ngaji pagi baru (mis. "Qiraati Pagi") ikut terbaca, tapi
+//                     sekolah yang kebetulan bernama "…pagi" TIDAK (harus qiraati).
+//     - sisi SEKOLAH: wajib sekolah formal MENURUT MASTER (isSekolahLembaga), lalu
+//                     dicocokkan ke daftar jenjang pagi di bawah.
+//   SEKOLAH_PAGI itu FAKTA LAPANGAN dari Kyai ("TK itu pagi"), bukan tebakan yang
+//   bisa digantikan data — karena itu ia daftar eksplisit, dan sengaja TIDAK
+//   digeneralisasi jadi "semua sekolah formal": itu akan menambah temuan baru yang
+//   patch-nya MENGOSONGKAN lembaga_sekolah. Untuk data 4 Agu 2026 hasilnya PERSIS
+//   sama dengan versi lama (dijaga tes) — perubahan ini murni melepas kunci nama.
+const SEKOLAH_PAGI = ['tk']
+
+function isNgajiPagi(lmb, lembagaList) {
+  const n = low(lmb)
+  if (!n || !/\bpagi\b/.test(n)) return false
+  return groupOfLembaga(lmb, lembagaList) === 'qiraati'
+}
+function isSekolahPagi(lmb, lembagaList) {
+  if (!isSekolahLembaga(lmb, lembagaList)) return false
+  return SEKOLAH_PAGI.includes(low(lmb))
 }
 
 // Tebak lembaga Qiraati yang BENAR dari string kelas. '' = tidak bisa menebak.
@@ -38,10 +68,18 @@ export function inferLembagaFromKelas(kelas) {
 
 /**
  * Scan daftar santri → temuan salah penempatan lembaga.
+ * @param {Array} santriList daftar santri mentah
+ * @param {Array} lembagaList baris master/lembaga (butuh `tipe`). WAJIB untuk Rule B —
+ *   tanpa ini Rule B DIMATIKAN (nol temuan), lihat catatan di dalam.
  * @returns {Array<{id,nama,nis,lembaga,kelas,lembaga_sekolah,kelas_sekolah,type,alasan,saranLembaga,patch,defaultOn}>}
  */
-export function scanLembagaFix(santriList = []) {
+export function scanLembagaFix(santriList = [], lembagaList = null) {
   const findings = []
+  // Rule B menghapus data, jadi ia hanya jalan kalau daftar lembaga master BENAR-BENAR
+  // ada. Kalau master belum termuat, Rule B tidak menemukan apa pun — SENGAJA tidak
+  // jatuh ke daftar nama warisan v.100, karena daftar itulah yang dulu menandai
+  // sekolah sah "Kelas Baca" untuk dikosongkan.
+  const masterSiap = Array.isArray(lembagaList) && lembagaList.length > 0
   for (const s of santriList) {
     if (!s || !s.id || s.aktif === false) continue
     const base = {
@@ -76,26 +114,35 @@ export function scanLembagaFix(santriList = []) {
       })
     }
 
-    // ── Rule B: lembaga_sekolah berisi nilai BUKAN sekolah (mis. "TPQ Pagi") ──
+    // ── Rule B: lembaga_sekolah berisi nilai NGAJI/asrama (mis. "TPQ Pagi") ──
     const ls = low(s.lembaga_sekolah)
-    if (ls && !SEKOLAH_VALID.includes(ls)) {
-      findings.push({
-        ...base,
-        type: 'sekolah_invalid',
-        alasan: `Lembaga sekolah "${s.lembaga_sekolah}" bukan TK/SDI/PKBM → dikosongkan`,
-        patch: { lembaga_sekolah: '', kelas_sekolah: '' },
-        defaultOn: true
-      })
+    if (ls && masterSiap && !isSekolahLembaga(s.lembaga_sekolah, lembagaList)) {
+      // Dua gerbang, bukan satu. "Bukan sekolah" saja TIDAK cukup: groupOfLembaga
+      // menjawab 'non-lembaga' juga untuk nama yang sama sekali tak dikenal, dan nama
+      // tak dikenal belum tentu salah (bisa sekolah yang belum didaftarkan di master).
+      // Jadi kosongkan HANYA kalau nilainya positif terbaca lembaga ngaji/asrama.
+      const grup = groupOfLembaga(s.lembaga_sekolah, lembagaList)
+      if (grup === 'qiraati' || grup === 'mahad') {
+        findings.push({
+          ...base,
+          type: 'sekolah_invalid',
+          alasan: `Lembaga sekolah "${s.lembaga_sekolah}" itu lembaga ngaji/asrama, bukan sekolah formal → dikosongkan`,
+          patch: { lembaga_sekolah: '', kelas_sekolah: '' },
+          defaultOn: true
+        })
+      }
     }
 
-    // ── Rule C (cek manual): TPQ PAGI tapi sekolah TK ──
+    // ── Rule C (cek manual): ngaji PAGI tapi sekolahnya juga pagi ──
     // kyai: santri TPQ Pagi (ngaji pagi) tidak mungkin TK (sekolah pagi) — bentrok jam.
     //   TPQ SORE + TK itu WAJAR (TK pagi, ngaji sore) → JANGAN diflag.
-    if (isTpqPagi(s.lembaga) && ls === 'tk') {
+    //   v.1.2.6: kedua sisi lewat helper di atas; ikut mati kalau master belum termuat
+    //   (isSekolahPagi butuh master) supaya tak menyarankan pengosongan tanpa dasar.
+    if (masterSiap && isNgajiPagi(s.lembaga, lembagaList) && isSekolahPagi(ls, lembagaList)) {
       findings.push({
         ...base,
         type: 'tpq_tk',
-        alasan: `Lembaga ${s.lembaga} (ngaji pagi) tapi sekolah TK — bentrok jam pagi, cek manual`,
+        alasan: `Lembaga ${s.lembaga} (ngaji pagi) tapi sekolah ${s.lembaga_sekolah} (juga pagi) — bentrok jam, cek manual`,
         patch: { lembaga_sekolah: '', kelas_sekolah: '' },
         defaultOn: false
       })
@@ -116,26 +163,33 @@ export async function applyLembagaFix(items = [], opts = {}) {
   let fail = 0
   const errors = []
   for (const it of items) {
-    const patch = it.type === 'kelas_lembaga' ? { lembaga: it.saranLembaga || '' } : { ...(it.patch || {}) }
-    if (!Object.keys(patch).length) { i++; continue }
+    const patch =
+      it.type === 'kelas_lembaga' ? { lembaga: it.saranLembaga || '' } : { ...(it.patch || {}) }
+    if (!Object.keys(patch).length) {
+      i++
+      continue
+    }
     try {
       const before = {}
       for (const k of Object.keys(patch)) {
         before[k] = k === 'lembaga' ? it.lembaga : it[k]
       }
       const auditId = `upd_santri_${it.id}_${Date.now()}`
-      await setDoc(doc(db, 'audit_log', auditId), {
+      await setOne('audit_log', auditId, {
         id: auditId,
         aksi: 'update',
         collection: 'santri',
         doc_id: String(it.id),
-        data_snapshot: JSON.stringify({ nama: it.nama, sebelum: before, sesudah: patch }).slice(0, 50000),
+        data_snapshot: JSON.stringify({ nama: it.nama, sebelum: before, sesudah: patch }).slice(
+          0,
+          50000
+        ),
         alasan: 'Migrasi Lembaga (fix salah impor): ' + (it.alasan || it.type),
         user_id: String(sesi?.id || 'unknown'),
         user_nama: sesi?.nama || sesi?.guru || 'unknown',
         timestamp: new Date().toISOString()
       }).catch(() => {})
-      await updateDoc(doc(db, 'santri', String(it.id)), patch)
+      await updateOne('santri', String(it.id), patch)
       ok++
     } catch (e) {
       fail++

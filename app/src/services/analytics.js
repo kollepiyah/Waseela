@@ -1,32 +1,22 @@
-// v.102 A3: client analitik — panggil Cloud Function analyticsQuery (jembatan BigQuery).
-//   App TAK akses BigQuery langsung. Token Firebase Auth dikirim; server cek role admin/super.
-import { getAuth } from 'firebase/auth'
-import { FUNCTIONS_BASE } from './firebase'
+// Analitik — sumber data Supabase Postgres via RPC `analytics_query` (F9).
+//   Menggantikan jembatan BigQuery (Cloud Function analyticsQuery) yang dicopot di F8.
+//   RPC = SECURITY DEFINER + gate auth_can_manage() (Laporan admin/super_admin only);
+//   balikan jsonb array dgn bentuk row identik konsumen LaporanView.vue.
+import { supabase } from '@/services/supabase'
 
 /**
- * Ambil hasil laporan analitik dari BigQuery (via Cloud Function).
- * @param {string} report nama laporan whitelist (mis. 'santri_per_lembaga')
- * @param {object} params filter opsional (mis. { year: 2026 })
- * @returns {Promise<Array>} array baris hasil query
+ * Jalankan satu laporan agregat di server (Postgres RPC).
+ * @param {string} report  kunci laporan (mis. 'santri_per_lembaga', 'keuangan_bulanan')
+ * @param {object} params  parameter opsional (mis. { year: 2026 })
+ * @returns {Promise<Array<object>>} array baris (kosong bila tak ada data)
  */
 export async function analyticsQuery(report, params = {}) {
-  const u = getAuth().currentUser
-  if (!u) throw new Error('Sesi tidak ditemukan. Login ulang.')
-  const token = await u.getIdToken()
-  const qs = new URLSearchParams({ report, ...params }).toString()
-  const resp = await fetch(`${FUNCTIONS_BASE}/analyticsQuery?${qs}`, {
-    headers: { Authorization: 'Bearer ' + token }
-  })
-  let j = {}
-  try {
-    j = await resp.json()
-  } catch (e) {
-    /* non-json */
+  const { data, error } = await supabase.rpc('analytics_query', { report, params })
+  if (error) {
+    // Pertahankan kode supaya LaporanView bisa bedakan forbidden vs error lain bila perlu.
+    const e = new Error(error.message || 'Gagal memuat laporan analitik.')
+    e.code = error.code || 'analytics/error'
+    throw e
   }
-  if (!resp.ok || !j.ok) {
-    const err = new Error(j.error || `Gagal memuat laporan (${resp.status})`)
-    err.code = j.error
-    throw err
-  }
-  return j.rows || []
+  return Array.isArray(data) ? data : []
 }

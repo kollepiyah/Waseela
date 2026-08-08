@@ -16,25 +16,25 @@
         </div>
         <div class="flex items-center gap-2 flex-wrap justify-end">
           <button
-            @click="prevMonth"
             aria-label="Bulan sebelumnya"
             title="Bulan sebelumnya"
             class="w-8 h-8 rounded-full bg-[var(--bg-muted)] hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition cursor-pointer"
+            @click="prevMonth"
           >
             <i class="fas fa-chevron-left text-[var(--text-secondary)] text-xs"></i>
           </button>
           <button
-            @click="goToday"
             class="text-xs font-bold px-3 py-1.5 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 dark:bg-teal-900/30 dark:text-teal-300 dark:hover:bg-teal-900/50 transition cursor-pointer"
             title="Kembali ke bulan ini"
+            @click="goToday"
           >
             Hari Ini
           </button>
           <button
-            @click="nextMonth"
             aria-label="Bulan berikutnya"
             title="Bulan berikutnya"
             class="w-8 h-8 rounded-full bg-[var(--bg-muted)] hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition cursor-pointer"
+            @click="nextMonth"
           >
             <i class="fas fa-chevron-right text-[var(--text-secondary)] text-xs"></i>
           </button>
@@ -43,17 +43,17 @@
             <!-- v.21.114.0528: Seed libur nasional Indonesia untuk tahun yg ditampilkan -->
             <button
               v-if="bisaEdit"
-              @click="seedLiburNasional"
               class="text-xs font-bold px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition cursor-pointer flex items-center gap-1.5"
               title="Tambahkan libur nasional Indonesia untuk tahun ini"
+              @click="seedLiburNasional"
             >
               <i class="fas fa-flag text-[10px]"></i>Libur Nasional
             </button>
             <button
               v-if="bisaEdit"
-              @click="openModal()"
               class="text-xs font-bold px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white transition cursor-pointer flex items-center gap-1.5"
               title="Tambah kegiatan"
+              @click="openModal()"
             >
               <i class="fas fa-plus text-[10px]"></i>Tambah
             </button>
@@ -61,9 +61,9 @@
                  web/mobile. Kembalikan di sini (route /impor-kalender, sama dgn aksi desktop). -->
             <button
               v-if="bisaEdit"
-              @click="$router.push('/impor-kalender')"
               class="text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition cursor-pointer flex items-center gap-1.5"
               title="Impor jadwal kegiatan dari Excel"
+              @click="$router.push('/impor-kalender')"
             >
               <i class="fas fa-file-import text-[10px]"></i>Impor
             </button>
@@ -97,7 +97,6 @@
         <button
           v-for="cell in cells"
           :key="cell.dateStr"
-          @click="onClickCell(cell.dateStr)"
           :class="[
             'aspect-[3/4] sm:aspect-square p-1.5 rounded-lg border transition cursor-pointer flex flex-col items-center justify-start min-w-0 overflow-hidden text-center',
             cell.isToday
@@ -106,6 +105,7 @@
                 ? 'bg-rose-50 border-rose-300 hover:bg-rose-100 dark:bg-rose-900/30 dark:border-rose-700'
                 : 'bg-[var(--bg-card)] border-[var(--border-subtle)] hover:bg-slate-50 dark:hover:bg-slate-700/50'
           ]"
+          @click="onClickCell(cell.dateStr)"
         >
           <p
             :class="[
@@ -199,8 +199,8 @@
             </div>
             <button
               v-if="bisaEdit"
-              @click.stop="openModal(k)"
               class="text-[10px] text-cyan-600 dark:text-cyan-400 hover:underline font-bold flex-shrink-0"
+              @click.stop="openModal(k)"
             >
               edit
             </button>
@@ -212,13 +212,13 @@
     <!-- Modal tambah/edit -->
     <div
       v-if="modalOpen"
-      @click.self="modalOpen = false"
       class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+      @click.self="modalOpen = false"
     >
       <div
         class="bg-[var(--bg-card)] rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
       >
-        <form @submit.prevent="simpan" class="p-5">
+        <form class="p-5" @submit.prevent="simpan">
           <h3 class="text-base font-black text-[var(--text-primary)] mb-4">
             <i :class="['fas', form.id ? 'fa-edit' : 'fa-calendar-plus', 'text-cyan-600 mr-2']"></i>
             {{ form.id ? 'Edit Kegiatan' : 'Tambah Kegiatan' }}
@@ -286,6 +286,36 @@
                 </select>
               </div>
             </div>
+            <!-- v.1.2.3: scope lembaga libur; v.1.2.4: agenda kegiatan juga ber-scope lembaga -->
+            <div>
+              <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                {{ form.tipe === 'kegiatan' ? 'Agenda untuk Lembaga' : 'Libur untuk Lembaga' }}
+                <span class="font-normal text-[var(--text-tertiary)]">— kosong = semua</span>
+              </label>
+              <div class="flex flex-wrap gap-1.5">
+                <button
+                  v-for="opt in LIBUR_LEMBAGA_OPSI"
+                  :key="opt"
+                  type="button"
+                  :class="[
+                    'px-2.5 py-1 rounded-full text-xs font-bold border transition',
+                    form.lembaga.includes(opt)
+                      ? 'bg-cyan-600 border-cyan-600 text-white'
+                      : 'bg-white dark:bg-slate-900 border-[var(--border-default)] text-[var(--text-secondary)] hover:border-cyan-400'
+                  ]"
+                  @click="toggleLiburLembaga(opt)"
+                >
+                  {{ opt }}
+                </button>
+              </div>
+              <p class="text-[11px] text-[var(--text-tertiary)] mt-1">
+                {{
+                  form.tipe === 'kegiatan'
+                    ? 'Kosongkan = agenda utk semua lembaga. Pilih mis. "PTPT" bila agenda khusus lembaga tsb (hanya tampil & dinotif ke sana).'
+                    : 'Kosongkan = libur semua lembaga. Pilih mis. "Sekolah" bila sekolah libur tapi ngaji tetap masuk.'
+                }}
+              </p>
+            </div>
             <div>
               <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
                 >Deskripsi</label
@@ -303,16 +333,16 @@
             <button
               v-if="form.id"
               type="button"
-              @click="hapus"
               class="text-xs font-bold px-3 py-2 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-900/30 dark:text-rose-300 transition cursor-pointer"
+              @click="hapus"
             >
               <i class="fas fa-trash mr-1"></i>Hapus
             </button>
             <div class="flex-1"></div>
             <button
               type="button"
-              @click="modalOpen = false"
               class="text-xs font-bold px-4 py-2 rounded-lg bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 transition cursor-pointer"
+              @click="modalOpen = false"
             >
               Batal
             </button>
@@ -497,8 +527,29 @@ const form = reactive({
   tgl_akhir: '',
   audience: 'semua',
   deskripsi: '',
-  tipe: 'kegiatan'
+  tipe: 'kegiatan',
+  // v.1.2.3: scope lembaga libur — [] = SEMUA (default). Broad 'Qiraati'/'Sekolah' didukung.
+  lembaga: []
 })
+
+// Opsi scope lembaga utk libur: broad (cepat) + spesifik. Kosong = semua lembaga.
+const LIBUR_LEMBAGA_OPSI = [
+  'Qiraati',
+  'Sekolah',
+  'TPQ Pagi',
+  'TPQ Sore',
+  'Pra PTPT',
+  'PTPT',
+  'PPPH',
+  'TK',
+  'SDI',
+  'PKBM'
+]
+function toggleLiburLembaga(nama) {
+  const i = form.lembaga.indexOf(nama)
+  if (i >= 0) form.lembaga.splice(i, 1)
+  else form.lembaga.push(nama)
+}
 
 function openModal(k = null) {
   if (k) {
@@ -509,6 +560,7 @@ function openModal(k = null) {
     form.audience = k.audience || 'semua'
     form.deskripsi = k.deskripsi || ''
     form.tipe = k.tipe || 'kegiatan'
+    form.lembaga = Array.isArray(k.lembaga) ? [...k.lembaga] : []
   } else {
     form.id = ''
     form.judul = ''
@@ -517,6 +569,7 @@ function openModal(k = null) {
     form.audience = 'semua'
     form.deskripsi = ''
     form.tipe = 'kegiatan'
+    form.lembaga = []
   }
   modalOpen.value = true
 }

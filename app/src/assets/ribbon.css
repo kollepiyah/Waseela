@@ -1,6 +1,6 @@
 /* =====================================================================
    Waseela — Desktop Ribbon shell (Electron only)
-   Port dari design handoff desktop (ribbon).
+   Port dari design_handoff_waseela_desktop/app/ribbon.css.
    SEMUA selector di-scope ke .wsl-ribbon-app + prefix rb- agar TIDAK
    bentrok dengan style view/komponen app yang sudah ada (yang tetap
    tampil di dalam area konten ribbon).
@@ -27,7 +27,7 @@
 
 /* ---- LIGHT (Office "Colorful") ---- */
 .wsl-ribbon-app[data-theme='light'] {
-  --accent: var(--theme-color, #047857);
+  --accent: var(--theme-color, #0f766e);
   --rb-app-bg: #f4f5f3;
   --rb-surface: #ffffff;
   --rb-surface-2: #f7f8f6;
@@ -40,7 +40,7 @@
   --rb-text-dim: #687078;
   --rb-card: #ffffff;
   --rb-card-border: #e6e8e3;
-  --rb-hover: rgba(4, 120, 87, 0.1);
+  --rb-hover: rgba(15, 118, 110, 0.1);
   --rb-divider: #e6e8e3;
   --rb-content-bg: #eef0ec;
   --rb-tab-active-bg: #f7f8f6;
@@ -51,7 +51,7 @@
 /* ---- DARK ---- (slate, KONSISTEN dgn palet app: --bg-page #0f172a, --bg-card #1e293b,
    --border-subtle #334155, header/status bar #1e293b). Hindari palet coklat Office. */
 .wsl-ribbon-app[data-theme='dark'] {
-  --accent: var(--theme-color, #047857);
+  --accent: var(--theme-color, #0f766e);
   --rb-app-bg: #0f172a;
   --rb-surface: #1e293b;
   --rb-surface-2: #334155;

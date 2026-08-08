@@ -38,7 +38,9 @@
             style="width: 72px; height: 72px; border-radius: 16px; background: #fff; padding: 6px"
           />
           <div>
-            <div style="font-size: 22px; font-weight: 700; color: var(--rb-text)">{{ settings.settings?.txtAppName || 'Waseela' }}</div>
+            <div style="font-size: 22px; font-weight: 700; color: var(--rb-text)">
+              {{ BRAND.appName }}
+            </div>
             <div style="color: var(--rb-text-dim)">Sistem Manajemen {{ lembagaName }}</div>
           </div>
         </div>
@@ -51,7 +53,8 @@
             <b>Versi</b><span>{{ version }}</span>
           </div>
           <div class="row">
-            <b>Hak Cipta</b><span>© {{ new Date().getFullYear() }} BAKAFRAWI PROJECT · All Rights Reserved</span>
+            <b>Hak Cipta</b
+            ><span>© {{ new Date().getFullYear() }} {{ BRAND.copyrightName }}</span>
           </div>
         </div>
       </template>
@@ -210,6 +213,7 @@ import {
 } from '@/composables/useDesktopPrint'
 import { buildStrukSlipEscpBase64 } from '@/utils/escpImage'
 import { useToast } from '@/composables/useToast'
+import { BRAND } from '@/config/brand'
 
 const emit = defineEmits(['close'])
 const router = useRouter()
@@ -310,13 +314,13 @@ const rail = computed(() => [
 
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
 const lembagaName = computed(
-  () => settings.settings?.namaLembaga || 'Waseela'
+  () => settings.settings?.namaLembaga || BRAND.namaLembaga
 )
-const version = computed(() => settings.settings?.appVersion || 'v.108.0626')
+const version = computed(() => settings.settings?.appVersion || BRAND.version)
 const userName = computed(() => auth.sesiAktif?.nama || auth.sesiAktif?.name || 'Pengguna')
 
 const infoRows = computed(() => [
-  ['Aplikasi', (settings.settings?.txtAppName || 'Waseela') + ' — Desktop'],
+  ['Aplikasi', `${BRAND.appName} — Desktop`],
   ['Lembaga', lembagaName.value],
   ['Pengguna', userName.value],
   ['Versi', version.value + ' (Electron)'],

@@ -44,8 +44,8 @@
             <i class="fas fa-edit"></i>Edit Info
           </router-link>
           <button
-            @click="onDelete"
             class="px-3 py-2 text-xs font-bold bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg flex items-center gap-1 cursor-pointer"
+            @click="onDelete"
           >
             <i class="fas fa-trash"></i>Hapus
           </button>
@@ -65,9 +65,10 @@
           </p>
           <p class="text-sm font-black">
             {{ lembagaId }} <span class="opacity-60 font-normal">termasuk group</span>
-            <span class="ml-1 px-2 py-0.5 bg-[var(--bg-card)]/60 rounded text-xs font-black uppercase">{{
-              groupKey
-            }}</span>
+            <span
+              class="ml-1 px-2 py-0.5 bg-[var(--bg-card)]/60 rounded text-xs font-black uppercase"
+              >{{ groupKey }}</span
+            >
           </p>
           <p class="text-[11px] mt-1 opacity-80">
             <i class="fas fa-user-tie mr-1"></i>Kepala lembaga:
@@ -140,67 +141,67 @@
       class="bg-[var(--bg-card)] rounded-xl p-2 border border-[var(--border-subtle)] flex items-center gap-1.5 flex-wrap"
     >
       <button
-        @click="activeSection = ''"
         class="text-xs font-bold px-3 py-1.5 rounded-lg bg-[var(--bg-muted)] hover:bg-slate-200 text-[var(--text-primary)] cursor-pointer"
+        @click="activeSection = ''"
       >
         <i class="fas fa-arrow-left mr-1"></i>Menu
       </button>
       <button
         v-if="!isNonLembaga"
-        @click="activeSection = 'kelas'"
         :class="[
           'text-[11px] font-bold px-3 py-1.5 rounded-lg cursor-pointer transition',
           activeSection === 'kelas'
             ? 'bg-teal-600 text-white'
             : 'bg-[var(--bg-muted)] hover:bg-teal-50 text-[var(--text-primary)]'
         ]"
+        @click="activeSection = 'kelas'"
       >
         <i class="fas fa-list-ol mr-1"></i>Kelas
       </button>
       <button
         v-if="!isNonLembaga"
-        @click="activeSection = 'rapor'"
         :class="[
           'text-[11px] font-bold px-3 py-1.5 rounded-lg cursor-pointer transition',
           activeSection === 'rapor'
             ? 'bg-emerald-600 text-white'
             : 'bg-[var(--bg-muted)] hover:bg-emerald-50 text-[var(--text-primary)]'
         ]"
+        @click="activeSection = 'rapor'"
       >
         <i class="fas fa-graduation-cap mr-1"></i>Rapor
       </button>
       <button
         v-if="!isNonLembaga"
-        @click="activeSection = 'rekap'"
         :class="[
           'text-[11px] font-bold px-3 py-1.5 rounded-lg cursor-pointer transition',
           activeSection === 'rekap'
             ? 'bg-cyan-600 text-white'
             : 'bg-[var(--bg-muted)] hover:bg-cyan-50 text-[var(--text-primary)]'
         ]"
+        @click="activeSection = 'rekap'"
       >
         <i class="fas fa-book-open mr-1"></i>Rekap
       </button>
       <button
         v-if="!isNonLembaga"
-        @click="activeSection = 'absen'"
         :class="[
           'text-[11px] font-bold px-3 py-1.5 rounded-lg cursor-pointer transition',
           activeSection === 'absen'
             ? 'bg-cyan-600 text-white'
             : 'bg-[var(--bg-muted)] hover:bg-cyan-50 text-[var(--text-primary)]'
         ]"
+        @click="activeSection = 'absen'"
       >
         <i class="fas fa-calendar-check mr-1"></i>Absen
       </button>
       <button
-        @click="activeSection = 'pengaturan'"
         :class="[
           'text-[11px] font-bold px-3 py-1.5 rounded-lg cursor-pointer transition',
           activeSection === 'pengaturan'
             ? 'bg-slate-700 text-white'
             : 'bg-[var(--bg-muted)] hover:bg-slate-200 text-[var(--text-primary)]'
         ]"
+        @click="activeSection = 'pengaturan'"
       >
         <i class="fas fa-cog mr-1"></i>Pengaturan
       </button>
@@ -219,7 +220,7 @@
         pilihan di form santri lembaga <b>{{ lembagaId }}</b
         >.
       </p>
-      <form @submit.prevent="onAddKelas" class="flex gap-2">
+      <form class="flex gap-2" @submit.prevent="onAddKelas">
         <input
           v-model="newKelasInput"
           class="flex-1 px-3 py-2 text-sm border border-teal-300 rounded-lg bg-[var(--bg-card)]"
@@ -244,19 +245,19 @@
           class="flex justify-between items-center bg-[var(--bg-card-elevated)] px-3 py-2 rounded-lg border border-[var(--border-subtle)]"
         >
           <span class="text-sm font-bold"
-            ><i class="fas fa-grip-vertical text-[var(--text-tertiary)] mr-2 text-xs"></i>{{ i + 1 }}.
-            {{ k }}</span
+            ><i class="fas fa-grip-vertical text-[var(--text-tertiary)] mr-2 text-xs"></i
+            >{{ i + 1 }}. {{ k }}</span
           >
           <div class="flex gap-1">
             <button
-              @click="onEditKelas(i)"
               class="text-cyan-600 hover:bg-cyan-50 p-1.5 rounded text-xs"
+              @click="onEditKelas(i)"
             >
               <i class="fas fa-edit"></i>
             </button>
             <button
-              @click="onHapusKelas(i)"
               class="text-rose-500 hover:bg-rose-50 p-1.5 rounded text-xs"
+              @click="onHapusKelas(i)"
             >
               <i class="fas fa-times"></i>
             </button>
@@ -294,11 +295,14 @@
               type="number"
               class="w-16 px-2 py-0.5 border border-[var(--border-default)] rounded"
             />
-            <button @click="predikatScale.splice(idx, 1)" class="text-rose-500 text-xs">
+            <button class="text-rose-500 text-xs" @click="predikatScale.splice(idx, 1)">
               <i class="fas fa-times"></i>
             </button>
           </div>
-          <button @click="addPredikatRule" class="text-xs text-cyan-600 hover:text-cyan-800 font-bold">
+          <button
+            class="text-xs text-cyan-600 hover:text-cyan-800 font-bold"
+            @click="addPredikatRule"
+          >
             <i class="fas fa-plus mr-1"></i>Tambah Predikat
           </button>
         </div>
@@ -314,15 +318,15 @@
           </h5>
           <div class="flex gap-1">
             <button
-              @click="resetRaporSchema"
               class="text-[10px] font-bold px-2 py-1 rounded bg-cyan-100 text-cyan-800 hover:bg-cyan-200"
+              @click="resetRaporSchema"
             >
               <i class="fas fa-undo mr-1"></i>Reset Default
             </button>
             <button
-              @click="simpanRaporSchema"
               :disabled="saving"
               class="text-[10px] font-black px-3 py-1 rounded bg-teal-600 hover:bg-teal-700 text-white disabled:opacity-50"
+              @click="simpanRaporSchema"
             >
               <i :class="['fas', saving ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i>Simpan
             </button>
@@ -336,38 +340,38 @@
           </p>
           <div class="flex flex-wrap gap-1.5">
             <button
-              @click="applyTemplate('tpq')"
               class="text-[10px] font-bold px-2.5 py-1 rounded bg-teal-100 hover:bg-teal-200 text-teal-800"
+              @click="applyTemplate('tpq')"
             >
               <i class="fas fa-mosque mr-0.5"></i>TPQ (Jilid + IMTAS + Khotaman)
             </button>
             <button
-              @click="applyTemplate('pra-ptpt')"
               class="text-[10px] font-bold px-2.5 py-1 rounded bg-cyan-100 hover:bg-cyan-200 text-cyan-800"
+              @click="applyTemplate('pra-ptpt')"
             >
               <i class="fas fa-book-quran mr-0.5"></i>Pra PTPT (5 Level Khotam)
             </button>
             <button
-              @click="applyTemplate('ptpt')"
               class="text-[10px] font-bold px-2.5 py-1 rounded bg-teal-100 hover:bg-teal-200 text-teal-800"
+              @click="applyTemplate('ptpt')"
             >
               <i class="fas fa-book-quran mr-0.5"></i>PTPT (Kelas Juz)
             </button>
             <button
-              @click="applyTemplate('ppph')"
               class="text-[10px] font-bold px-2.5 py-1 rounded bg-cyan-100 hover:bg-cyan-200 text-cyan-800"
+              @click="applyTemplate('ppph')"
             >
               <i class="fas fa-book mr-0.5"></i>PPPH (Tahap)
             </button>
             <button
-              @click="applyTemplate('diniyah')"
               class="text-[10px] font-bold px-2.5 py-1 rounded bg-cyan-100 hover:bg-cyan-200 text-cyan-800"
+              @click="applyTemplate('diniyah')"
             >
               <i class="fas fa-school mr-0.5"></i>Diniyah (Mapel × Kelas)
             </button>
             <button
-              @click="applyTemplate('kosong')"
               class="text-[10px] font-bold px-2.5 py-1 rounded bg-[var(--bg-muted)] hover:bg-slate-200 text-[var(--text-primary)]"
+              @click="applyTemplate('kosong')"
             >
               <i class="fas fa-ban mr-0.5"></i>Tidak Punya Rapor
             </button>
@@ -384,8 +388,8 @@
               Field Nilai (kolom angka tiap khotam)
             </p>
             <button
-              @click="addFieldNilai"
               class="text-[10px] bg-teal-200 hover:bg-teal-300 text-teal-800 font-bold px-2 py-0.5 rounded"
+              @click="addFieldNilai"
             >
               + Field
             </button>
@@ -401,8 +405,8 @@
                 class="bg-transparent border-0 outline-none text-[11px] w-24"
               />
               <button
-                @click="raporSchema.fieldsNilai.splice(idx, 1)"
                 class="text-rose-400 text-[10px]"
+                @click="raporSchema.fieldsNilai.splice(idx, 1)"
               >
                 <i class="fas fa-times"></i>
               </button>
@@ -411,8 +415,8 @@
           <div class="flex justify-between items-center mt-3">
             <p class="text-xs font-black text-teal-800 uppercase">Level × Khotam</p>
             <button
-              @click="addLevel"
               class="text-[10px] bg-teal-200 hover:bg-teal-300 text-teal-800 font-bold px-2 py-0.5 rounded"
+              @click="addLevel"
             >
               + Level
             </button>
@@ -432,8 +436,8 @@
                 class="text-xs px-2 py-1 border border-[var(--border-default)] rounded"
               />
               <button
-                @click="raporSchema.levels.splice(lIdx, 1)"
                 class="text-rose-500 text-xs px-2"
+                @click="raporSchema.levels.splice(lIdx, 1)"
               >
                 <i class="fas fa-trash"></i>
               </button>
@@ -442,8 +446,8 @@
               <div class="flex items-center justify-between">
                 <p class="text-[10px] font-black text-teal-700">Khotam:</p>
                 <button
-                  @click="addKhotam(lvl)"
                   class="text-[10px] bg-teal-200 hover:bg-teal-300 text-teal-800 font-bold px-2 py-0.5 rounded"
+                  @click="addKhotam(lvl)"
                 >
                   + Khotam
                 </button>
@@ -465,7 +469,7 @@
                   class="text-[11px] px-1.5 py-0.5 border border-[var(--border-default)] rounded text-center"
                   :title="`Multiplier: ${kh.multiplier}x`"
                 />
-                <button @click="lvl.khotamList.splice(kIdx, 1)" class="text-rose-500 text-[11px]">
+                <button class="text-rose-500 text-[11px]" @click="lvl.khotamList.splice(kIdx, 1)">
                   <i class="fas fa-times"></i>
                 </button>
               </div>
@@ -479,12 +483,10 @@
           class="space-y-2 bg-[var(--bg-card)] p-3 rounded-xl border border-teal-100"
         >
           <div class="flex justify-between items-center">
-            <p class="text-xs font-black text-teal-800 uppercase">
-              Jenjang Kelas × Mata Pelajaran
-            </p>
+            <p class="text-xs font-black text-teal-800 uppercase">Jenjang Kelas × Mata Pelajaran</p>
             <button
-              @click="addJenjang"
               class="text-[10px] bg-teal-200 hover:bg-teal-300 text-teal-800 font-bold px-2 py-0.5 rounded"
+              @click="addJenjang"
             >
               + Jenjang
             </button>
@@ -499,7 +501,7 @@
                 v-model="j.kelas"
                 class="text-xs font-bold px-2 py-1 border border-[var(--border-default)] rounded w-32"
               />
-              <button @click="raporSchema.jenjang.splice(jIdx, 1)" class="text-rose-500 text-xs">
+              <button class="text-rose-500 text-xs" @click="raporSchema.jenjang.splice(jIdx, 1)">
                 <i class="fas fa-trash"></i>
               </button>
             </div>
@@ -519,14 +521,19 @@
                   class="w-12 text-[11px] px-1 border border-[var(--border-default)] rounded text-center"
                   title="KKM"
                 />
-                <button @click="j.mapel.splice(mIdx, 1)" class="text-rose-400 text-[10px]">
+                <button class="text-rose-400 text-[10px]" @click="j.mapel.splice(mIdx, 1)">
                   <i class="fas fa-times"></i>
                 </button>
               </div>
             </div>
             <button
-              @click="j.mapel = j.mapel || []; j.mapel.push({ id: 'm_' + Date.now(), nama: '', kkm: 80 })"
               class="text-[10px] text-teal-700 font-bold mt-1"
+              @click="
+                () => {
+                  j.mapel = j.mapel || []
+                  j.mapel.push({ id: 'm_' + Date.now(), nama: '', kkm: 80 })
+                }
+              "
             >
               + Tambah Mapel
             </button>
@@ -541,8 +548,8 @@
           <div class="flex justify-between items-center">
             <p class="text-xs font-black text-teal-800 uppercase">Sections</p>
             <button
-              @click="addSection"
               class="text-[10px] bg-teal-200 hover:bg-teal-300 text-teal-800 font-bold px-2 py-0.5 rounded"
+              @click="addSection"
             >
               + Section
             </button>
@@ -557,7 +564,7 @@
                 v-model="sec.title"
                 class="text-xs font-bold px-2 py-1 border border-[var(--border-default)] rounded flex-1"
               />
-              <button @click="raporSchema.sections.splice(sIdx, 1)" class="text-rose-500 text-xs">
+              <button class="text-rose-500 text-xs" @click="raporSchema.sections.splice(sIdx, 1)">
                 <i class="fas fa-trash"></i>
               </button>
             </div>
@@ -575,13 +582,13 @@
                     v-model="sec.rows[rIdx]"
                     class="bg-transparent border-0 outline-none text-[11px] w-16"
                   />
-                  <button @click="sec.rows.splice(rIdx, 1)" class="text-rose-400 text-[10px]">
+                  <button class="text-rose-400 text-[10px]" @click="sec.rows.splice(rIdx, 1)">
                     <i class="fas fa-times"></i>
                   </button>
                 </span>
                 <button
-                  @click="(sec.rows = sec.rows || []) && sec.rows.push('Baru')"
                   class="bg-teal-200 hover:bg-teal-300 text-[10px] font-bold px-2 py-0.5 rounded"
+                  @click="(sec.rows = sec.rows || []) && sec.rows.push('Baru')"
                 >
                   + Row
                 </button>
@@ -607,13 +614,16 @@
                   <option value="date">Tanggal</option>
                   <option value="auto_predikat">Predikat (auto)</option>
                 </select>
-                <button @click="sec.fields.splice(fIdx, 1)" class="text-rose-500 text-[11px]">
+                <button class="text-rose-500 text-[11px]" @click="sec.fields.splice(fIdx, 1)">
                   <i class="fas fa-times"></i>
                 </button>
               </div>
               <button
-                @click="(sec.fields = sec.fields || []) && sec.fields.push({ id: 'f_' + Date.now(), label: 'Baru', type: 'number' })"
                 class="bg-teal-200 hover:bg-teal-300 text-[10px] font-bold px-2 py-0.5 rounded"
+                @click="
+                  (sec.fields = sec.fields || []) &&
+                  sec.fields.push({ id: 'f_' + Date.now(), label: 'Baru', type: 'number' })
+                "
               >
                 + Field
               </button>
@@ -627,15 +637,15 @@
           class="bg-cyan-50 border-2 border-cyan-300 rounded-xl p-3 mb-2"
         >
           <p class="text-xs font-black text-[var(--text-on-accent)] mb-1">
-            <i class="fas fa-exclamation-triangle mr-1"></i>Schema lama terdeteksi di Firestore
+            <i class="fas fa-exclamation-triangle mr-1"></i>Schema lama terdeteksi
           </p>
           <p class="text-[11px] text-cyan-700 mb-2">
             Klik tombol <b>PTPT (Kelas Juz)</b> di atas lalu <b>Simpan</b> untuk migrasi ke format
             baru. Atau hapus schema lama dulu:
           </p>
           <button
-            @click="resetRaporSchema"
             class="text-[11px] font-bold px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-700 text-white"
+            @click="resetRaporSchema"
           >
             <i class="fas fa-trash mr-1"></i>Hapus Schema Lama
           </button>
@@ -649,9 +659,7 @@
           <p class="text-xs font-black text-teal-800 dark:text-teal-200 mb-1">
             📋 Schema PTPT (Flat Kelas × Juz)
           </p>
-          <div
-            class="bg-teal-50/60 p-2 rounded text-[11px] text-[var(--text-primary)] space-y-1"
-          >
+          <div class="bg-teal-50/60 p-2 rounded text-[11px] text-[var(--text-primary)] space-y-1">
             <p><strong>Total baris:</strong> {{ (raporSchema.rows || []).length }} (Kelas × Juz)</p>
             <p>
               <strong>Kolom nilai:</strong>
@@ -693,7 +701,8 @@
             </p>
             <p>
               <strong>Kolom nilai:</strong>
-              {{ (raporSchema.fieldsNilai || []).map((f) => f.label).join(' · ') }} · Tgl Khotam · Predikat
+              {{ (raporSchema.fieldsNilai || []).map((f) => f.label).join(' · ') }} · Tgl Khotam ·
+              Predikat
             </p>
           </div>
         </div>
@@ -701,25 +710,26 @@
         <!-- kosong / empty -->
         <div v-else class="bg-cyan-50 border border-cyan-200 p-3 rounded text-xs text-cyan-800">
           <template v-if="isDiniyahLembaga">
-            <i class="fas fa-info-circle mr-1"></i>Lembaga formal memakai <b>Rapor Diniyah</b> otomatis
-            (No · Mata Pelajaran · KKM · Rata-rata Sumatif · Sumatif Akhir Semester · Predikat). Daftar
-            mata pelajaran diatur di bagian <b>"Mata Pelajaran"</b> (tab Rekap), bukan di sini.
+            <i class="fas fa-info-circle mr-1"></i>Lembaga formal memakai
+            <b>Rapor Diniyah</b> otomatis (No · Mata Pelajaran · KKM · Rata-rata Sumatif · Sumatif
+            Akhir Semester · Predikat). Daftar mata pelajaran diatur di bagian
+            <b>"Mata Pelajaran"</b> (tab Rekap), bukan di sini.
           </template>
           <template v-else>
-            <i class="fas fa-info-circle mr-1"></i>Belum ada struktur schema. Klik tombol template di
-            atas untuk mulai.
+            <i class="fas fa-info-circle mr-1"></i>Belum ada struktur schema. Klik tombol template
+            di atas untuk mulai.
           </template>
         </div>
 
         <p class="text-[10px] text-[var(--text-secondary)] italic">
-          <i class="fas fa-info-circle mr-1"></i>Klik "Simpan" untuk apply ke Firestore. Vue rapor
-          page otomatis pakai schema ini.
+          <i class="fas fa-info-circle mr-1"></i>Klik "Simpan" untuk menyimpan. Halaman rapor
+          otomatis pakai schema ini.
         </p>
       </div>
 
       <button
-        @click="bukaRaporPage"
         class="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-3 rounded-xl shadow-md"
+        @click="bukaRaporPage"
       >
         <i class="fas fa-external-link-alt mr-2"></i>Buka Page Rapor Santri →
       </button>
@@ -750,7 +760,8 @@
           <i class="fas fa-list mr-1"></i>Mata Pelajaran
         </h5>
         <p class="text-[11px] text-[var(--text-secondary)]">
-          Mata pelajaran kolom di Rekap &amp; Rapor Diniyah, diatur PER KELAS (tiap kelas bisa beda). Tambah/hapus tiap mapel di bawah.
+          Mata pelajaran kolom di Rekap &amp; Rapor Diniyah, diatur PER KELAS (tiap kelas bisa
+          beda). Tambah/hapus tiap mapel di bawah.
         </p>
 
         <!-- v.90.0626b: input mapel per-KELAS (dari daftar kelas lembaga) -->
@@ -765,14 +776,24 @@
           :key="kv.key"
           class="bg-[var(--bg-card)] rounded-xl p-3 border border-cyan-100 dark:border-cyan-800 space-y-2"
         >
-          <label class="text-[10px] font-black text-cyan-800 dark:text-cyan-200 uppercase tracking-wide block">
-            Kelas {{ kv.key }}<span v-if="kv.jenjang" class="ml-1 text-[9px] font-bold text-cyan-500">({{ kv.jenjang }})</span>
+          <label
+            class="text-[10px] font-black text-cyan-800 dark:text-cyan-200 uppercase tracking-wide block"
+          >
+            Kelas {{ kv.key
+            }}<span v-if="kv.jenjang" class="ml-1 text-[9px] font-bold text-cyan-500"
+              >({{ kv.jenjang }})</span
+            >
           </label>
-          <p v-if="(rekapMapel[kv.key] || []).length === 0" class="text-[11px] italic text-[var(--text-tertiary)]">
+          <p
+            v-if="(rekapMapel[kv.key] || []).length === 0"
+            class="text-[11px] italic text-[var(--text-tertiary)]"
+          >
             Belum ada mata pelajaran. Klik &quot;Isi default&quot; atau &quot;Tambah&quot;.
           </p>
-          <div v-for="(m, i) in (rekapMapel[kv.key] || [])" :key="i" class="flex items-center gap-2">
-            <span class="text-[10px] font-bold text-[var(--text-tertiary)] w-5 text-right">{{ i + 1 }}.</span>
+          <div v-for="(m, i) in rekapMapel[kv.key] || []" :key="i" class="flex items-center gap-2">
+            <span class="text-[10px] font-bold text-[var(--text-tertiary)] w-5 text-right"
+              >{{ i + 1 }}.</span
+            >
             <input
               v-model="rekapMapel[kv.key][i]"
               type="text"
@@ -785,23 +806,25 @@
               class="w-16 px-2 py-2 text-sm text-center border border-cyan-300 rounded-lg bg-[var(--bg-card)]"
             />
             <button
-              @click="removeMapel(kv.key, i)"
               class="w-8 h-8 flex items-center justify-center rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 cursor-pointer"
               title="Hapus mapel"
+              @click="removeMapel(kv.key, i)"
             >
               <i class="fas fa-times"></i>
             </button>
           </div>
           <div class="flex items-center gap-3 flex-wrap">
             <button
-              @click="isiMapelDefault(kv.key, kv.jenjang)"
               class="text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:underline cursor-pointer"
+              @click="isiMapelDefault(kv.key, kv.jenjang)"
             >
-              <i class="fas fa-wand-magic-sparkles mr-1"></i>Isi default<span v-if="kv.jenjang"> ({{ kv.jenjang }})</span>
+              <i class="fas fa-wand-magic-sparkles mr-1"></i>Isi default<span v-if="kv.jenjang">
+                ({{ kv.jenjang }})</span
+              >
             </button>
             <button
-              @click="addMapel(kv.key)"
               class="text-xs font-bold text-cyan-700 dark:text-cyan-300 hover:underline cursor-pointer"
+              @click="addMapel(kv.key)"
             >
               <i class="fas fa-plus mr-1"></i>Tambah Mata Pelajaran
             </button>
@@ -809,17 +832,18 @@
         </div>
 
         <button
-          @click="simpanRekapMapel"
           :disabled="saving"
           class="text-xs font-black px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-700 text-white disabled:opacity-50"
+          @click="simpanRekapMapel"
         >
-          <i :class="['fas', saving ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i>Simpan Mata Pelajaran
+          <i :class="['fas', saving ? 'fa-spinner fa-spin' : 'fa-save', 'mr-1']"></i>Simpan Mata
+          Pelajaran
         </button>
       </div>
 
       <button
-        @click="bukaRekapPage"
         class="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-3 rounded-xl shadow-md"
+        @click="bukaRekapPage"
       >
         <i class="fas fa-external-link-alt mr-2"></i>Buka Page Rekap Prestasi →
       </button>
@@ -834,8 +858,8 @@
         <p class="text-[11px] text-cyan-800">Input absensi santri per bulan untuk lembaga ini.</p>
       </div>
       <button
-        @click="bukaAbsenPage"
         class="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-3 rounded-xl shadow-md"
+        @click="bukaAbsenPage"
       >
         <i class="fas fa-external-link-alt mr-2"></i>Buka Page Absen Santri →
       </button>
@@ -902,14 +926,14 @@
           <input
             type="file"
             accept="image/*"
-            @change="uploadKopLogo"
             :disabled="uploading"
             class="text-xs flex-1"
+            @change="uploadKopLogo"
           />
           <button
             v-if="pengaturanForm.kop_logo"
-            @click="pengaturanForm.kop_logo = ''"
             class="text-xs text-rose-600 font-bold"
+            @click="pengaturanForm.kop_logo = ''"
           >
             <i class="fas fa-trash mr-1"></i>Hapus
           </button>
@@ -942,9 +966,9 @@
           <input
             type="file"
             accept="image/*"
-            @change="uploadLogoQiraati"
             :disabled="uploading"
             class="text-xs flex-1"
+            @change="uploadLogoQiraati"
           />
         </div>
       </div>
@@ -961,16 +985,14 @@
         </p>
         <div class="space-y-3">
           <div>
-            <label class="text-[11px] font-bold text-teal-800 block mb-1"
-              >📄 Info Pembayaran</label
-            >
+            <label class="text-[11px] font-bold text-teal-800 block mb-1">📄 Info Pembayaran</label>
             <div class="flex items-center gap-2">
               <input
                 type="file"
                 accept="application/pdf"
-                @change="(e) => uploadPdf('info_pembayaran_url', e)"
                 :disabled="uploading"
                 class="text-xs flex-1"
+                @change="(e) => uploadPdf('info_pembayaran_url', e)"
               />
               <a
                 v-if="pengaturanForm.info_pembayaran_url"
@@ -982,8 +1004,8 @@
               >
               <button
                 v-if="pengaturanForm.info_pembayaran_url"
-                @click="pengaturanForm.info_pembayaran_url = ''"
                 class="text-xs text-rose-600 font-bold"
+                @click="pengaturanForm.info_pembayaran_url = ''"
               >
                 <i class="fas fa-trash"></i>
               </button>
@@ -997,9 +1019,9 @@
               <input
                 type="file"
                 accept="application/pdf"
-                @change="(e) => uploadPdf('syarat_ketentuan_url', e)"
                 :disabled="uploading"
                 class="text-xs flex-1"
+                @change="(e) => uploadPdf('syarat_ketentuan_url', e)"
               />
               <a
                 v-if="pengaturanForm.syarat_ketentuan_url"
@@ -1011,8 +1033,8 @@
               >
               <button
                 v-if="pengaturanForm.syarat_ketentuan_url"
-                @click="pengaturanForm.syarat_ketentuan_url = ''"
                 class="text-xs text-rose-600 font-bold"
+                @click="pengaturanForm.syarat_ketentuan_url = ''"
               >
                 <i class="fas fa-trash"></i>
               </button>
@@ -1063,10 +1085,7 @@
                 v-model="field.label"
                 class="md:col-span-3 text-xs px-2 py-1.5 border rounded"
               />
-              <input
-                v-model="field.id"
-                class="md:col-span-2 text-xs px-2 py-1.5 border rounded"
-              />
+              <input v-model="field.id" class="md:col-span-2 text-xs px-2 py-1.5 border rounded" />
               <select v-model="field.type" class="md:col-span-2 text-xs px-2 py-1.5 border rounded">
                 <option value="text">Teks</option>
                 <option value="number">Angka</option>
@@ -1083,11 +1102,11 @@
                 class="md:col-span-3 text-xs px-2 py-1.5 border rounded"
               />
               <label class="md:col-span-1 flex items-center gap-1 text-xs">
-                <input type="checkbox" v-model="field.required" /> Wajib
+                <input v-model="field.required" type="checkbox" /> Wajib
               </label>
               <button
-                @click="removeAcfField(idx)"
                 class="md:col-span-1 text-xs text-rose-600 font-bold hover:bg-rose-100 rounded px-2 py-1"
+                @click="removeAcfField(idx)"
               >
                 <i class="fas fa-trash"></i>
               </button>
@@ -1095,14 +1114,14 @@
             <div v-if="field.type === 'dropdown'">
               <input
                 v-model="field._optsStr"
-                @input="updateOptsFromStr(field)"
                 class="w-full text-xs px-2 py-1.5 border rounded"
+                @input="updateOptsFromStr(field)"
               />
             </div>
           </div>
           <button
-            @click="addAcfField"
             class="text-xs font-bold px-3 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white"
+            @click="addAcfField"
           >
             <i class="fas fa-plus mr-1"></i>Tambah Field
           </button>
@@ -1110,9 +1129,9 @@
       </div>
 
       <button
-        @click="simpanPengaturan"
         :disabled="saving"
         class="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-black py-3 rounded-xl shadow-md disabled:opacity-50"
+        @click="simpanPengaturan"
       >
         <i :class="['fas', saving ? 'fa-spinner fa-spin' : 'fa-save', 'mr-2']"></i>SIMPAN PENGATURAN
       </button>
@@ -1130,8 +1149,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { uploadBase64 } from '@/services/storage'
-import { doc, setDoc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { setOne, mergeOne } from '@/services/db'
 import UiActionCard from '@/components/ui/UiActionCard.vue'
 
 const route = useRoute()
@@ -1198,7 +1216,8 @@ const groupBadgeClass = computed(() => {
   if (g === 'qiraati') return 'bg-emerald-100 text-emerald-800 border-emerald-300'
   if (g === 'sekolah') return 'bg-cyan-100 text-cyan-800 border-cyan-300'
   if (g === 'mahad') return 'bg-teal-100 text-teal-800 border-teal-300'
-  if (g === 'non-lembaga') return 'bg-slate-200 text-[var(--text-primary)] border-[var(--border-default)]'
+  if (g === 'non-lembaga')
+    return 'bg-slate-200 text-[var(--text-primary)] border-[var(--border-default)]'
   return 'bg-cyan-100 text-cyan-800 border-cyan-300'
 })
 
@@ -1226,11 +1245,21 @@ async function onEditKelas(i) {
   list[i] = newVal.trim()
   await saveLembagaKelas(list)
 }
+// audit A6: ConfirmDialog merender `message` via v-html (sengaja — sebagian pesan
+//   pakai <b>/<br>). Data dinamis (nama kelas dari master) WAJIB di-escape agar
+//   nama ber-HTML tak jadi XSS saat dialog dibuka. (pola sama CeremonialView)
+function escapeHtml(v) {
+  return String(v ?? '').replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
+  )
+}
+
 async function onHapusKelas(i) {
   if (
     !(await confirm({
       title: 'Hapus kelas?',
-      message: `Hapus "${lembagaData.value?.kelas?.[i]}"?`,
+      message: `Hapus "${escapeHtml(lembagaData.value?.kelas?.[i])}"?`,
       danger: true
     }))
   )
@@ -1246,7 +1275,7 @@ async function saveLembagaKelas(newList) {
     const idx = all.findIndex((l) => l.lembaga === lembagaData.value?.lembaga)
     if (idx < 0) throw new Error('Lembaga tidak ditemukan')
     all[idx] = { ...all[idx], kelas: newList }
-    await setDoc(doc(db, 'master', 'lembaga'), { list: all })
+    await setOne('master', 'lembaga', { list: all })
     toast.success('Daftar kelas tersimpan')
   } catch (e) {
     toast.error('Gagal: ' + (e.message || e))
@@ -1394,16 +1423,14 @@ async function simpanRaporSchema() {
   try {
     const allSchemas = { ...(settings.settings?.raporSchemas || {}) }
     allSchemas[lembagaId.value] = JSON.parse(JSON.stringify(raporSchema.value))
-    await setDoc(
-      doc(db, 'settings', 'general'),
-      { raporSchemas: allSchemas, predikatScale: predikatScale.value },
-      { merge: true }
-    )
-    await setDoc(
-      doc(db, 'settings', 'web'),
-      { raporSchemas: allSchemas, predikatScale: predikatScale.value },
-      { merge: true }
-    )
+    await mergeOne('settings', 'general', {
+      raporSchemas: allSchemas,
+      predikatScale: predikatScale.value
+    })
+    await mergeOne('settings', 'web', {
+      raporSchemas: allSchemas,
+      predikatScale: predikatScale.value
+    })
     settings.settings.raporSchemas = allSchemas
     settings.settings.predikatScale = predikatScale.value
     toast.success(`Schema rapor ${lembagaId.value} tersimpan`)
@@ -1418,7 +1445,7 @@ async function resetRaporSchema() {
   if (
     !(await confirm({
       title: 'Reset schema?',
-      message: `Hapus override schema rapor ${lembagaId.value}?`,
+      message: `Hapus override schema rapor ${escapeHtml(lembagaId.value)}?`,
       danger: true
     }))
   )
@@ -1427,8 +1454,8 @@ async function resetRaporSchema() {
   try {
     const allSchemas = { ...(settings.settings?.raporSchemas || {}) }
     delete allSchemas[lembagaId.value]
-    await setDoc(doc(db, 'settings', 'general'), { raporSchemas: allSchemas }, { merge: true })
-    await setDoc(doc(db, 'settings', 'web'), { raporSchemas: allSchemas }, { merge: true })
+    await mergeOne('settings', 'general', { raporSchemas: allSchemas })
+    await mergeOne('settings', 'web', { raporSchemas: allSchemas })
     settings.settings.raporSchemas = allSchemas
     raporSchema.value = {}
     toast.success('Schema di-reset ke default factory')
@@ -1478,9 +1505,36 @@ function addMapel(key) {
   rekapKkm[key].push(75)
 }
 const MAPEL_DEFAULT_DINIYAH = {
-  SDI: ['Tauhid', 'Fiqh', 'Tarikh', 'Akhlaq', 'Bahasa Arab', 'Tahajji', 'Praktek Ibadah', 'ASWAJA & ke-NU-an'],
-  SMP: ['Tauhid', 'Fiqh', 'Akhlaq', 'Nahwu', 'Shorof', 'Khot/Pego', 'Tasawwuf', 'ASWAJA & ke-NU-an'],
-  SMA: ['Akhlaq/Ulumul Qur’an', 'Nahwu', 'Fiqh', 'Ushul Fiqh', 'Faroidl', 'Tasawwuf', 'Ilmu Falak', 'ASWAJA & ke-NU-an']
+  SDI: [
+    'Tauhid',
+    'Fiqh',
+    'Tarikh',
+    'Akhlaq',
+    'Bahasa Arab',
+    'Tahajji',
+    'Praktek Ibadah',
+    'ASWAJA & ke-NU-an'
+  ],
+  SMP: [
+    'Tauhid',
+    'Fiqh',
+    'Akhlaq',
+    'Nahwu',
+    'Shorof',
+    'Khot/Pego',
+    'Tasawwuf',
+    'ASWAJA & ke-NU-an'
+  ],
+  SMA: [
+    'Akhlaq/Ulumul Qur’an',
+    'Nahwu',
+    'Fiqh',
+    'Ushul Fiqh',
+    'Faroidl',
+    'Tasawwuf',
+    'Ilmu Falak',
+    'ASWAJA & ke-NU-an'
+  ]
 }
 function isiMapelDefault(key, jenjang) {
   const j = String(jenjang || '').toUpperCase()
@@ -1501,8 +1555,8 @@ async function simpanRekapMapel() {
       all[kv.key] = clean(rekapMapel[kv.key])
       kkmAll[kv.key] = (rekapKkm[kv.key] || []).map((v) => Number(v) || 75)
     }
-    await setDoc(doc(db, 'settings', 'general'), { rekapDiniyahMapel: all, rekapDiniyahKKM: kkmAll }, { merge: true })
-    await setDoc(doc(db, 'settings', 'web'), { rekapDiniyahMapel: all, rekapDiniyahKKM: kkmAll }, { merge: true })
+    await mergeOne('settings', 'general', { rekapDiniyahMapel: all, rekapDiniyahKKM: kkmAll })
+    await mergeOne('settings', 'web', { rekapDiniyahMapel: all, rekapDiniyahKKM: kkmAll })
     settings.settings.rekapDiniyahMapel = all
     settings.settings.rekapDiniyahKKM = kkmAll
     toast.success('Mapel rekap tersimpan')
@@ -1626,8 +1680,8 @@ async function uploadLogoQiraati(e) {
           reader.result,
           file.type
         )
-        await setDoc(doc(db, 'settings', 'general'), { logoQiraati: url }, { merge: true })
-        await setDoc(doc(db, 'settings', 'web'), { logoQiraati: url }, { merge: true })
+        await mergeOne('settings', 'general', { logoQiraati: url })
+        await mergeOne('settings', 'web', { logoQiraati: url })
         settings.settings.logoQiraati = url
         toast.success('Logo Qiraati global terupload')
       } catch (err) {
@@ -1709,7 +1763,7 @@ async function simpanPengaturan() {
       syarat_ketentuan_teks: pengaturanForm.syarat_ketentuan_teks,
       psb_fields: cleanedFields
     }
-    await setDoc(doc(db, 'master', 'lembaga'), { list: all })
+    await setOne('master', 'lembaga', { list: all })
     toast.success(`Pengaturan ${lembagaId.value} tersimpan`)
   } catch (e) {
     toast.error('Gagal: ' + (e.message || e))

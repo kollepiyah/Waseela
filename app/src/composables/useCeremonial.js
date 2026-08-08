@@ -6,7 +6,7 @@
 //   pola sama dgn canAssign useGlondongan. Guru lain: lihat-saja, dan hanya sesi yang
 //   memuat santri ampuannya (disaring di CeremonialView).
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { subscribeColl, subscribeDoc, setOne, updateOne, deleteOne } from '@/services/firestore'
+import { subscribeColl, subscribeDoc, setOne, updateOne, deleteOne } from '@/services/db'
 import { antreNotifBanyak, targetGuru, targetSantri } from '@/services/notif'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'

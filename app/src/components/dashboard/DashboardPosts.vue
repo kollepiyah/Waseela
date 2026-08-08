@@ -1,11 +1,16 @@
 <template>
   <!-- v.21.80.0526: Posts feed Pesantren Modern — olive title + gold count badge -->
-  <div class="bg-[var(--bg-card)] rounded-[var(--radius-lg)] p-4 md:p-5 border border-[var(--border-subtle)] shadow-[var(--shadow-sm)]">
+  <div
+    class="bg-[var(--bg-card)] rounded-[var(--radius-lg)] p-4 md:p-5 border border-[var(--border-subtle)] shadow-[var(--shadow-sm)]"
+  >
     <div class="flex items-center justify-between mb-3">
       <h3 class="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest">
         <i class="fas fa-bullhorn text-[var(--color-primary)] mr-2"></i>{{ channelName }}
       </h3>
-      <span v-if="posts.length > 0" class="text-[10px] text-[var(--color-accent)] font-bold uppercase tracking-wider">
+      <span
+        v-if="posts.length > 0"
+        class="text-[10px] text-[var(--color-accent)] font-bold uppercase tracking-wider"
+      >
         {{ posts.length }} POSTINGAN
       </span>
     </div>
@@ -22,18 +27,16 @@
       class="py-6 text-center bg-[var(--bg-muted)] rounded-[var(--radius-md)] border border-dashed border-[var(--border-default)]"
     >
       <i class="fas fa-inbox text-[var(--text-tertiary)] text-3xl mb-2"></i>
-      <p class="text-xs text-[var(--text-secondary)] font-bold">
-        Belum ada postingan baru
-      </p>
+      <p class="text-xs text-[var(--text-secondary)] font-bold">Belum ada postingan baru</p>
     </div>
 
-    <!-- Post list — preview only, click utk ke detail Channel -->
+    <!-- Post list — preview only, click utk ke detail kanal informasi -->
     <ul v-else class="space-y-2.5">
       <li
         v-for="p in posts.slice(0, 5)"
         :key="p.id"
-        @click="goToPosts(p.id)"
         class="p-3 bg-[var(--bg-card-elevated)] rounded-[var(--radius-md)] border border-[var(--border-subtle)] cursor-pointer hover:border-[var(--color-accent)] hover:shadow-[var(--shadow-md)] transition flex gap-3 items-start"
+        @click="goToPosts(p.id)"
       >
         <!-- Thumbnail (kalau ada gambar) -->
         <div
@@ -57,7 +60,10 @@
         </div>
         <!-- Caption + meta -->
         <div class="flex-1 min-w-0">
-          <h4 v-if="p.judul" class="text-sm font-black text-[var(--text-primary)] leading-snug truncate">
+          <h4
+            v-if="p.judul"
+            class="text-sm font-black text-[var(--text-primary)] leading-snug truncate"
+          >
             {{ p.judul }}
           </h4>
           <p class="text-xs text-[var(--text-secondary)] mt-1 line-clamp-2 whitespace-pre-line">
@@ -77,8 +83,8 @@
     <!-- Lihat semua link -->
     <button
       v-if="posts.length > 0"
-      @click="goToPosts()"
       class="w-full mt-3 text-[11px] font-bold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] hover:bg-[var(--color-primary-soft)] py-2 rounded-[var(--radius-md)] transition cursor-pointer"
+      @click="goToPosts()"
     >
       <i class="fas fa-arrow-right mr-1"></i>Lihat semua di {{ channelName }}
     </button>
@@ -88,9 +94,10 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { subscribeColl } from '@/services/firestore'
+import { subscribeColl } from '@/services/db'
 import { useSettingsStore } from '@/stores/settings'
 import { fmtDateTime } from '@/utils/format'
+import { BRAND } from '@/config/brand'
 
 const settings = useSettingsStore()
 const router = useRouter()
@@ -98,7 +105,7 @@ const posts = ref([])
 const loading = ref(true)
 let unsubscribe = null
 
-const channelName = computed(() => settings.settings?.namaChannel || 'Waseela Channel')
+const channelName = computed(() => settings.settings?.namaChannel || BRAND.namaChannel)
 
 function firstImage(p) {
   if (Array.isArray(p.gambar_urls) && p.gambar_urls.length > 0) {
@@ -150,7 +157,9 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (unsubscribe) {
-    try { unsubscribe() } catch (e) {}
+    try {
+      unsubscribe()
+    } catch (e) {}
     unsubscribe = null
   }
 })

@@ -1,16 +1,16 @@
-/* GENERATED oleh scripts/build-tenant.mjs — JANGAN edit langsung.
-   Firebase Cloud Messaging service worker — WEB PUSH (PWA/browser).
-   Notifikasi saat tab tertutup/background. Wajib di root: /firebase-messaging-sw.js */
+/* v.95.0626: Firebase Cloud Messaging service worker — WEB PUSH (PWA/browser).
+   Menangani notifikasi saat tab tertutup/background. Wajib di root: /firebase-messaging-sw.js
+   HARUS SAMA dengan FIREBASE_CONFIG di src/config/brand.js. */
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js')
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js')
 
 firebase.initializeApp({
-  "apiKey": "AIzaSyDEd5UKDcsy0QC1B1x_75L1VaTgasTzGTE",
-  "authDomain": "waseela-id.firebaseapp.com",
-  "projectId": "waseela-id",
-  "storageBucket": "waseela-id.firebasestorage.app",
-  "messagingSenderId": "31586326439",
-  "appId": "1:31586326439:web:c8f394228777130242c882"
+  apiKey: 'AIzaSyDEd5UKDcsy0QC1B1x_75L1VaTgasTzGTE',
+  authDomain: 'waseela-id.firebaseapp.com',
+  projectId: 'waseela-id',
+  storageBucket: 'waseela-id.firebasestorage.app',
+  messagingSenderId: '31586326439',
+  appId: '1:31586326439:web:c8f394228777130242c882'
 })
 
 const messaging = firebase.messaging()
@@ -19,7 +19,7 @@ const messaging = firebase.messaging()
 messaging.onBackgroundMessage((payload) => {
   const n = (payload && payload.notification) || {}
   const data = (payload && payload.data) || {}
-  self.registration.showNotification(n.title || "Waseela", {
+  self.registration.showNotification(n.title || 'Waseela', {
     body: n.body || '',
     icon: '/icon-192.png',
     badge: '/icon-192.png',

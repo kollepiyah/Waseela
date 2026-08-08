@@ -10,12 +10,14 @@
 //       ngaji  → guru_pagi / guru_sore (+ guru utk backward-compat)
 //       sekolah→ guru_sekolah[]
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { subscribeColl, subscribeDoc, updateOne } from '@/services/firestore'
+import { subscribeColl, subscribeDoc, updateOne } from '@/services/db'
 import { useToast } from '@/composables/useToast'
 import { sortSantri, sortLembagaNames } from '@/utils/santriSort'
 import { useExcel } from '@/composables/useExcel'
 import { toTitleCase } from '@/utils/format'
 import { bestNameMatch } from '@/utils/fuzzyMatch' // v.100 Batch12: cocokkan nama mirip saat impor
+import { punyaGuruKategori, isGuruAktif } from '@/utils/guruScope' // v.1.2.0: sembunyikan santri yang sudah berguru + penyaring status guru
+import { groupOfLembaga } from '@/composables/useLembaga' // v.1.2.1: sumber tunggal deteksi qiraati/sekolah
 
 const toast = useToast()
 const { exportStyled, importFile } = useExcel()
@@ -36,7 +38,10 @@ onMounted(() => {
 })
 onUnmounted(() => {
   for (const u of [_unsubS, _unsubG, _unsubL]) {
-    if (u) try { u() } catch (e) {}
+    if (u)
+      try {
+        u()
+      } catch (e) {}
   }
 })
 
@@ -85,28 +90,27 @@ const SEKOLAH = ['TK', 'SDI', 'PKBM']
 
 const lembagaOptions = computed(() => {
   const names = (lembagaRaw.value || []).map((l) => l.lembaga || l.nama).filter(Boolean)
+  // v.1.2.1: pakai groupOfLembaga (tipe → group → konstanta). Dulu blok ini membaca
+  //   `group` lalu jatuh ke daftar nama hardcoded — dan lembaga tambahan Kyai TAK
+  //   punya `group` (form cuma menulis `tipe`), jadi sekolah baru tak pernah muncul.
+  const pilih = (target) => names.filter((n) => groupOfLembaga(n, lembagaRaw.value) === target)
   if (kategori.value === 'ngaji') {
-    const list = names.filter((n) => {
-      const g = (lembagaRaw.value.find((l) => (l.lembaga || l.nama) === n) || {}).group
-      if (g) return g === 'qiraati'
-      return QIRAATI.includes(n)
-    })
-    return sortLembagaNames(list.length ? [...new Set(list)] : QIRAATI.filter((n) => n !== 'P3H' && n !== 'TPQ'))
+    const list = pilih('qiraati')
+    return sortLembagaNames(
+      list.length ? [...new Set(list)] : QIRAATI.filter((n) => n !== 'P3H' && n !== 'TPQ')
+    )
   }
   if (kategori.value === 'sekolah') {
-    const list = names.filter((n) => {
-      const g = (lembagaRaw.value.find((l) => (l.lembaga || l.nama) === n) || {}).group
-      if (g) return g === 'sekolah'
-      return SEKOLAH.includes(n)
-    })
+    const list = pilih('sekolah')
     return sortLembagaNames(list.length ? [...new Set(list)] : SEKOLAH)
   }
   return []
 })
 
 // Objek lembaga terpilih (dari master/lembaga.list)
-const lembagaObj = computed(() =>
-  (lembagaRaw.value || []).find((l) => (l.lembaga || l.nama) === selectedLembaga.value) || null
+const lembagaObj = computed(
+  () =>
+    (lembagaRaw.value || []).find((l) => (l.lembaga || l.nama) === selectedLembaga.value) || null
 )
 
 // ── Kelas options (dari master/lembaga; fallback hardcode) ──
@@ -129,33 +133,53 @@ const kelasGuruDefault = computed(() => {
 
 // ── Matchers ──
 function matchNgaji(s, lembaga) {
-  const sl = String(s.lembaga || '').toLowerCase().trim()
-  const target = String(lembaga || '').toLowerCase().trim()
+  const sl = String(s.lembaga || '')
+    .toLowerCase()
+    .trim()
+  const target = String(lembaga || '')
+    .toLowerCase()
+    .trim()
   if (!sl || !target) return false
   if ((target === 'ppph' || target === 'p3h') && (sl === 'ppph' || sl === 'p3h')) return true
   if (target.startsWith('tpq')) return sl.startsWith('tpq')
   return sl === target
 }
 function matchSekolah(s, lembaga) {
-  const target = String(lembaga || '').toLowerCase().trim()
-  const ls = String(s.lembaga_sekolah || '').toLowerCase().trim()
-  const l = String(s.lembaga || '').toLowerCase().trim()
+  const target = String(lembaga || '')
+    .toLowerCase()
+    .trim()
+  const ls = String(s.lembaga_sekolah || '')
+    .toLowerCase()
+    .trim()
+  const l = String(s.lembaga || '')
+    .toLowerCase()
+    .trim()
   return ls === target || l === target
 }
 
 // ── Guru list (aktif, sesuai lembaga; tipe-agnostic spt halaman ini sebelumnya) ──
 const guruForLembaga = computed(() => {
-  const target = String(selectedLembaga.value || '').toLowerCase().trim()
+  const target = String(selectedLembaga.value || '')
+    .toLowerCase()
+    .trim()
   let list = (guruRaw.value || []).filter((g) => {
-    const aktif = String(g.status || 'Aktif').toLowerCase().trim() === 'aktif'
-    if (!aktif) return false
-    const gl = String(g.lembaga || '').toLowerCase().trim()
-    const gls = String(g.lembaga_sekolah || '').toLowerCase().trim()
+    if (!isGuruAktif(g)) return false
+    const gl = String(g.lembaga || '')
+      .toLowerCase()
+      .trim()
+    const gls = String(g.lembaga_sekolah || '')
+      .toLowerCase()
+      .trim()
     if (kategori.value === 'ngaji') return gl === target
     return gls === target || gl === target
   })
   const kw = guruSearch.value.trim().toLowerCase()
-  if (kw) list = list.filter((g) => String(g.nama || '').toLowerCase().includes(kw))
+  if (kw)
+    list = list.filter((g) =>
+      String(g.nama || '')
+        .toLowerCase()
+        .includes(kw)
+    )
   return list.sort((a, b) => String(a.nama || '').localeCompare(String(b.nama || ''), 'id'))
 })
 
@@ -164,18 +188,44 @@ const santriKandidat = computed(() => {
   if (!selectedKelas.value) return []
   let list = (santriRaw.value || []).filter((s) => s && s.aktif !== false)
   if (kategori.value === 'ngaji') {
-    list = list.filter((s) => matchNgaji(s, selectedLembaga.value) && String(s.kelas || '') === selectedKelas.value)
+    list = list.filter(
+      (s) => matchNgaji(s, selectedLembaga.value) && String(s.kelas || '') === selectedKelas.value
+    )
     return sortSantri(list, { lembagaField: 'lembaga', kelasField: 'kelas' })
   }
-  list = list.filter((s) => matchSekolah(s, selectedLembaga.value) && String(s.kelas_sekolah || s.kelas || '') === selectedKelas.value)
+  list = list.filter(
+    (s) =>
+      matchSekolah(s, selectedLembaga.value) &&
+      String(s.kelas_sekolah || s.kelas || '') === selectedKelas.value
+  )
   return sortSantri(list, { lembagaField: 'lembaga_sekolah', kelasField: 'kelas_sekolah' })
 })
+// v.1.2.0 (Kyai 22 Jul): santri yang SUDAH punya guru tak usah muncul lagi saat
+//   meng-assign guru baru — daftarnya jadi sisa yang benar-benar belum terurus.
+//   Dicek PER KATEGORI: sedang assign ngaji -> lihat guru ngajinya saja; assign
+//   sekolah -> lihat guru sekolahnya saja. Kalau dicampur, santri yang punya guru
+//   ngaji tak akan pernah bisa di-assign guru sekolah (dan hampir semua santri
+//   punya guru ngaji, jadi daftar sekolah bakal kosong melompong).
+const sudahPunyaGuru = (s) => punyaGuruKategori(s, kategori.value)
+// Jalan keluar: kalau guru santri SALAH dan perlu diganti, ia harus bisa dimunculkan
+//   lagi — tanpa ini layar assign jadi buntu untuk koreksi.
+const tampilkanSudahBerguru = ref(false)
+const santriSudahBerguru = computed(() => santriKandidat.value.filter(sudahPunyaGuru))
+
 const santriKandidatTampil = computed(() => {
+  let list = santriKandidat.value
+  if (!tampilkanSudahBerguru.value) list = list.filter((s) => !sudahPunyaGuru(s))
   const kw = santriSearch.value.trim().toLowerCase()
-  if (!kw) return santriKandidat.value
-  return santriKandidat.value.filter((s) => String(s.nama || '').toLowerCase().includes(kw))
+  if (!kw) return list
+  return list.filter((s) =>
+    String(s.nama || '')
+      .toLowerCase()
+      .includes(kw)
+  )
 })
-const jumlahDipilih = computed(() => santriKandidat.value.filter((s) => checked.value.has(s.id)).length)
+const jumlahDipilih = computed(
+  () => santriKandidatTampil.value.filter((s) => checked.value.has(s.id)).length
+)
 const adaGuruDipilih = computed(() =>
   kategori.value === 'ngaji'
     ? !!(guruPagi.value || guruSore.value)
@@ -194,7 +244,7 @@ function pilihKelas(k) {
     guruSekolah1.value = arr[0] || ''
     guruSekolah2.value = arr[1] || ''
   }
-  checked.value = new Set(santriKandidat.value.map((s) => s.id))
+  checked.value = new Set(santriKandidatTampil.value.map((s) => s.id))
 }
 
 function toggle(id) {
@@ -203,15 +253,25 @@ function toggle(id) {
   else set.add(id)
   checked.value = set
 }
-function selectAll() { checked.value = new Set(santriKandidat.value.map((s) => s.id)) }
-function selectNone() { checked.value = new Set() }
+function selectAll() {
+  checked.value = new Set(santriKandidatTampil.value.map((s) => s.id))
+}
+function selectNone() {
+  checked.value = new Set()
+}
 
 // Tambah kelas baru ke master/lembaga.list[i].kelas
 async function tambahKelas() {
   const nama = String(newKelas.value || '').trim()
   if (!nama) return
-  if (!lembagaObj.value) { toast.warning('Lembaga tidak ditemukan di master'); return }
-  if ((kelasOptions.value || []).includes(nama)) { toast.warning('Kelas sudah ada'); return }
+  if (!lembagaObj.value) {
+    toast.warning('Lembaga tidak ditemukan di master')
+    return
+  }
+  if ((kelasOptions.value || []).includes(nama)) {
+    toast.warning('Kelas sudah ada')
+    return
+  }
   addingKelas.value = true
   try {
     const newList = (lembagaRaw.value || []).map((l) => {
@@ -232,9 +292,10 @@ async function tambahKelas() {
 // Simpan default kelas_guru ke master/lembaga
 async function _persistKelasGuru() {
   if (!lembagaObj.value) return
-  const payload = kategori.value === 'ngaji'
-    ? { guru_pagi: guruPagi.value || '', guru_sore: guruSore.value || '' }
-    : { guru_sekolah: [guruSekolah1.value, guruSekolah2.value].filter(Boolean) }
+  const payload =
+    kategori.value === 'ngaji'
+      ? { guru_pagi: guruPagi.value || '', guru_sore: guruSore.value || '' }
+      : { guru_sekolah: [guruSekolah1.value, guruSekolah2.value].filter(Boolean) }
   const newList = (lembagaRaw.value || []).map((l) => {
     if ((l.lembaga || l.nama) !== selectedLembaga.value) return l
     const kg = { ...(l.kelas_guru || {}) }
@@ -245,8 +306,14 @@ async function _persistKelasGuru() {
 }
 
 async function simpan() {
-  if (!selectedKelas.value) { toast.warning('Pilih kelas dulu'); return }
-  if (!adaGuruDipilih.value) { toast.warning('Pilih minimal 1 guru'); return }
+  if (!selectedKelas.value) {
+    toast.warning('Pilih kelas dulu')
+    return
+  }
+  if (!adaGuruDipilih.value) {
+    toast.warning('Pilih minimal 1 guru')
+    return
+  }
   saving.value = true
   let changed = 0
   try {
@@ -294,11 +361,17 @@ async function downloadTemplateAssign() {
   try {
     const list = sortSantri((santriRaw.value || []).filter((s) => s && s.aktif !== false))
     const rows = list.map((s) => ({
-      nis: s.nis || '', nama: s.nama || '',
-      lembaga: s.lembaga || '', kelas: s.kelas || '',
-      guru_pagi: s.guru_pagi || '', guru_sore: s.guru_sore || '',
-      lembaga_sekolah: s.lembaga_sekolah || '', kelas_sekolah: s.kelas_sekolah || '',
-      guru_sekolah_1: Array.isArray(s.guru_sekolah) ? s.guru_sekolah[0] || '' : s.guru_sekolah || '',
+      nis: s.nis || '',
+      nama: s.nama || '',
+      lembaga: s.lembaga || '',
+      kelas: s.kelas || '',
+      guru_pagi: s.guru_pagi || '',
+      guru_sore: s.guru_sore || '',
+      lembaga_sekolah: s.lembaga_sekolah || '',
+      kelas_sekolah: s.kelas_sekolah || '',
+      guru_sekolah_1: Array.isArray(s.guru_sekolah)
+        ? s.guru_sekolah[0] || ''
+        : s.guru_sekolah || '',
       guru_sekolah_2: Array.isArray(s.guru_sekolah) ? s.guru_sekolah[1] || '' : ''
     }))
     await exportStyled(rows, {
@@ -318,7 +391,9 @@ async function downloadTemplateAssign() {
         { key: 'guru_sekolah_2', header: 'Guru Sekolah 2', width: 20 }
       ]
     })
-    toast.success(`Template berisi ${rows.length} santri. Isi kolom guru lalu impor. Tanda "-" = kosongkan guru.`)
+    toast.success(
+      `Template berisi ${rows.length} santri. Isi kolom guru lalu impor. Tanda "-" = kosongkan guru.`
+    )
   } catch (e) {
     toast.error('Gagal buat template: ' + (e.message || e))
   } finally {
@@ -352,12 +427,19 @@ function _guruCell(v) {
 function _splitGuruPair(gpCol, gsCol, gCombined) {
   const comb = String(gCombined == null ? '' : gCombined).trim()
   if (comb) {
-    if (comb.includes('/')) { const [a, b] = comb.split('/'); return { pagi: a, sore: b } }
+    if (comb.includes('/')) {
+      const [a, b] = comb.split('/')
+      return { pagi: a, sore: b }
+    }
     return { pagi: comb, sore: comb } // 1 nama → pagi & sore sama
   }
   let p = String(gpCol == null ? '' : gpCol).trim()
   let s = String(gsCol == null ? '' : gsCol).trim()
-  if (p.includes('/')) { const [a, b] = p.split('/'); p = a; s = s || b } // "A/B" nyasar di kolom Guru Pagi
+  if (p.includes('/')) {
+    const [a, b] = p.split('/')
+    p = a
+    s = s || b
+  } // "A/B" nyasar di kolom Guru Pagi
   return { pagi: p, sore: s }
 }
 
@@ -367,29 +449,47 @@ async function onImportAssign(e) {
   importingAssign.value = true
   try {
     const rows = await importFile(file)
-    if (!rows.length) { toast.warning('File kosong / format tidak sesuai'); return }
+    if (!rows.length) {
+      toast.warning('File kosong / format tidak sesuai')
+      return
+    }
     const list = santriRaw.value || []
     const byNis = new Map()
     const byNama = new Map()
     for (const s of list) {
       const nis = String(s.nis || '').trim()
       if (nis && !byNis.has(nis)) byNis.set(nis, s)
-      const nm = String(s.nama || '').trim().toLowerCase()
+      const nm = String(s.nama || '')
+        .trim()
+        .toLowerCase()
       if (nm && !byNama.has(nm)) byNama.set(nm, s)
     }
-    let updated = 0, skipped = 0, notFound = 0, fuzzyMatched = 0
+    let updated = 0,
+      skipped = 0,
+      notFound = 0,
+      fuzzyMatched = 0
     importAssignProgress.value = { i: 0, total: rows.length }
     for (const r of rows) {
       importAssignProgress.value = { i: importAssignProgress.value.i + 1, total: rows.length }
-      const nis = String(_pickCell(r, 'No. Induk', 'No Induk', 'no_induk', 'NIS', 'nis') || '').trim() // v.100: terima header baru + template lama
-      const nama = String(_pickCell(r, 'Nama Santri', 'Nama', 'nama') || '').trim().toLowerCase()
+      const nis = String(
+        _pickCell(r, 'No. Induk', 'No Induk', 'no_induk', 'NIS', 'nis') || ''
+      ).trim() // v.100: terima header baru + template lama
+      const nama = String(_pickCell(r, 'Nama Santri', 'Nama', 'nama') || '')
+        .trim()
+        .toLowerCase()
       let s = (nis && byNis.get(nis)) || (nama && byNama.get(nama)) || null
       // v.100 Batch12: fallback nama MIRIP (fuzzy) — NIS/nama persis tak ketemu, coba kemiripan tinggi & tak ambigu
       if (!s && nama) {
         const m = bestNameMatch(nama, list, { getName: (x) => x.nama })
-        if (m) { s = m.item; fuzzyMatched++ }
+        if (m) {
+          s = m.item
+          fuzzyMatched++
+        }
       }
-      if (!s) { if (nis || nama) notFound++; continue }
+      if (!s) {
+        if (nis || nama) notFound++
+        continue
+      }
       const patch = {}
       // v.100 Batch14: dukung "Guru A/Guru B" (1 sel) → pagi/sore; 1 nama → pagi & sore sama
       const { pagi: _gpRaw, sore: _gsRaw } = _splitGuruPair(
@@ -406,16 +506,25 @@ async function onImportAssign(e) {
       const g1 = _guruCell(_pickCell(r, 'Guru Sekolah 1', 'guru_sekolah_1', 'Guru Sekolah'))
       const g2 = _guruCell(_pickCell(r, 'Guru Sekolah 2', 'guru_sekolah_2'))
       if (g1 !== undefined || g2 !== undefined) {
-        const cur = Array.isArray(s.guru_sekolah) ? s.guru_sekolah : (s.guru_sekolah ? [s.guru_sekolah] : [])
-        const a1 = g1 !== undefined ? g1 : (cur[0] || '')
-        const a2 = g2 !== undefined ? g2 : (cur[1] || '')
+        const cur = Array.isArray(s.guru_sekolah)
+          ? s.guru_sekolah
+          : s.guru_sekolah
+            ? [s.guru_sekolah]
+            : []
+        const a1 = g1 !== undefined ? g1 : cur[0] || ''
+        const a2 = g2 !== undefined ? g2 : cur[1] || ''
         patch.guru_sekolah = [a1, a2].filter(Boolean)
       }
-      if (!Object.keys(patch).length) { skipped++; continue }
+      if (!Object.keys(patch).length) {
+        skipped++
+        continue
+      }
       await updateOne('santri', String(s.id), patch)
       updated++
     }
-    toast.success(`Impor assign selesai: ${updated} santri diperbarui${fuzzyMatched ? ` (${fuzzyMatched} via nama mirip — cek bila ragu)` : ''}, ${skipped} dilewati (kolom guru kosong), ${notFound} tak ditemukan (No. Induk/nama).`)
+    toast.success(
+      `Impor assign selesai: ${updated} santri diperbarui${fuzzyMatched ? ` (${fuzzyMatched} via nama mirip — cek bila ragu)` : ''}, ${skipped} dilewati (kolom guru kosong), ${notFound} tak ditemukan (No. Induk/nama).`
+    )
   } catch (e2) {
     toast.error('Gagal impor: ' + (e2.message || e2))
   } finally {
@@ -441,25 +550,38 @@ async function onImportAssign(e) {
           <!-- v.100 Batch10: impor massal assign guru (data baru & banyak) -->
           <button
             type="button"
-            @click="downloadTemplateAssign"
             :disabled="exportingTpl"
             class="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 px-3 py-1.5 rounded-lg"
+            @click="downloadTemplateAssign"
           >
-            <i :class="['fas mr-1', exportingTpl ? 'fa-spinner fa-spin' : 'fa-file-arrow-down']"></i>Template Assign
+            <i :class="['fas mr-1', exportingTpl ? 'fa-spinner fa-spin' : 'fa-file-arrow-down']"></i
+            >Template Assign
           </button>
           <label
             class="text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 px-3 py-1.5 rounded-lg cursor-pointer"
             :class="importingAssign ? 'opacity-50 pointer-events-none' : ''"
           >
-            <i :class="['fas mr-1', importingAssign ? 'fa-spinner fa-spin' : 'fa-file-arrow-up']"></i>
-            {{ importingAssign ? `Impor… ${importAssignProgress.i}/${importAssignProgress.total}` : 'Impor Assign' }}
-            <input type="file" accept=".xlsx,.xls" class="hidden" @change="onImportAssign" :disabled="importingAssign" />
+            <i
+              :class="['fas mr-1', importingAssign ? 'fa-spinner fa-spin' : 'fa-file-arrow-up']"
+            ></i>
+            {{
+              importingAssign
+                ? `Impor… ${importAssignProgress.i}/${importAssignProgress.total}`
+                : 'Impor Assign'
+            }}
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              class="hidden"
+              :disabled="importingAssign"
+              @change="onImportAssign"
+            />
           </label>
           <button
             v-if="kategori"
             type="button"
-            @click="reset"
             class="text-xs font-bold text-[var(--text-secondary)] bg-[var(--bg-muted)] hover:bg-slate-300 dark:hover:bg-slate-600 px-3 py-1.5 rounded-lg"
+            @click="reset"
           >
             <i class="fas fa-rotate-left mr-1"></i>Mulai Ulang
           </button>
@@ -471,8 +593,8 @@ async function onImportAssign(e) {
     <div v-if="!kategori" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <button
         type="button"
-        @click="kategori = 'ngaji'"
         class="bg-gradient-to-br from-teal-500 to-teal-700 text-white rounded-2xl p-5 text-left shadow-sm hover:shadow-md hover:-translate-y-0.5 transition cursor-pointer"
+        @click="kategori = 'ngaji'"
       >
         <i class="fas fa-book-quran text-2xl mb-2 drop-shadow"></i>
         <h3 class="text-base font-black">Ngaji (Qiraati)</h3>
@@ -480,8 +602,8 @@ async function onImportAssign(e) {
       </button>
       <button
         type="button"
-        @click="kategori = 'sekolah'"
         class="bg-gradient-to-br from-cyan-500 to-cyan-700 text-white rounded-2xl p-5 text-left shadow-sm hover:shadow-md hover:-translate-y-0.5 transition cursor-pointer"
+        @click="kategori = 'sekolah'"
       >
         <i class="fas fa-school text-2xl mb-2 drop-shadow"></i>
         <h3 class="text-base font-black">Sekolah (Formal)</h3>
@@ -501,11 +623,18 @@ async function onImportAssign(e) {
             >({{ kategori === 'ngaji' ? 'Ngaji' : 'Sekolah' }})</span
           >
         </h3>
-        <button type="button" @click="kategori = ''" class="text-[11px] font-bold text-[var(--text-secondary)] hover:underline">
+        <button
+          type="button"
+          class="text-[11px] font-bold text-[var(--text-secondary)] hover:underline"
+          @click="kategori = ''"
+        >
           <i class="fas fa-arrow-left mr-1"></i>Kembali
         </button>
       </div>
-      <div v-if="lembagaOptions.length === 0" class="text-xs italic text-[var(--text-tertiary)] py-4 text-center">
+      <div
+        v-if="lembagaOptions.length === 0"
+        class="text-xs italic text-[var(--text-tertiary)] py-4 text-center"
+      >
         Tidak ada lembaga.
       </div>
       <div v-else class="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -513,8 +642,8 @@ async function onImportAssign(e) {
           v-for="l in lembagaOptions"
           :key="l"
           type="button"
-          @click="selectedLembaga = l"
           class="px-3 py-3 text-sm font-bold rounded-xl border border-[var(--border-default)] bg-[var(--bg-muted)] text-[var(--text-primary)] hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:border-teal-400 transition cursor-pointer"
+          @click="selectedLembaga = l"
         >
           {{ l }}
         </button>
@@ -531,11 +660,18 @@ async function onImportAssign(e) {
           <i class="fas fa-layer-group text-teal-600 mr-1"></i>Pilih Kelas —
           <span class="text-teal-600">{{ selectedLembaga }}</span>
         </h3>
-        <button type="button" @click="backToLembaga" class="text-[11px] font-bold text-[var(--text-secondary)] hover:underline">
+        <button
+          type="button"
+          class="text-[11px] font-bold text-[var(--text-secondary)] hover:underline"
+          @click="backToLembaga"
+        >
           <i class="fas fa-arrow-left mr-1"></i>Ganti Lembaga
         </button>
       </div>
-      <div v-if="kelasOptions.length === 0" class="text-xs italic text-[var(--text-tertiary)] py-3 text-center">
+      <div
+        v-if="kelasOptions.length === 0"
+        class="text-xs italic text-[var(--text-tertiary)] py-3 text-center"
+      >
         Belum ada kelas. Tambahkan di bawah.
       </div>
       <div v-else class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
@@ -543,8 +679,8 @@ async function onImportAssign(e) {
           v-for="k in kelasOptions"
           :key="k"
           type="button"
-          @click="pilihKelas(k)"
           class="px-3 py-3 text-sm font-bold rounded-xl border border-[var(--border-default)] bg-[var(--bg-muted)] text-[var(--text-primary)] hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:border-teal-400 transition cursor-pointer"
+          @click="pilihKelas(k)"
         >
           {{ k }}
         </button>
@@ -558,23 +694,31 @@ async function onImportAssign(e) {
         />
         <button
           type="button"
-          @click="tambahKelas"
           :disabled="addingKelas || !newKelas.trim()"
           class="px-3 py-2 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-700 text-white disabled:opacity-50"
+          @click="tambahKelas"
         >
-          <i :class="['fas', addingKelas ? 'fa-spinner fa-spin' : 'fa-plus']" class="mr-1"></i>Tambah
+          <i :class="['fas', addingKelas ? 'fa-spinner fa-spin' : 'fa-plus']" class="mr-1"></i
+          >Tambah
         </button>
       </div>
     </div>
 
     <!-- STEP 4: pilih guru (1-2) + checklist santri -->
-    <div v-else class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm">
+    <div
+      v-else
+      class="bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-subtle)] shadow-sm"
+    >
       <div class="flex items-center justify-between mb-3 gap-2 flex-wrap">
         <h3 class="text-sm font-black text-[var(--text-primary)]">
           <i class="fas fa-chalkboard-teacher text-teal-600 mr-1"></i>{{ selectedLembaga }}
           <span class="text-teal-600">· {{ selectedKelas }}</span>
         </h3>
-        <button type="button" @click="backToKelas" class="text-[11px] font-bold text-[var(--text-secondary)] hover:underline">
+        <button
+          type="button"
+          class="text-[11px] font-bold text-[var(--text-secondary)] hover:underline"
+          @click="backToKelas"
+        >
           <i class="fas fa-arrow-left mr-1"></i>Ganti Kelas
         </button>
       </div>
@@ -591,33 +735,61 @@ async function onImportAssign(e) {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
         <template v-if="kategori === 'ngaji'">
           <div>
-            <label class="block text-[11px] font-bold text-[var(--text-secondary)] uppercase mb-1">Guru Pagi</label>
-            <select v-model="guruPagi" class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)] cursor-pointer">
+            <label class="block text-[11px] font-bold text-[var(--text-secondary)] uppercase mb-1"
+              >Guru Pagi</label
+            >
+            <select
+              v-model="guruPagi"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)] cursor-pointer"
+            >
               <option value="">— tidak ada —</option>
-              <option v-for="g in guruForLembaga" :key="'p-' + g.id" :value="g.nama">{{ g.nama }}</option>
+              <option v-for="g in guruForLembaga" :key="'p-' + g.id" :value="g.nama">
+                {{ g.nama }}
+              </option>
             </select>
           </div>
           <div>
-            <label class="block text-[11px] font-bold text-[var(--text-secondary)] uppercase mb-1">Guru Sore</label>
-            <select v-model="guruSore" class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)] cursor-pointer">
+            <label class="block text-[11px] font-bold text-[var(--text-secondary)] uppercase mb-1"
+              >Guru Sore</label
+            >
+            <select
+              v-model="guruSore"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)] cursor-pointer"
+            >
               <option value="">— tidak ada —</option>
-              <option v-for="g in guruForLembaga" :key="'s-' + g.id" :value="g.nama">{{ g.nama }}</option>
+              <option v-for="g in guruForLembaga" :key="'s-' + g.id" :value="g.nama">
+                {{ g.nama }}
+              </option>
             </select>
           </div>
         </template>
         <template v-else>
           <div>
-            <label class="block text-[11px] font-bold text-[var(--text-secondary)] uppercase mb-1">Guru Sekolah 1</label>
-            <select v-model="guruSekolah1" class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)] cursor-pointer">
+            <label class="block text-[11px] font-bold text-[var(--text-secondary)] uppercase mb-1"
+              >Guru Sekolah 1</label
+            >
+            <select
+              v-model="guruSekolah1"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)] cursor-pointer"
+            >
               <option value="">— tidak ada —</option>
-              <option v-for="g in guruForLembaga" :key="'a-' + g.id" :value="g.nama">{{ g.nama }}</option>
+              <option v-for="g in guruForLembaga" :key="'a-' + g.id" :value="g.nama">
+                {{ g.nama }}
+              </option>
             </select>
           </div>
           <div>
-            <label class="block text-[11px] font-bold text-[var(--text-secondary)] uppercase mb-1">Guru Sekolah 2</label>
-            <select v-model="guruSekolah2" class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)] cursor-pointer">
+            <label class="block text-[11px] font-bold text-[var(--text-secondary)] uppercase mb-1"
+              >Guru Sekolah 2</label
+            >
+            <select
+              v-model="guruSekolah2"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] text-[var(--text-primary)] cursor-pointer"
+            >
               <option value="">— tidak ada —</option>
-              <option v-for="g in guruForLembaga" :key="'b-' + g.id" :value="g.nama">{{ g.nama }}</option>
+              <option v-for="g in guruForLembaga" :key="'b-' + g.id" :value="g.nama">
+                {{ g.nama }}
+              </option>
             </select>
           </div>
         </template>
@@ -626,13 +798,39 @@ async function onImportAssign(e) {
       <!-- Checklist santri -->
       <div class="flex items-center justify-between mb-2">
         <p class="text-[11px] text-[var(--text-secondary)]">
-          Centang santri kelas ini. <span class="text-teal-600 font-bold">{{ jumlahDipilih }}</span> / {{ santriKandidat.length }} dipilih.
+          Centang santri kelas ini.
+          <span class="text-teal-600 font-bold">{{ jumlahDipilih }}</span> /
+          {{ santriKandidatTampil.length }} dipilih.
+          <!-- v.1.2.0: santri yang sudah punya guru disembunyikan; beri jalan keluar
+               supaya guru yang SALAH masih bisa dikoreksi lewat layar ini. -->
+          <template v-if="santriSudahBerguru.length">
+            <br />
+            <span class="text-[var(--text-tertiary)]">
+              {{ santriSudahBerguru.length }} santri disembunyikan (sudah punya guru
+              {{ kategori === 'ngaji' ? 'ngaji' : 'sekolah' }}).
+            </span>
+            <button
+              type="button"
+              class="font-bold text-teal-700 dark:text-teal-300 hover:underline ml-1"
+              @click="tampilkanSudahBerguru = !tampilkanSudahBerguru"
+            >
+              {{ tampilkanSudahBerguru ? 'sembunyikan lagi' : 'tampilkan' }}
+            </button>
+          </template>
         </p>
         <div class="flex gap-2">
-          <button type="button" @click="selectAll" class="text-[11px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-2.5 py-1 rounded-lg">
+          <button
+            type="button"
+            class="text-[11px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-2.5 py-1 rounded-lg"
+            @click="selectAll"
+          >
             <i class="fas fa-check-double mr-1"></i>Semua
           </button>
-          <button type="button" @click="selectNone" class="text-[11px] font-bold text-[var(--text-secondary)] bg-[var(--bg-muted)] px-2.5 py-1 rounded-lg">
+          <button
+            type="button"
+            class="text-[11px] font-bold text-[var(--text-secondary)] bg-[var(--bg-muted)] px-2.5 py-1 rounded-lg"
+            @click="selectNone"
+          >
             <i class="fas fa-xmark mr-1"></i>Kosong
           </button>
         </div>
@@ -646,42 +844,58 @@ async function onImportAssign(e) {
         class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-input)] text-[var(--text-primary)] mb-2"
       />
 
-      <div v-if="santriKandidat.length === 0" class="text-xs italic text-[var(--text-tertiary)] py-6 text-center">
+      <div
+        v-if="santriKandidat.length === 0"
+        class="text-xs italic text-[var(--text-tertiary)] py-6 text-center"
+      >
         <i class="fas fa-inbox text-3xl text-[var(--border-default)] block mb-2"></i>
         Tidak ada santri di kelas ini.
       </div>
-      <p v-else-if="santriKandidatTampil.length === 0" class="text-xs italic text-[var(--text-tertiary)] py-4 text-center">
+      <p
+        v-else-if="santriKandidatTampil.length === 0"
+        class="text-xs italic text-[var(--text-tertiary)] py-4 text-center"
+      >
         Tidak ada santri cocok pencarian "{{ santriSearch }}".
       </p>
       <ul v-else class="space-y-1 max-h-[45vh] overflow-y-auto">
         <li
           v-for="s in santriKandidatTampil"
           :key="s.id"
-          @click="toggle(s.id)"
           :class="[
             'flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer border transition',
             checked.has(s.id)
               ? 'bg-teal-50 dark:bg-teal-900/30 border-teal-300'
               : 'bg-[var(--bg-muted)] border-transparent hover:border-[var(--border-default)]'
           ]"
+          @click="toggle(s.id)"
         >
-          <i :class="['fas', checked.has(s.id) ? 'fa-square-check text-teal-600' : 'fa-square text-[var(--text-tertiary)]']"></i>
-          <span class="flex-1 text-sm font-bold text-[var(--text-primary)] truncate">{{ s.nama }}</span>
+          <i
+            :class="[
+              'fas',
+              checked.has(s.id)
+                ? 'fa-square-check text-teal-600'
+                : 'fa-square text-[var(--text-tertiary)]'
+            ]"
+          ></i>
+          <span class="flex-1 text-sm font-bold text-[var(--text-primary)] truncate">{{
+            s.nama
+          }}</span>
           <span class="text-[10px] font-bold text-[var(--text-tertiary)]">{{ kelasLabel(s) }}</span>
         </li>
       </ul>
 
       <button
         type="button"
-        @click="simpan"
         :disabled="saving || !adaGuruDipilih"
         class="w-full mt-4 bg-teal-600 hover:bg-teal-700 text-white font-black py-3 rounded-xl shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
+        @click="simpan"
       >
         <i :class="['fas', saving ? 'fa-spinner fa-spin' : 'fa-save']"></i>
         {{ saving ? 'Menyimpan...' : 'SIMPAN PENUGASAN' }}
       </button>
       <p class="text-[10px] text-[var(--text-tertiary)] text-center mt-2">
-        Guru kelas disimpan sbg default (dipakai prefill form santri). Penugasan menulis guru ke santri tercentang.
+        Guru kelas disimpan sbg default (dipakai prefill form santri). Penugasan menulis guru ke
+        santri tercentang.
       </p>
     </div>
   </div>

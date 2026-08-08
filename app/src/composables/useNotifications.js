@@ -17,33 +17,73 @@
 //
 // Notif baru = item.createdAt > last_seen_per_jenis[jenis]
 
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { doc, setDoc } from 'firebase/firestore'
-import { db } from '@/services/firebase'
-import { subscribeColl, subscribeDoc } from '@/services/firestore'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { subscribeColl, subscribeDoc, mergeOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
-import { isKepalaLembaga } from '@/utils/roleScope'
+import { isKepalaLembaga, isSuperAdmin } from '@/utils/roleScope'
 import { lembagaScopeMatches } from '@/composables/useLembaga' // v.100: scope kepala utk notif tes kenaikan
+import { kegiatanKenaLembaga } from '@/composables/useKegiatan' // v.1.2.4: scope lembaga agenda
+
+// ---------------------------------------------------------------------------
+// AUDIT AGU 2026 (P3) — state & langganan dipindah ke lingkup MODUL (dipakai
+// bersama), dulu dibuat ulang per pemakai composable.
+//
+// Masalahnya: composable ini dipakai AppNotifBell (header web/desktop) ATAU
+// BottomNav (HP) — salah satunya SELALU hidup di tiap halaman — dan tiap pemakai
+// memasang langganannya SENDIRI. Untuk peran admin itu 11 langganan tabel PENUH
+// hanya demi angka di lonceng, dan membuka /notifikasi menambah satu set lagi
+// (jadi 22). Sekarang satu set dipakai bersama, dipasang saat pemakai pertama
+// muncul dan dilepas saat pemakai terakhir hilang.
+// ---------------------------------------------------------------------------
+
+// Raw data per koleksi
+const supervisiRaw = ref([])
+const kritikRaw = ref([])
+const postRaw = ref([])
+const bukuIndukRaw = ref([])
+const slipRaw = ref([])
+// v.87.0526: sumber notif baru
+const tagihanRaw = ref([])
+const liburRaw = ref([]) // dari koleksi `kegiatan` (filter tipe === 'libur')
+const kenaikanRaw = ref([]) // dari koleksi `riwayat_kenaikan` (event ditulis saat PROSES NAIK)
+const prestasiRaw = ref([]) // dari koleksi `notif_prestasi` (event ditulis saat input nilai prestasi)
+const tesRaw = ref([]) // v.100: dari koleksi `tes_kenaikan` (ajuan + hasil tes)
+const glondRaw = ref([]) // v.1.1.9: dari koleksi `tes_glondongan` (tugas menyimak)
+const notifState = ref({})
+
+// Langganan bersama + hitungan pemakai (0 = lepas semua).
+let _unsubs = []
+let _pemakai = 0
+let _kunci = '' // tanda tangan langganan aktif: `${role}|${userId}`
+
+// Batas umur data notif. Notif = "aktivitas BARU", dan yang lebih tua sudah pasti
+// tersaring last_seen — jadi menariknya cuma memberatkan tanpa mengubah tampilan.
+// Tanpa batas ini seorang admin menarik SELURUH keuangan_tagihan (2.805 baris per
+// 3 Agu 2026) + buku induk + prestasi setiap kali halaman APA PUN dibuka.
+// SENGAJA TIDAK dipakai untuk:
+//   - `kegiatan`  : jendelanya tanggal ACARA (lihat _windowKegiatan), bukan tanggal
+//                   dibuat — libur yang dibuat 3 bulan lalu tetap harus muncul.
+//   - `tes_kenaikan` / `tes_glondongan` : tugas menggantung boleh lebih tua.
+const HARI_NOTIF = 30
+function _filterBaru() {
+  return [['created_at', '>=', new Date(Date.now() - HARI_NOTIF * 86400000).toISOString()]]
+}
+
+function _lepasSemua() {
+  for (const u of _unsubs) {
+    if (u)
+      try {
+        u()
+      } catch {
+        /* ignore */
+      }
+  }
+  _unsubs = []
+  _kunci = ''
+}
 
 export function useNotifications() {
   const auth = useAuthStore()
-
-  // Raw data per koleksi
-  const supervisiRaw = ref([])
-  const kritikRaw = ref([])
-  const postRaw = ref([])
-  const bukuIndukRaw = ref([])
-  const slipRaw = ref([])
-  // v.87.0526: sumber notif baru
-  const tagihanRaw = ref([])
-  const liburRaw = ref([])     // dari koleksi `kegiatan` (filter tipe === 'libur')
-  const kenaikanRaw = ref([])  // dari koleksi `riwayat_kenaikan` (event ditulis saat PROSES NAIK)
-  const prestasiRaw = ref([])  // dari koleksi `notif_prestasi` (event ditulis saat input nilai prestasi)
-  const tesRaw = ref([])       // v.100: dari koleksi `tes_kenaikan` (ajuan + hasil tes)
-  const notifState = ref({})
-
-  // unsub list
-  const unsubs = []
 
   const userId = computed(() => String(auth.sesiAktif?.id || ''))
   const role = computed(() => auth.sesiAktif?.role || 'guest')
@@ -52,11 +92,47 @@ export function useNotifications() {
   function tsMs(ts) {
     if (!ts) return 0
     if (ts.seconds != null) return ts.seconds * 1000
-    if (ts.toDate) try { return ts.toDate().getTime() } catch { return 0 }
+    if (ts.toDate)
+      try {
+        return ts.toDate().getTime()
+      } catch {
+        return 0
+      }
     if (typeof ts === 'number') return ts
     const d = new Date(ts)
     if (!isNaN(d.getTime())) return d.getTime()
     return 0
+  }
+
+  // v.1.2.6: Notif agenda & libur berbasis TANGGAL kegiatan, BUKAN waktu impor/pembuatan.
+  //   Dulu ts = createdAt → impor kalender 1 semester langsung membanjiri notif semuanya.
+  //   Kini hanya muncul saat H-3 s/d hari terakhir kegiatan. ts = H-3 (00:00) supaya
+  //   markAllRead (lastSeen = now) tetap bisa menandainya terbaca.
+  const _MS_HARI = 86400000
+  function _tglMs(s) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || ''))
+    if (!m) return NaN
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getTime()
+  }
+  // { show, ts, label } — window notif kegiatan (H-3 s/d hari-H); label = hitung mundur.
+  function _windowKegiatan(k) {
+    const mulai = _tglMs(k.tgl_mulai)
+    if (isNaN(mulai)) return { show: false, ts: 0, label: '' }
+    const akhir = _tglMs(k.tgl_akhir) || mulai
+    const t = new Date()
+    const todayMid = new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime()
+    const h3 = mulai - 3 * _MS_HARI
+    const show = todayMid >= h3 && todayMid <= akhir
+    const hariLagi = Math.round((mulai - todayMid) / _MS_HARI)
+    const label =
+      hariLagi > 1
+        ? `H-${hariLagi}`
+        : hariLagi === 1
+          ? 'Besok'
+          : hariLagi === 0
+            ? 'Hari ini'
+            : 'Berlangsung'
+    return { show, ts: h3, label }
   }
 
   // === Build list per kategori ===
@@ -113,28 +189,36 @@ export function useNotifications() {
       icon: 'fa-bullhorn',
       color: 'teal',
       // v.71.0526: thumbnail image untuk notif post (1 image pertama kalau ada)
-      thumbnail: Array.isArray(p.gambar_urls) && p.gambar_urls.length > 0
-        ? p.gambar_urls[0]
-        : (p.thumbnail || p.image_url || '')
+      thumbnail:
+        Array.isArray(p.gambar_urls) && p.gambar_urls.length > 0
+          ? p.gambar_urls[0]
+          : p.thumbnail || p.image_url || ''
     }))
   }
 
   function getPembayaran() {
     if (role.value !== 'santri') return []
     const me = userId.value
-    return bukuIndukRaw.value
-      // v.87.0526: sertakan transfer yang sudah diverifikasi admin (selain tunai POS)
-      .filter((r) => (r.sumber === 'pos_santri' || r.sumber === 'transfer_verified') && String(r.santri_id) === me)
-      .map((r) => ({
-        id: r.id || r._id,
-        jenis: 'pembayaran',
-        judul: r.sumber === 'transfer_verified' ? 'Transfer terverifikasi' : 'Pembayaran berhasil',
-        body: `${r.kategori || 'Pembayaran'} · Rp ${new Intl.NumberFormat('id-ID').format(Number(r.nominal || 0))}`,
-        ts: tsMs(r.createdAt || r.created_at),
-        link: '/pembayaran',
-        icon: 'fa-receipt',
-        color: 'emerald'
-      }))
+    return (
+      bukuIndukRaw.value
+        // v.87.0526: sertakan transfer yang sudah diverifikasi admin (selain tunai POS)
+        .filter(
+          (r) =>
+            (r.sumber === 'pos_santri' || r.sumber === 'transfer_verified') &&
+            String(r.santri_id) === me
+        )
+        .map((r) => ({
+          id: r.id || r._id,
+          jenis: 'pembayaran',
+          judul:
+            r.sumber === 'transfer_verified' ? 'Transfer terverifikasi' : 'Pembayaran berhasil',
+          body: `${r.kategori || 'Pembayaran'} · Rp ${new Intl.NumberFormat('id-ID').format(Number(r.nominal || 0))}`,
+          ts: tsMs(r.createdAt || r.created_at),
+          link: '/pembayaran',
+          icon: 'fa-receipt',
+          color: 'emerald'
+        }))
+    )
   }
 
   function getBisyaroh() {
@@ -158,22 +242,27 @@ export function useNotifications() {
   function getTagihan() {
     if (role.value !== 'santri') return []
     const me = userId.value
-    return tagihanRaw.value
-      // v.100: jangan tampilkan sbg "Tagihan baru" jika tagihan LAHIR sudah lunas (bayar-di-muka POS).
-      .filter((t) => String(t.santri_id) === me && String(t.status || '').toLowerCase() !== 'lunas')
-      .map((t) => ({
-        id: t.id || t._id,
-        jenis: 'tagihan',
-        judul: 'Tagihan baru',
-        body: `${t.kategori || 'Tagihan'} · Rp ${new Intl.NumberFormat('id-ID').format(Number(t.nominal || 0))}`,
-        ts: tsMs(t.createdAt || t.created_at),
-        link: '/tagihan',
-        icon: 'fa-file-invoice-dollar',
-        color: 'rose'
-      }))
+    return (
+      tagihanRaw.value
+        // v.100: jangan tampilkan sbg "Tagihan baru" jika tagihan LAHIR sudah lunas (bayar-di-muka POS).
+        .filter(
+          (t) => String(t.santri_id) === me && String(t.status || '').toLowerCase() !== 'lunas'
+        )
+        .map((t) => ({
+          id: t.id || t._id,
+          jenis: 'tagihan',
+          judul: 'Tagihan baru',
+          body: `${t.kategori || 'Tagihan'} · Rp ${new Intl.NumberFormat('id-ID').format(Number(t.nominal || 0))}`,
+          ts: tsMs(t.createdAt || t.created_at),
+          link: '/tagihan',
+          icon: 'fa-file-invoice-dollar',
+          color: 'rose'
+        }))
+    )
   }
 
   // v.87.0526: Hari libur dari admin — KECUALI libur_nasional → semua role (sesuai audience kegiatan)
+  // v.1.2.6: muncul hanya H-3 s/d hari-H (lihat _windowKegiatan), bukan saat dibuat/diimpor.
   function getLibur() {
     return liburRaw.value
       .filter((k) => k.tipe === 'libur') // exclude 'kegiatan' & 'libur_nasional'
@@ -184,16 +273,54 @@ export function useNotifications() {
         if (aud === 'santri') return role.value === 'santri' || role.value === 'admin'
         return role.value === 'admin'
       })
-      .map((k) => ({
-        id: k.id || k._id,
-        jenis: 'libur',
-        judul: `Libur: ${k.judul || 'Hari Libur'}`,
-        body: k.deskripsi || (k.tgl_mulai ? `Mulai ${k.tgl_mulai}` : ''),
-        ts: tsMs(k.timestamp || k.createdAt),
-        link: '/kalender',
-        icon: 'fa-umbrella-beach',
-        color: 'blue'
-      }))
+      .map((k) => {
+        const w = _windowKegiatan(k)
+        return {
+          id: k.id || k._id,
+          jenis: 'libur',
+          judul: `Libur: ${k.judul || 'Hari Libur'}${w.label ? ' · ' + w.label : ''}`,
+          body: k.deskripsi || (k.tgl_mulai ? `Mulai ${k.tgl_mulai}` : ''),
+          ts: w.ts,
+          _show: w.show,
+          link: '/kalender',
+          icon: 'fa-umbrella-beach',
+          color: 'blue'
+        }
+      })
+      .filter((n) => n._show && n.ts > 0)
+  }
+
+  // v.1.2.4: Agenda kegiatan (tipe 'kegiatan') → notif sesuai audience + scope lembaga.
+  //   Dulu getLibur HANYA memproses tipe 'libur' → agenda tak pernah muncul di notif.
+  function getKegiatan() {
+    const sesi = auth.sesiAktif
+    return (
+      liburRaw.value
+        .filter((k) => (k.tipe || 'kegiatan') === 'kegiatan')
+        .filter((k) => {
+          const aud = k.audience || 'semua'
+          if (aud === 'guru') return role.value === 'guru' || role.value === 'admin'
+          if (aud === 'santri') return role.value === 'santri' || role.value === 'admin'
+          return true // semua
+        })
+        .filter((k) => kegiatanKenaLembaga(k, sesi))
+        // v.1.2.6: muncul hanya H-3 s/d hari-H (lihat _windowKegiatan), bukan saat diimpor/dibuat.
+        .map((k) => {
+          const w = _windowKegiatan(k)
+          return {
+            id: 'keg_' + (k.id || k._id),
+            jenis: 'kegiatan',
+            judul: `Agenda: ${k.judul || 'Kegiatan'}${w.label ? ' · ' + w.label : ''}`,
+            body: k.deskripsi || (k.tgl_mulai ? `Mulai ${k.tgl_mulai}` : ''),
+            ts: w.ts,
+            _show: w.show,
+            link: '/kalender',
+            icon: 'fa-calendar-day',
+            color: 'cyan'
+          }
+        })
+        .filter((n) => n._show && n.ts > 0)
+    )
   }
 
   // v.87.0526: Kenaikan kelas → wali/santri (anaknya). Sumber: koleksi `riwayat_kenaikan` (event).
@@ -241,12 +368,19 @@ export function useNotifications() {
     if (role.value === 'guru' || role.value === 'admin') {
       // sbg PENGAJU: ajuan saya yang sudah ada hasil
       for (const a of tesRaw.value) {
-        if (String(a.guru_id || '') !== me || a.status === 'diajukan') continue
+        // v.1.2.5: ajuan yang DIBATALKAN pengaju sendiri jangan jadi notifikasi
+        //   (tanpa ini ia jatuh ke cabang "Belum Lulus" — menyesatkan).
+        if (String(a.guru_id || '') !== me || a.status === 'diajukan' || a.status === 'dibatalkan')
+          continue
         const lulus = a.status === 'lulus'
         out.push({
           id: 'tesres_' + (a.id || a._id),
           jenis: 'tes',
-          judul: lulus ? 'Tes: Lulus' : a.status === 'ditolak' ? 'Tes: Ditolak' : 'Tes: Belum Lulus',
+          judul: lulus
+            ? 'Tes: Lulus'
+            : a.status === 'ditolak'
+              ? 'Tes: Ditolak'
+              : 'Tes: Belum Lulus',
           body: `${a.nama_cache || ''}${a.target ? ' → ' + a.target : ''}`.trim(),
           ts: tsMs(a.tgl_hasil || a._ts),
           link: '/tes-kenaikan',
@@ -254,11 +388,12 @@ export function useNotifications() {
           color: lulus ? 'teal' : 'amber'
         })
       }
-      // sbg PENGUJI (kepala/PJ scoped, admin semua): ajuan baru menunggu tes
-      if (isAdminRole.value || isKepalaLembaga(sesi)) {
+      // sbg PENGUJI — v.1.1.9: HANYA super_admin (semua lembaga) + Kepala/PJ (lembaganya saja).
+      //   Dulu semua role 'admin' kebagian → notif tes membanjiri admin biasa/keuangan.
+      if (isSuperAdmin(sesi) || isKepalaLembaga(sesi)) {
         for (const a of tesRaw.value) {
           if (a.status !== 'diajukan') continue
-          if (!isAdminRole.value && !lembagaScopeMatches(sesi.lembaga, a.lembaga)) continue
+          if (!isSuperAdmin(sesi) && !lembagaScopeMatches(sesi.lembaga, a.lembaga)) continue
           out.push({
             id: 'tesreq_' + (a.id || a._id),
             jenis: 'tes',
@@ -290,6 +425,57 @@ export function useNotifications() {
     return out
   }
 
+  // v.1.1.9: Tes Glondongan PTPT. Sumber: koleksi `tes_glondongan`.
+  //   Guru penyimak → blok yang DITUGASKAN ke dia. super_admin + Kepala/PJ PTPT → blok
+  //   'menunggu' yang perlu ditugaskan. Selain itu TIDAK dapat notif.
+  function getGlondongan() {
+    const sesi = auth.sesiAktif || {}
+    const me = userId.value
+    const out = []
+    if (role.value !== 'guru' && role.value !== 'admin') return out
+    const juzTxt = (r) =>
+      r.juz_dari === r.juz_sampai ? `juz ${r.juz_dari}` : `juz ${r.juz_dari}–${r.juz_sampai}`
+    // 1) Tugas menyimak untuk SAYA
+    for (const r of glondRaw.value) {
+      if (r.status !== 'ditugaskan') continue
+      const mine =
+        String(r.penguji_id || '') === me ||
+        (!r.penguji_id && String(r.penguji_nama || '').trim() === String(sesi.nama || '').trim())
+      if (!mine) continue
+      out.push({
+        id: 'glondtug_' + (r.id || r._id),
+        jenis: 'glondongan',
+        judul:
+          r.tipe === 'berjalan' ? 'Tugas Menyimak (juz berjalan)' : 'Tugas Menyimak Glondongan',
+        body: `${r.nama_cache || ''} — ${juzTxt(r)}`.trim(),
+        ts: tsMs(r.tgl_tugas || r._ts),
+        link: '/glondongan',
+        icon: 'fa-headphones',
+        color: 'violet'
+      })
+    }
+    // 2) Blok menunggu penugasan → super_admin + Kepala/PJ (scope PTPT)
+    if (
+      isSuperAdmin(sesi) ||
+      (isKepalaLembaga(sesi) && lembagaScopeMatches(sesi.lembaga, 'PTPT'))
+    ) {
+      for (const r of glondRaw.value) {
+        if (r.status !== 'menunggu' || r.tipe !== 'glondongan') continue
+        out.push({
+          id: 'glondwait_' + (r.id || r._id),
+          jenis: 'glondongan',
+          judul: 'Glondongan Perlu Penguji',
+          body: `${r.nama_cache || ''} — ${juzTxt(r)}`.trim(),
+          ts: tsMs(r.tgl_daftar || r._ts),
+          link: '/glondongan',
+          icon: 'fa-user-plus',
+          color: 'amber'
+        })
+      }
+    }
+    return out
+  }
+
   // v.73.0526: cleared_at = timestamp setelah user klik "Bersihkan semua".
   // Notif dengan ts <= cleared_at di-hide dari list (per-user state).
   const clearedAt = computed(() => Number(notifState.value?.cleared_at || 0))
@@ -304,9 +490,11 @@ export function useNotifications() {
       ...getBisyaroh(),
       ...getTagihan(),
       ...getLibur(),
+      ...getKegiatan(),
       ...getKenaikan(),
       ...getPrestasi(),
-      ...getTesKenaikan()
+      ...getTesKenaikan(),
+      ...getGlondongan()
     ]
     const clearTs = clearedAt.value
     return all
@@ -332,8 +520,17 @@ export function useNotifications() {
   // v.87.0526: semua jenis (termasuk tagihan/libur/kenaikan)
   function allSeenNow(now) {
     return {
-      supervisi: now, kritik: now, post: now, pembayaran: now, bisyaroh: now,
-      tagihan: now, libur: now, kenaikan: now, prestasi: now, tes: now
+      supervisi: now,
+      kritik: now,
+      post: now,
+      pembayaran: now,
+      bisyaroh: now,
+      tagihan: now,
+      libur: now,
+      kegiatan: now,
+      kenaikan: now,
+      prestasi: now,
+      tes: now
     }
   }
 
@@ -342,11 +539,10 @@ export function useNotifications() {
     const now = Date.now()
     const next = allSeenNow(now)
     try {
-      await setDoc(
-        doc(db, 'user_notif_state', userId.value),
-        { last_seen_per_jenis: next, updated_at: new Date() },
-        { merge: true }
-      )
+      await mergeOne('user_notif_state', userId.value, {
+        last_seen_per_jenis: next,
+        updated_at: new Date().toISOString()
+      })
       notifState.value = { ...notifState.value, last_seen_per_jenis: next }
     } catch (e) {
       console.warn('[useNotifications] markAllRead gagal:', e?.message || e)
@@ -358,47 +554,164 @@ export function useNotifications() {
     if (!userId.value) return
     const now = Date.now()
     try {
-      await setDoc(
-        doc(db, 'user_notif_state', userId.value),
-        {
-          cleared_at: now,
-          last_seen_per_jenis: allSeenNow(now),
-          updated_at: new Date()
-        },
-        { merge: true }
-      )
+      await mergeOne('user_notif_state', userId.value, {
+        cleared_at: now,
+        last_seen_per_jenis: allSeenNow(now),
+        updated_at: new Date().toISOString()
+      })
       notifState.value = { ...notifState.value, cleared_at: now }
     } catch (e) {
       console.warn('[useNotifications] clearAll gagal:', e?.message || e)
     }
   }
 
+  // Pasang langganan BERSAMA. Dipanggil hanya oleh pemakai pertama; `baru` = batas
+  // 30 hari (lihat HARI_NOTIF) untuk tabel event yang tumbuh terus.
+  function _pasang() {
+    const baru = _filterBaru()
+    _unsubs.push(
+      subscribeColl(
+        'supervisi_catatan',
+        (docs) => {
+          supervisiRaw.value = docs || []
+        },
+        baru
+      )
+    )
+    _unsubs.push(
+      subscribeColl(
+        'kritik_saran',
+        (docs) => {
+          kritikRaw.value = docs || []
+        },
+        baru
+      )
+    )
+    _unsubs.push(
+      subscribeColl(
+        'beranda_post',
+        (docs) => {
+          postRaw.value = docs || []
+        },
+        baru
+      )
+    )
+    // v.1.2.8 PERF (HP low-end): keempat tabel di bawah HANYA dibaca oleh notifikasi
+    //   role 'santri' (getPembayaran/getTagihan/getKenaikan/getPrestasi semuanya
+    //   `return []` untuk role lain) dan SELALU disaring `santri_id === me`. Jadi:
+    //     - role 'admin' TIDAK perlu berlangganan sama sekali — dulu ikut, dan itu
+    //       berarti setiap admin membuka halaman apa pun menarik 30 hari buku induk +
+    //       tagihan SELURUH pondok tanpa satu pun barisnya dipakai;
+    //     - role 'santri' menyaring santri_id DI SERVER, bukan setelah semuanya
+    //       diunduh. Wali/santri di HP low-end dulu menarik transaksi semua santri.
+    //   Kalau nanti admin memang butuh notifikasi keuangan, tambahkan langganan
+    //   TERPISAH yang sadar-scope — jangan pulihkan yang penuh ini.
+    if (role.value === 'santri' && userId.value) {
+      const milikku = [...baru, ['santri_id', '==', userId.value]]
+      _unsubs.push(
+        subscribeColl(
+          'keuangan_buku_induk',
+          (docs) => {
+            bukuIndukRaw.value = docs || []
+          },
+          milikku
+        )
+      )
+      // v.87.0526: tagihan baru + event kenaikan (untuk wali/santri)
+      _unsubs.push(
+        subscribeColl(
+          'keuangan_tagihan',
+          (docs) => {
+            tagihanRaw.value = docs || []
+          },
+          milikku
+        )
+      )
+      _unsubs.push(
+        subscribeColl(
+          'riwayat_kenaikan',
+          (docs) => {
+            kenaikanRaw.value = docs || []
+          },
+          milikku
+        )
+      )
+      _unsubs.push(
+        subscribeColl(
+          'notif_prestasi',
+          (docs) => {
+            prestasiRaw.value = docs || []
+          },
+          milikku
+        )
+      )
+    }
+    // Slip bisyaroh: getBisyaroh() juga role 'guru' saja + filter guru_id sendiri.
+    //   Admin dulu ikut berlangganan seluruh tabel gaji tanpa memakainya.
+    if (role.value === 'guru' && userId.value) {
+      _unsubs.push(
+        subscribeColl(
+          'keuangan_gaji',
+          (docs) => {
+            slipRaw.value = docs || []
+          },
+          [...baru, ['guru_id', '==', userId.value]]
+        )
+      )
+    }
+    // v.87.0526: hari libur (kegiatan) — semua role. TANPA batas tanggal: jendelanya
+    //   tanggal ACARA, bukan tanggal dibuat (tabelnya pun kecil).
+    _unsubs.push(
+      subscribeColl('kegiatan', (docs) => {
+        liburRaw.value = docs || []
+      })
+    )
+    // v.100: tes kenaikan — semua role (filter per-role di getTesKenaikan).
+    //   TANPA batas tanggal: ajuan/tugas menggantung boleh lebih tua dari 30 hari.
+    _unsubs.push(
+      subscribeColl('tes_kenaikan', (docs) => {
+        tesRaw.value = docs || []
+      })
+    )
+    // v.1.1.9: tugas menyimak glondongan — HANYA guru/admin (santri/wali tak berkepentingan)
+    if (role.value === 'guru' || role.value === 'admin') {
+      _unsubs.push(
+        subscribeColl('tes_glondongan', (docs) => {
+          glondRaw.value = docs || []
+        })
+      )
+    }
+    if (userId.value) {
+      _unsubs.push(
+        subscribeDoc('user_notif_state', userId.value, (d) => {
+          notifState.value = d || {}
+        })
+      )
+    }
+  }
+
+  // Ikut-tidaknya instance INI dicatat sendiri: onMounted bisa keluar lebih awal
+  // (belum ada sesi), dan tanpa penanda ini onUnmounted akan mengurangi hitungan
+  // yang tak pernah ia tambah -> langganan pemakai lain ikut dilepas.
+  let _ikut = false
   onMounted(() => {
     if (!auth.sesiAktif) return
-    unsubs.push(subscribeColl('supervisi_catatan', (docs) => { supervisiRaw.value = docs || [] }))
-    unsubs.push(subscribeColl('kritik_saran', (docs) => { kritikRaw.value = docs || [] }))
-    unsubs.push(subscribeColl('beranda_post', (docs) => { postRaw.value = docs || [] }))
-    if (role.value === 'santri' || role.value === 'admin') {
-      unsubs.push(subscribeColl('keuangan_buku_induk', (docs) => { bukuIndukRaw.value = docs || [] }))
-      // v.87.0526: tagihan baru + event kenaikan (untuk wali/santri; admin lihat semua)
-      unsubs.push(subscribeColl('keuangan_tagihan', (docs) => { tagihanRaw.value = docs || [] }))
-      unsubs.push(subscribeColl('riwayat_kenaikan', (docs) => { kenaikanRaw.value = docs || [] }))
-      unsubs.push(subscribeColl('notif_prestasi', (docs) => { prestasiRaw.value = docs || [] }))
-    }
-    if (role.value === 'guru' || role.value === 'admin') {
-      unsubs.push(subscribeColl('keuangan_gaji', (docs) => { slipRaw.value = docs || [] }))
-    }
-    // v.87.0526: hari libur (kegiatan) — semua role
-    unsubs.push(subscribeColl('kegiatan', (docs) => { liburRaw.value = docs || [] }))
-    // v.100: tes kenaikan — semua role (filter per-role di getTesKenaikan)
-    unsubs.push(subscribeColl('tes_kenaikan', (docs) => { tesRaw.value = docs || [] }))
-    if (userId.value) {
-      unsubs.push(subscribeDoc('user_notif_state', userId.value, (d) => { notifState.value = d || {} }))
+    _ikut = true
+    _pemakai++
+    // Ganti akun / ganti anak (wali) -> tanda tangan berubah -> pasang ulang.
+    const kunci = `${role.value}|${userId.value}`
+    if (_unsubs.length && _kunci !== kunci) _lepasSemua()
+    if (!_unsubs.length) {
+      _kunci = kunci
+      _pasang()
     }
   })
 
   onUnmounted(() => {
-    for (const u of unsubs) { if (u) try { u() } catch { /* ignore */ } }
+    if (!_ikut) return
+    _ikut = false
+    _pemakai = Math.max(0, _pemakai - 1)
+    if (_pemakai === 0) _lepasSemua()
   })
 
   return {

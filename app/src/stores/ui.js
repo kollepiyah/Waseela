@@ -26,7 +26,7 @@ export const useUiStore = defineStore('ui', () => {
       document.body.classList.toggle('dark-mode', isDark.value)
     }
     try {
-      localStorage.setItem('portalMu_darkMode', isDark.value ? '1' : '0')
+      localStorage.setItem('waseela_darkMode', isDark.value ? '1' : '0')
     } catch (e) {
       // ignore
     }
@@ -40,16 +40,16 @@ export const useUiStore = defineStore('ui', () => {
     // v.48.0526: Force LIGHT cream theme — migrate user existing yang prev set dark
     // Cek flag migration v48; kalau belum ada, RESET ke light + tandai migrated
     try {
-      const migrated = localStorage.getItem('portalMu_themeMigrated_v48')
+      const migrated = localStorage.getItem('waseela_themeMigrated_v48')
       if (!migrated) {
         // First load post v.48 — force light + clear dark setting lama
-        localStorage.setItem('portalMu_darkMode', '0')
-        localStorage.setItem('portalMu_themeMigrated_v48', '1')
+        localStorage.setItem('waseela_darkMode', '0')
+        localStorage.setItem('waseela_themeMigrated_v48', '1')
         setDark(false)
         return
       }
       // Setelah migration: respect user toggle
-      const v = localStorage.getItem('portalMu_darkMode')
+      const v = localStorage.getItem('waseela_darkMode')
       if (v != null) {
         setDark(v === '1')
         return

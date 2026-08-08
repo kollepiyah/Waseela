@@ -1,0 +1,129 @@
+import { describe, it, expect } from 'vitest'
+import { putusanPembaruan, sumberVersi, apkUrlSah } from '@/composables/useAndroidUpdate'
+
+// Kyai (5 Agu 2026): "di web ada tautan link download android (apk). jika ada update
+// baru, supaya tidak nunggu lama dari playstore ... bisa langsung ada notif unduh
+// pembaruan untuk android (seperti di electron)".
+//
+// Di sinilah kesalahan paling mahal bersembunyi: salah arah perbandingan = dialog muncul
+// terus-terusan di HP semua guru, atau tak pernah muncul sama sekali — dan dua-duanya
+// baru terasa SETELAH rilis. Karena itu keputusannya dipisah jadi fungsi murni.
+//
+// versionCode Android = angka yang WAJIB naik; itulah pembanding yang sah (bukan
+// versionName yang boleh direset, mis. "v.1.2.7" -> "v.07").
+
+const baru = (versionCode, extra = {}) => ({
+  versionCode,
+  versionName: 'v.1.2.8',
+  apkUrl: 'https://example.test/Waseela.apk',
+  ...extra
+})
+
+describe('putusanPembaruan', () => {
+  it('versi lebih baru -> tawarkan', () => {
+    expect(putusanPembaruan({ kiniCode: 127, baru: baru(128) })).toBe('tawarkan')
+  })
+
+  it('versi sama -> terbaru (JANGAN menawarkan)', () => {
+    expect(putusanPembaruan({ kiniCode: 128, baru: baru(128) })).toBe('terbaru')
+  })
+
+  it('app lebih baru dari berkas (web belum ikut deploy) -> terbaru, bukan tawaran turun-versi', () => {
+    expect(putusanPembaruan({ kiniCode: 129, baru: baru(128) })).toBe('terbaru')
+  })
+
+  it('apkUrl kosong -> belum-siap (jangan tawarkan tautan hampa)', () => {
+    expect(putusanPembaruan({ kiniCode: 127, baru: baru(128, { apkUrl: '' }) })).toBe('belum-siap')
+  })
+
+  it('apkUrl bukan https -> belum-siap, walau versinya lebih baru', () => {
+    for (const url of ['javascript:alert(1)', 'http://contoh.test/a.apk', '/lokal/a.apk']) {
+      expect(putusanPembaruan({ kiniCode: 127, baru: baru(128, { apkUrl: url }) })).toBe(
+        'belum-siap'
+      )
+    }
+  })
+
+  it('versionCode kosong/0 -> belum-siap', () => {
+    expect(putusanPembaruan({ kiniCode: 127, baru: baru(0) })).toBe('belum-siap')
+    expect(putusanPembaruan({ kiniCode: 127, baru: {} })).toBe('belum-siap')
+  })
+
+  it('versionCode berbentuk teks tetap dibandingkan sebagai ANGKA', () => {
+    // App.getInfo().build mengembalikan string; '99' vs '128' sebagai teks akan salah urut.
+    expect(putusanPembaruan({ kiniCode: '99', baru: baru('128') })).toBe('tawarkan')
+    expect(putusanPembaruan({ kiniCode: '128', baru: baru('99') })).toBe('terbaru')
+  })
+
+  it('versi yang pernah dilewati: diam pada cek OTOMATIS', () => {
+    expect(putusanPembaruan({ kiniCode: 127, baru: baru(128), dilewatiCode: '128' })).toBe(
+      'dilewati'
+    )
+  })
+
+  it('versi yang pernah dilewati: tetap ditawarkan kalau pengguna menekan tombolnya sendiri', () => {
+    expect(
+      putusanPembaruan({ kiniCode: 127, baru: baru(128), dilewatiCode: '128', manual: true })
+    ).toBe('tawarkan')
+  })
+
+  it('melewati versi 128 TIDAK membungkam versi 129', () => {
+    expect(putusanPembaruan({ kiniCode: 127, baru: baru(129), dilewatiCode: '128' })).toBe(
+      'tawarkan'
+    )
+  })
+
+  it('pembaruan wajib tak bisa dibungkam meski pernah dilewati', () => {
+    expect(
+      putusanPembaruan({ kiniCode: 127, baru: baru(128, { wajib: true }), dilewatiCode: '128' })
+    ).toBe('tawarkan')
+  })
+
+  it('menerima bentuk {code} maupun {versionCode}', () => {
+    const b = { code: 128, apkUrl: 'https://example.test/a.apk' }
+    expect(putusanPembaruan({ kiniCode: 127, baru: b })).toBe('tawarkan')
+  })
+
+  it('kiniCode tak dikenal (0) tetap menawarkan — lebih baik ditawari daripada tertinggal', () => {
+    expect(putusanPembaruan({ kiniCode: 0, baru: baru(128) })).toBe('tawarkan')
+  })
+})
+
+// Jebakan yang mematikan seluruh fitur tanpa satu pun galat: Capacitor menyajikan bundel
+// LOKAL di https://localhost (capacitor.config punya androidScheme 'https' TANPA
+// server.url), jadi di dalam APK fetch('/app-version.json') membaca berkas yang DIBUNDEL
+// BERSAMA APK ITU. versionCode-nya selalu sama dengan dirinya sendiri -> putusan selalu
+// 'terbaru' -> tak ada pembaruan yang pernah ditawarkan. Native WAJIB menembak hosting.
+describe('sumberVersi', () => {
+  it('aplikasi native menembak HOSTING (bukan bundel lokalnya sendiri)', () => {
+    const url = sumberVersi(true)
+    expect(url).toMatch(/^https:\/\//)
+    expect(url).not.toMatch(/localhost/)
+    expect(url.endsWith('/app-version.json')).toBe(true)
+  })
+
+  it('web memakai path relatif (sepanggung dengan halaman)', () => {
+    expect(sumberVersi(false)).toBe('/app-version.json')
+  })
+})
+
+// apkUrl menentukan URL yang DIBUKA aplikasi. Berkas versinya memang milik sendiri, tapi
+// kalau hosting/berkasnya pernah disusupi, `javascript:` di sini = eksekusi kode di dalam
+// WebView dan `http:` = APK yang bisa ditukar di jalan.
+describe('apkUrlSah', () => {
+  it('https diterima', () => {
+    expect(apkUrlSah('https://github.com/kollepiyah/waseela/releases/latest/download/A.apk')).toBe(
+      true
+    )
+  })
+
+  it('javascript:, http:, path relatif, dan kosong ditolak', () => {
+    for (const url of ['javascript:alert(1)', 'http://contoh.test/a.apk', '/a.apk', '', null]) {
+      expect(apkUrlSah(url)).toBe(false)
+    }
+  })
+
+  it('https berhuruf besar tetap diterima (skema tak peka huruf)', () => {
+    expect(apkUrlSah('HTTPS://contoh.test/a.apk')).toBe(true)
+  })
+})

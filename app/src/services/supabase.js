@@ -1,43 +1,34 @@
-// Supabase client — WASEELA (multi-tenant). SCAFFOLD (Fase 1): belum dipakai
-// view/composable manapun. Firebase TETAP sumber kebenaran sampai cutover
-// per-koleksi (Fase 6). App tetap jalan normal walau env Supabase kosong.
+// Supabase client — init satu kali, export instance.
+// F1 (migrasi Supabase): SCAFFOLD SAJA — belum dipakai view/composable manapun.
+// Firebase tetap sumber kebenaran sampai cutover per-koleksi (F6).
 //
-// Isolasi tenant DITEGAKKAN DI SERVER (RLS + public.current_tenant_id()), BUKAN
-// di client — anon key publik aman; RLS yang menjaga & memisah data antar-lembaga.
-// Kredensial dari .env.local (per-build tenant): VITE_SUPABASE_URL +
-// VITE_SUPABASE_PUBLISHABLE_KEY (key format baru `sb_publishable_...`; alias lama
-// VITE_SUPABASE_ANON_KEY tetap didukung utk backward-compat).
+// Kredensial dari .env.local (anon key PUBLIK, aman di client; RLS yang menjaga data).
+// SINGLE-TENANT: tak ada tenant_id; peran ditegakkan via RLS auth.uid().
 import { createClient } from '@supabase/supabase-js'
 
 const url = import.meta.env.VITE_SUPABASE_URL
-const anonKey =
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY
-// Slug tenant build ini (di-set build-tenant.mjs). Dikirim sbg header `x-tenant`
-// supaya current_tenant_id() bisa resolusi tenant utk request ANON (pra-login:
-// branding/PSB/posts publik). User LOGIN tetap pakai profiles.tenant_id (header
-// diabaikan) -> tak bisa lompat-tenant. Kosong = mode single/dev.
-const tenantSlug = import.meta.env.VITE_SUPABASE_TENANT_SLUG || ''
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-// Guard: env belum diisi -> export null (JANGAN throw saat boot). Saat adapter
-// mulai memakai ini (Fase 4/6), ketiadaan env ketahuan eksplisit.
+// Guard: kalau env belum diisi, export null (JANGAN throw saat boot app).
+// Saat adapter mulai memakai ini (F4/F6), ketiadaan env akan ketahuan eksplisit.
 export const supabase =
   url && anonKey
     ? createClient(url, anonKey, {
         auth: {
           persistSession: true,
           autoRefreshToken: true,
-          // FALSE: true bikin login username/WA/NIS hang (proses URL hash-router
-          // saat init). OAuth balik `?code=` ditukar MANUAL di initAuth (Fase 4).
+          // v.109: detectSessionInUrl FALSE (true bikin login username/WA/NIS hang krn
+          //   proses URL hash-router saat init). OAuth Google balik dgn `?code=` ditukar
+          //   MANUAL via authSupabase.exchangeOAuthCode di initAuth (lihat stores/auth.js).
           detectSessionInUrl: false,
           flowType: 'pkce'
-        },
-        global: tenantSlug ? { headers: { 'x-tenant': tenantSlug } } : {}
+        }
       })
     : null
 
 if (!supabase && import.meta.env.DEV) {
   console.warn(
-    '[supabase] VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY belum di-set (.env.local) — client = null (scaffold Fase 1).'
+    '[supabase] VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY belum di-set (.env.local) — client = null (scaffold F1).'
   )
 }
 

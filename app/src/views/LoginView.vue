@@ -4,7 +4,10 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
-import * as authService from '@/services/auth'
+import { loginWithGoogle } from '@/services/authSupabase'
+import loginBg from '@/assets/loginBg.js'
+import { HALAMAN_RILIS, urlApk, urlInstallerDesktop, urlInstallerWin7 } from '@/utils/unduhan'
+import { BRAND } from '@/config/brand'
 
 // v.86.0526: full match legacy login — Google + Ingat Saya + Lupa Sandi + Copyright luar card
 const router = useRouter()
@@ -12,6 +15,11 @@ const route = useRoute()
 const auth = useAuthStore()
 const settings = useSettingsStore()
 const toast = useToast()
+
+// White-label: judul & motto layar login diisi pembeli lewat Pengaturan.
+//   Fallback = merek produk; motto kosong → barisnya disembunyikan (tak ada motto lembaga lain).
+const namaLembagaLogin = computed(() => settings.settings?.namaLembaga || BRAND.namaLembaga)
+const mottoLogin = computed(() => settings.settings?.motto || BRAND.motto)
 
 // v.86.0526: BG login dari settings (Pengaturan Web → Background Layar).
 // Force load settings di mount supaya BG image tersedia sebelum render (App.vue load async)
@@ -24,21 +32,24 @@ onMounted(() => {
 // v.21.114.0528: drop teal solid overlay → bg image full visible + backdrop-blur overlay separate
 const bgStyle = computed(() => {
   const s = settings.settings || {}
-  const bg = s.bgImage || s.bg_login || s.bg_img || s.bgUrl
-  // WASEELA: gambar bg custom (admin) tetap dihormati; default -> warna solid selaras tema app.
-  if (bg) return `background: url('${bg}') center/cover no-repeat;`
-  return 'background: var(--theme-color, #065F46);'
+  const bg = s.bgImage || s.bg_login || s.bg_img || s.bgUrl || loginBg
+  return `background: url('${bg}') center/cover no-repeat;`
 })
 
-// WASEELA white-label: URL download app native diisi admin via Pengaturan (per lembaga).
-//   TANPA fallback (dulu hardcode ke rilis lama). Kosong → section unduh disembunyikan.
-const downloadAndroidUrl = computed(() => settings.settings?.downloadAndroid || '')
-const downloadIosUrl = computed(() => settings.settings?.downloadIos || '')
-const downloadDesktopUrl = computed(() => settings.settings?.downloadDesktop || '')
-const downloadDesktopWin7Url = computed(() => settings.settings?.downloadDesktopWin7 || '')
-// Tampilkan section "Unduh Aplikasi" HANYA bila tenant punya minimal 1 URL download.
-const hasDownloads = computed(
-  () => !!(downloadAndroidUrl.value || downloadDesktopUrl.value || downloadDesktopWin7Url.value)
+// v.21.115.0528: URL download app native (Android/Desktop)
+// Bisa di-override dari Pengaturan Web (settings.downloadAndroid, downloadDesktop)
+// Default ke GitHub Releases latest — lihat utils/unduhan.js
+// v.1.2.9: nama berkas installer memuat versi sejak `8d8acbe`, jadi tak boleh
+//   diketik manual lagi. `downloadIos` DIBUANG — cuma dideklarasikan, tak pernah
+//   dipakai di template, dan Waseela.ipa tak pernah ada di satu rilis pun.
+const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : ''
+const downloadAndroidUrl = computed(() => settings.settings?.downloadAndroid || urlApk())
+const downloadDesktopUrl = computed(
+  () => settings.settings?.downloadDesktop || urlInstallerDesktop(APP_VERSION) || HALAMAN_RILIS
+)
+// v.95.0626: installer khusus Windows 7 (Electron 22)
+const downloadDesktopWin7Url = computed(
+  () => settings.settings?.downloadDesktopWin7 || urlInstallerWin7(APP_VERSION) || HALAMAN_RILIS
 )
 const showDesktopMenu = ref(false)
 
@@ -58,6 +69,23 @@ const loginError = ref('')
 const showPassword = ref(false)
 const ingatSaya = ref(true) // default tetap login di perangkat ini
 
+// v.111: pisah jalur login guru/pegawai vs santri/wali — atasi 1 WA dipakai guru
+//   yang juga wali santri. Ingat pilihan terakhir; pertama kali default 'guru'.
+const loginMode = ref(localStorage.getItem('waseela_login_mode') === 'santri' ? 'santri' : 'guru')
+const isSantriMode = computed(() => loginMode.value === 'santri')
+function setLoginMode(m) {
+  loginMode.value = m
+  try {
+    localStorage.setItem('waseela_login_mode', m)
+  } catch (e) {
+    /* ignore */
+  }
+}
+const usernameLabel = computed(() => (isSantriMode.value ? 'No. Induk / WA Wali' : 'Username / WA'))
+const usernamePlaceholder = computed(() =>
+  isSantriMode.value ? 'No. Induk santri atau WA wali' : 'Username atau nomor WA'
+)
+
 async function handleLogin() {
   if (!username.value || !password.value) {
     toast.error('Username dan kata sandi wajib diisi')
@@ -66,7 +94,12 @@ async function handleLogin() {
   isSubmitting.value = true
   loginError.value = ''
   try {
-    await auth.login(username.value.trim(), password.value, ingatSaya.value)
+    await auth.login(
+      username.value.trim().toLowerCase(),
+      password.value,
+      ingatSaya.value,
+      loginMode.value
+    )
     toast.success('Login berhasil')
     const redirect = route.query.redirect || '/dashboard'
     router.push(redirect)
@@ -82,7 +115,7 @@ async function handleGoogleLogin() {
   if (isSubmitting.value) return
   isSubmitting.value = true
   try {
-    const cred = await authService.loginWithGoogle()
+    const cred = await loginWithGoogle()
     if (cred?.user) {
       await auth.loadSesiFromUser(cred.user)
       toast.success('Login Google berhasil')
@@ -119,9 +152,8 @@ function bukaWaAdmin() {
     toast.warning('Nomor WA Admin belum di-setup di Pengaturan Web')
     return
   }
-  const namaLembaga = settings.settings?.namaLembaga || 'Waseela'
   const msg = encodeURIComponent(
-    `Assalamu'alaikum Admin Pondok, saya lupa sandi akun Portal ${namaLembaga}. Mohon bantu reset sandi. Terima kasih.`
+    `Assalamu'alaikum Admin Pondok, saya lupa sandi akun Portal ${namaLembagaLogin.value}. Mohon bantu reset sandi. Terima kasih.`
   )
   window.open(`https://wa.me/${wa}?text=${msg}`, '_blank')
 }
@@ -146,14 +178,17 @@ function bukaWaAdmin() {
       <div class="px-6 pt-7 pb-4 text-center">
         <img
           src="/logo.png"
-          :alt="settings.settings?.namaLembaga || 'Logo'"
-          class="h-16 w-auto max-w-[200px] mx-auto mb-2 object-contain drop-shadow-md"
+          :alt="'Logo ' + namaLembagaLogin"
+          class="w-20 h-20 mx-auto mb-2 object-contain drop-shadow-xl"
         />
         <h2 class="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
-          {{ settings.settings?.namaLembaga || 'Portal' }}
+          {{ namaLembagaLogin }}
         </h2>
-        <p class="text-[10px] text-teal-700 mt-0.5 font-bold uppercase tracking-widest">
-          {{ settings.settings?.motto || 'Portal Pesantren' }}
+        <p
+          v-if="mottoLogin"
+          class="text-[10px] text-teal-700 mt-0.5 font-bold uppercase tracking-widest"
+        >
+          {{ mottoLogin }}
         </p>
       </div>
 
@@ -162,9 +197,9 @@ function bukaWaAdmin() {
         <!-- Login dengan Google -->
         <button
           type="button"
-          @click="handleGoogleLogin"
           :disabled="isSubmitting"
           class="w-full bg-[var(--bg-card)] border border-[var(--border-default)] hover:bg-[var(--bg-card-elevated)] disabled:opacity-50 text-[var(--text-primary)] font-bold py-2.5 rounded-xl shadow-sm cursor-pointer flex justify-center items-center gap-2 transition text-sm"
+          @click="handleGoogleLogin"
         >
           <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path
@@ -196,13 +231,43 @@ function bukaWaAdmin() {
           <div class="flex-1 h-px bg-slate-300"></div>
         </div>
 
-        <form @submit.prevent="handleLogin" class="space-y-3" autocomplete="on">
-          <!-- Username -->
+        <form class="space-y-3" autocomplete="on" @submit.prevent="handleLogin">
+          <!-- v.111: pilih jalur login — Santri/Wali vs Guru/Pegawai (1 WA bisa dipakai keduanya) -->
+          <div
+            class="flex gap-1 p-1 rounded-xl bg-black/5 dark:bg-white/10 border border-[var(--border-default)]"
+          >
+            <button
+              type="button"
+              :class="
+                isSantriMode
+                  ? 'bg-teal-600 text-white shadow'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              "
+              class="flex-1 py-2 rounded-lg text-xs font-bold transition"
+              @click="setLoginMode('santri')"
+            >
+              <i class="fas fa-user-graduate mr-1.5"></i>Santri / Wali
+            </button>
+            <button
+              type="button"
+              :class="
+                !isSantriMode
+                  ? 'bg-teal-600 text-white shadow'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              "
+              class="flex-1 py-2 rounded-lg text-xs font-bold transition"
+              @click="setLoginMode('guru')"
+            >
+              <i class="fas fa-chalkboard-user mr-1.5"></i>Guru / Pegawai
+            </button>
+          </div>
+
+          <!-- Username / identitas (adaptif per mode) -->
           <div>
             <label
               class="block text-[9px] font-bold text-[var(--text-primary)] mb-1 uppercase tracking-wide"
             >
-              Username
+              {{ usernameLabel }}
             </label>
             <div class="relative">
               <i
@@ -211,8 +276,11 @@ function bukaWaAdmin() {
               <input
                 v-model="username"
                 type="text"
-                placeholder="Masukkan username"
+                :placeholder="usernamePlaceholder"
                 autocomplete="username"
+                autocapitalize="none"
+                autocorrect="off"
+                spellcheck="false"
                 required
                 class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
               />
@@ -240,10 +308,10 @@ function bukaWaAdmin() {
               />
               <button
                 type="button"
-                @click="showPassword = !showPassword"
                 class="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition cursor-pointer"
                 :aria-label="showPassword ? 'Sembunyikan sandi' : 'Tampilkan sandi'"
                 tabindex="-1"
+                @click="showPassword = !showPassword"
               >
                 <i :class="['fas', showPassword ? 'fa-eye-slash' : 'fa-eye', 'text-xs']"></i>
               </button>
@@ -289,8 +357,8 @@ function bukaWaAdmin() {
         <div class="flex justify-end items-center text-[10px]">
           <button
             type="button"
-            @click="handleLupaSandi"
             class="text-cyan-600 hover:text-cyan-800 font-bold cursor-pointer underline"
+            @click="handleLupaSandi"
           >
             Lupa Sandi?
           </button>
@@ -329,8 +397,8 @@ function bukaWaAdmin() {
     >
       <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
         <button
-          @click="showLupaSandi = false"
           class="absolute top-3 right-3 text-[var(--text-tertiary)] hover:text-rose-600 text-lg cursor-pointer"
+          @click="showLupaSandi = false"
         >
           <i class="fas fa-times"></i>
         </button>
@@ -359,14 +427,14 @@ function bukaWaAdmin() {
         <div class="mt-4 flex gap-2">
           <button
             v-if="adminWaPondok"
-            @click="bukaWaAdmin"
             class="flex-1 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold py-2.5 rounded-xl text-sm cursor-pointer transition"
+            @click="bukaWaAdmin"
           >
             <i class="fab fa-whatsapp mr-1"></i>Hubungi Admin via WA
           </button>
           <button
-            @click="showLupaSandi = false"
             class="flex-1 bg-slate-200 hover:bg-slate-300 text-[var(--text-primary)] font-bold py-2.5 rounded-xl text-sm cursor-pointer transition"
+            @click="showLupaSandi = false"
           >
             <i class="fas fa-check mr-1"></i>Mengerti
           </button>
@@ -376,7 +444,7 @@ function bukaWaAdmin() {
 
     <!-- v.86.0526: Download section — Android + Desktop only (iOS pakai PWA Add-to-Home).
          Hide di Capacitor (Android native) + Electron (Desktop) karena sudah di-app native. -->
-    <div v-if="isWebOnly && hasDownloads" class="relative z-10 mt-4 max-w-[280px] w-full">
+    <div v-if="isWebOnly" class="relative z-10 mt-4 max-w-[280px] w-full">
       <div class="bg-white/8 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/15">
         <p
           class="text-[9px] text-white/80 font-bold uppercase tracking-[0.15em] text-center mb-1.5"
@@ -385,7 +453,6 @@ function bukaWaAdmin() {
         </p>
         <div class="grid grid-cols-2 gap-2">
           <a
-            v-if="downloadAndroidUrl"
             :href="downloadAndroidUrl"
             target="_blank"
             rel="noopener"
@@ -396,12 +463,12 @@ function bukaWaAdmin() {
             <span class="text-[10px] text-white font-bold tracking-wide">Android</span>
           </a>
           <!-- v.95.0626: Desktop -> dropdown pilih versi (Win10/11 modern vs Win7) -->
-          <div v-if="downloadDesktopUrl || downloadDesktopWin7Url" class="relative">
+          <div class="relative">
             <button
               type="button"
-              @click="showDesktopMenu = !showDesktopMenu"
               aria-label="Unduh installer Desktop"
               class="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-md bg-gradient-to-br from-cyan-500/80 to-sky-600/80 hover:from-cyan-400 hover:to-sky-500 border border-cyan-300/30 shadow-sm hover:shadow-md transition cursor-pointer group"
+              @click="showDesktopMenu = !showDesktopMenu"
             >
               <i class="fas fa-desktop text-white text-sm group-hover:scale-110 transition"></i>
               <span class="text-[10px] text-white font-bold tracking-wide">Desktop</span>
@@ -415,8 +482,8 @@ function bukaWaAdmin() {
                 :href="downloadDesktopUrl"
                 target="_blank"
                 rel="noopener"
-                @click="showDesktopMenu = false"
                 class="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-white/10 transition cursor-pointer"
+                @click="showDesktopMenu = false"
               >
                 <i class="fab fa-windows text-cyan-300 text-[11px]"></i>
                 <span class="text-[10px] text-white font-bold">Windows 10/11</span>
@@ -425,8 +492,8 @@ function bukaWaAdmin() {
                 :href="downloadDesktopWin7Url"
                 target="_blank"
                 rel="noopener"
-                @click="showDesktopMenu = false"
                 class="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-white/10 transition cursor-pointer border-t border-white/10"
+                @click="showDesktopMenu = false"
               >
                 <i class="fab fa-windows text-amber-300 text-[11px]"></i>
                 <span class="text-[10px] text-white font-bold">Windows 7</span>
@@ -443,7 +510,10 @@ function bukaWaAdmin() {
     <!-- Copyright + versi DI LUAR CARD (match legacy) -->
     <div class="relative z-10 mt-3 text-center px-4">
       <p class="text-[11px] text-white/90 font-bold uppercase tracking-wider drop-shadow">
-        © {{ new Date().getFullYear() }} BAKAFRAWI PROJECT · All Rights Reserved
+        © {{ new Date().getFullYear() }} {{ BRAND.copyrightName }}
+      </p>
+      <p class="text-[11px] text-white/80 font-bold tracking-widest mt-1 drop-shadow">
+        v.{{ APP_VERSION }}
       </p>
     </div>
   </div>

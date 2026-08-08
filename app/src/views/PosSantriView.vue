@@ -36,7 +36,8 @@
             class="text-[10px] font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-300 px-2 py-1 rounded-full whitespace-nowrap"
             title="Transaksi POS hari ini"
           >
-            <i class="fas fa-receipt mr-1"></i>Hari ini: {{ todayStats.count }} · {{ fmtRp(todayStats.total) }}
+            <i class="fas fa-receipt mr-1"></i>Hari ini: {{ todayStats.count }} ·
+            {{ fmtRp(todayStats.total) }}
           </span>
         </div>
       </div>
@@ -80,6 +81,13 @@
           <option value="">Semua Lembaga</option>
           <option v-for="lb in lembagaList" :key="lb" :value="lb">{{ lb }}</option>
         </select>
+        <select
+          v-model="filterSekolah"
+          class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
+        >
+          <option value="">Semua Sekolah</option>
+          <option v-for="sk in sekolahList" :key="sk" :value="sk">{{ sk }}</option>
+        </select>
         <label
           class="flex items-center gap-1.5 text-xs font-bold text-rose-700 bg-rose-50 px-3 py-2.5 rounded-xl border border-rose-200 cursor-pointer hover:bg-rose-100"
         >
@@ -91,7 +99,7 @@
 
     <!-- Loading -->
     <div
-      v-if="isAdminKeu && loading"
+      v-if="isAdminKeu && memuat"
       class="bg-[var(--bg-card)] rounded-2xl p-10 border border-[var(--border-subtle)] text-center"
     >
       <i class="fas fa-spinner fa-spin text-2xl text-teal-600 mb-2"></i>
@@ -100,18 +108,21 @@
 
     <!-- Santri grid -->
     <div
-      v-if="isAdminKeu && !loading"
+      v-if="isAdminKeu && !memuat"
       class="bg-[var(--bg-card)] rounded-2xl p-3 md:p-4 border border-[var(--border-subtle)] shadow-sm"
     >
-      <p v-if="filteredSantri.length === 0" class="text-center text-[var(--text-tertiary)] py-6 text-sm">
+      <p
+        v-if="filteredSantri.length === 0"
+        class="text-center text-[var(--text-tertiary)] py-6 text-sm"
+      >
         Tidak ada santri yang cocok.
       </p>
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
         <button
           v-for="s in filteredSantri"
           :key="s.id"
-          @click="openModal(s)"
           class="text-left p-3 rounded-xl border border-[var(--border-subtle)] hover:bg-teal-50 dark:hover:bg-teal-900/20 hover:border-teal-300 transition cursor-pointer flex items-center gap-2.5"
+          @click="openModal(s)"
         >
           <div
             class="w-9 h-9 rounded-full bg-gradient-to-br from-teal-100 to-cyan-100 dark:from-teal-700 dark:to-cyan-700 flex items-center justify-center font-black text-teal-700 dark:text-teal-200 flex-shrink-0"
@@ -135,7 +146,10 @@
           <i class="fas fa-chevron-right text-[var(--text-tertiary)] text-xs"></i>
         </button>
       </div>
-      <p v-if="filteredSantri.length === 50" class="text-center text-[10px] text-[var(--text-tertiary)] mt-3">
+      <p
+        v-if="filteredSantri.length === 50"
+        class="text-center text-[10px] text-[var(--text-tertiary)] mt-3"
+      >
         Menampilkan 50 santri pertama — refine pencarian untuk lihat lainnya
       </p>
     </div>
@@ -170,8 +184,8 @@
       :open="modalOpen"
       :santri="selectedSantri"
       :operator="operatorName"
-      :pending-tagihan="pendingTagihan"
-      :prepaid-periodes="prepaidPeriodes"
+      :all-tagihan="allTagihan"
+      :pos-payments="posPayments"
       :saved-trx="lastTrx"
       :saving="posSaving"
       :is-desktop="isDesktop"
@@ -189,39 +203,61 @@
 // v.21+: POS Santri — kasir cepat pembayaran tagihan/syahriyah/tabungan dengan modal cart.
 // Save ke keuangan_buku_induk (sumber='pos_santri') + auto-lunas tagihan terkait.
 import { ref, computed, onMounted, watch } from 'vue'
+import { useCollectionsStore } from '@/stores/collections' // P5b: santri/guru dari store terpusat
 import { useRoute, useRouter } from 'vue-router'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  limit,
-  getDocs,
-  setDoc,
-  updateDoc,
-  doc,
-  serverTimestamp
-} from 'firebase/firestore'
-import { db } from '@/services/firebase'
+// v.F6e: adapter Supabase (serverTimestamp = shim ISO string).
+import { getOne, queryColl, setOne, updateOne, serverTimestamp } from '@/services/db'
 import { sortSantri } from '@/utils/santriSort'
+import { sisaTagihan } from '@/utils/tagihan'
+// K1: pemecahan komponen (sekolah+ngaji) jadi beberapa baris Buku Induk — rumusnya di
+//   utils/syahriyah.js yang diuji unit, jangan disalin ke sini.
+import { pecahProporsional } from '@/utils/syahriyah'
+// Kyai 4 Agu: kas per lembaga — resolver tunggal di utils/kasLembaga (jangan disalin ke sini)
+import { petaKasLembaga, kasLembagaBaris } from '@/utils/kasLembaga'
+// v.1.2.6: nomor struk anti-kembar + penanda transaksi unik (lihat utils/trxStruk.js)
+import { nomorStrukBerikutnya, buatTrxUid } from '@/utils/trxStruk'
+import { todayJakarta } from '@/utils/format'
+import { lunasDenganPotongan } from '@/utils/potonganPos'
 import { cetakStrukPdf, cetakStrukSlipPdf, buildStrukHtml } from '@/utils/strukBuilder'
 import { buildStrukSlipEscpBase64 } from '@/utils/escpImage'
-import { isElectron, printStruk, printRaw, printPdf, getDefaultPrinter } from '@/composables/useDesktopPrint'
+import {
+  isElectron,
+  printStruk,
+  printRaw,
+  printPdf,
+  getDefaultPrinter
+} from '@/composables/useDesktopPrint'
 import { terbilangRupiah } from '@/utils/terbilang'
 import { useSettingsStore } from '@/stores/settings'
+import { useGedungScope } from '@/composables/useGedungScope'
 import ModalPOS from '@/components/pos/ModalPOS.vue'
 
 const auth = useAuthStore()
 const toast = useToast()
 const settingsStore = useSettingsStore()
+// v.111: scope Gedung — admin keuangan ber-gedung hanya transaksi santri gedungnya
+const { allowSantri } = useGedungScope()
 
-const santriList = ref([])
+// AUDIT AGU 2026 (P5b): daftar santri diambil dari store TERPUSAT (stores/collections)
+//   yang subscribe SEKALI per sesi + live realtime — bukan getAll penuh setiap kali
+//   halaman POS dibuka (539 baris, 580 kB mentah / 41 kB gzip, 53 field per baris).
+//   Datanya IDENTIK (store memakai select yang sama), jadi tak ada risiko field hilang;
+//   yang hilang cuma pengulangan unduhannya. Bonus di PC kasir: 539 objek reaktif tak
+//   dibuat ulang tiap kali halaman dibuka.
+const collections = useCollectionsStore()
+const santriList = computed(() =>
+  sortSantri((collections.santri || []).filter((s) => s.aktif !== false))
+)
+// Spinner ikut menunggu store: kalau tidak, daftar sempat tampil "Tidak ada santri
+// yang cocok" pada sesi yang membuka /pos-santri langsung (store belum terisi).
+const memuat = computed(() => loading.value || !collections.isLoaded('santri'))
 const loading = ref(true)
 const search = ref('')
 const filterLembaga = ref('')
+const filterSekolah = ref('') // v.110.0626: filter lembaga sekolah (formal) — terpisah dari lembaga ngaji
 const selectedSantri = ref(null)
 const modalOpen = ref(false)
 const histori = ref([])
@@ -235,26 +271,27 @@ function syncFiltersFromQuery() {
   _syncingQuery = true
   search.value = _route.query.q != null ? String(_route.query.q) : ''
   filterLembaga.value = _route.query.lembaga != null ? String(_route.query.lembaga) : ''
+  filterSekolah.value = _route.query.sekolah != null ? String(_route.query.sekolah) : ''
   filterTunggakan.value = _route.query.tunggakan === '1'
   _syncingQuery = false
 }
 syncFiltersFromQuery()
 watch(() => _route.query, syncFiltersFromQuery)
-watch([search, filterLembaga, filterTunggakan], () => {
+watch([search, filterLembaga, filterSekolah, filterTunggakan], () => {
   if (_syncingQuery) return
   const q = {}
   if (search.value) q.q = search.value
   if (filterLembaga.value) q.lembaga = filterLembaga.value
+  if (filterSekolah.value) q.sekolah = filterSekolah.value
   if (filterTunggakan.value) q.tunggakan = '1'
   _router.replace({ query: q }).catch(() => {})
 })
-const pendingTagihan = ref([])
-const prepaidPeriodes = ref([]) // v.96.0626 audit: periode sudah ada tagihan -> anti-dobel bayar di muka
+// v.1.2.x: matriks POS gaya Braja — kirim SEMUA tagihan santri + pembayaran POS (utk warna sel)
+const allTagihan = ref([])
+const posPayments = ref([])
 const loadingCart = ref(false)
 // v.21.87.0527: ringkasan transaksi POS hari ini
 const todayStats = ref({ count: 0, total: 0 })
-// v.21.90.0527: counter transaksi unik hari ini (utk nomor struk MU-NNNddmmyy)
-const todayTrxCount = ref(0)
 // v.21.91.0527: TTD operator (kasir) — auto dari guru.tanda_tangan
 const operatorTtdUrl = ref('')
 // v.21.88.0527: transaksi terakhir (utk tombol cetak struk setelah simpan)
@@ -280,44 +317,41 @@ onMounted(async () => {
     return
   }
   try {
-    // Load santri
-    const snap = await getDocs(collection(db, 'santri'))
-    santriList.value = sortSantri(
-      snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((s) => s.aktif !== false)
-    )
+    // Santri & guru: pastikan store terpusat aktif (idempotent, hidup se-sesi).
+    collections.ensure('santri', 'guru')
 
     // Load transaksi terakhir POS Santri (utk histori + ringkasan harian)
-    const histSnap = await getDocs(
-      query(collection(db, 'keuangan_buku_induk'), orderBy('createdAt', 'desc'), limit(80))
+    const posTx = await queryColl(
+      'keuangan_buku_induk',
+      [['sumber', '==', 'pos_santri']],
+      [['createdAt', 'desc']],
+      80
     )
-    const posTx = histSnap.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
-      .filter((t) => t.sumber === 'pos_santri')
     histori.value = posTx.slice(0, 5)
-    const hariIni = new Date().toISOString().split('T')[0]
+    // v.1.2.6: tanggal WIB (todayJakarta), bukan toISOString() yang UTC — transaksi dini
+    //   hari WIB (00:00–07:00) dulu dihitung ke tanggal kemarin.
+    const hariIni = todayJakarta()
     const txToday = posTx.filter((t) => t.tanggal === hariIni)
     todayStats.value = {
       count: txToday.length,
       total: txToday.reduce((s, t) => s + Number(t.nominal || 0), 0)
     }
-    // v.21.90.0527: hitung jumlah TRANSAKSI unik (trx_id) hari ini utk seq nomor struk
-    const trxIdsToday = new Set(txToday.map((t) => t.trx_id).filter(Boolean))
-    todayTrxCount.value = trxIdsToday.size
+    // v.1.2.6: seq nomor struk TIDAK lagi di-cache di sini — dulu dihitung dari 80 baris
+    //   terakhir saja sehingga mundur & bikin nomor kembar. Sekarang dibaca dari DB tepat
+    //   saat menyimpan (lihat ambilNomorStruk).
     // v.21.91.0527: ambil TTD operator dari guru.tanda_tangan utk auto-isi struk PDF
     try {
       const myId = auth.sesiAktif?.id
       if (myId) {
-        const gSnap = await getDocs(
-          query(collection(db, 'guru'), where('id', '==', String(myId)), limit(1))
-        )
-        let ttd = ''
-        if (!gSnap.empty) ttd = gSnap.docs[0].data().tanda_tangan || ''
+        const gRow = await getOne('guru', String(myId))
+        let ttd = gRow?.tanda_tangan || ''
         if (!ttd) {
-          const all = await getDocs(query(collection(db, 'guru'), limit(500)))
-          const me = all.docs.find(
-            (d) => String(d.data().id) === String(myId) || d.data().nama === operatorName.value
+          // dari store (sudah ada di memori) — dulu getAll('guru') penuh tiap kali
+          // operator belum punya tanda tangan, jadi terulang di SETIAP buka POS.
+          const me = (collections.guru || []).find(
+            (g) => String(g.id) === String(myId) || g.nama === operatorName.value
           )
-          ttd = me?.data().tanda_tangan || ''
+          ttd = me?.tanda_tangan || ''
         }
         operatorTtdUrl.value = ttd || ''
       }
@@ -327,18 +361,29 @@ onMounted(async () => {
 
     // Load tunggakan map (count + total per santri_id)
     try {
-      const tagSnap = await getDocs(collection(db, 'keuangan_tagihan'))
+      // AUDIT AGU 2026 (P5): dulu getAll (SELURUH keuangan_tagihan, 2.805 baris per
+      //   3 Agu ≈ 1,1 MB) lalu dibuang lagi di klien — padahal peta tunggakan hanya
+      //   butuh yang BELUM/PARTIAL. Penyaringannya dipindah ke DB.
+      //   Aman & EKSAK: diperiksa di data nyata 3 Agu — `status` 0 baris NULL dan 0
+      //   nilai di luar {belum, partial, lunas}, jadi `in` tak membuang baris yang
+      //   loop di bawah dulu ikut hitung. (Kalau suatu saat status boleh NULL lagi,
+      //   filter ini WAJIB dicabut: SQL membuang NULL dari `in`, sementara klien
+      //   menganggapnya 'belum' — tunggakan akan tampak lebih kecil dari kenyataan.)
+      // Kolom TETAP '*' (bukan pilih kolom): sisaTagihan -> terbayarDari punya jalur
+      //   mundur ke `data.bayar`/`data.dibayar` di ekor jsonb, dan 8 baris nyata masih
+      //   memakainya — membuang kolom `data` akan MELEBIHKAN tunggakan mereka.
+      const tagihanAll = await queryColl('keuangan_tagihan', [
+        ['status', 'in', ['belum', 'partial']]
+      ])
       const map = {}
-      for (const t of tagSnap.docs) {
-        const data = t.data()
+      for (const data of tagihanAll) {
         const status = String(data.status || 'belum').toLowerCase()
         if (status !== 'belum' && status !== 'partial') continue
         const sid = data.santri_id
         if (!sid) continue
         if (!map[sid]) map[sid] = { count: 0, total: 0 }
         map[sid].count++
-        // v.21.104.0527: pakai field 'bayar' (selaras TagihanView), fallback 'dibayar' utk legacy
-        map[sid].total += Number(data.nominal || 0) - Number(data.bayar || data.dibayar || 0)
+        map[sid].total += sisaTagihan(data)
       }
       tunggakanMap.value = map
     } catch (e) {
@@ -356,9 +401,15 @@ const lembagaList = computed(() => {
   return Array.from(set).sort()
 })
 
+const sekolahList = computed(() => {
+  const set = new Set(santriList.value.map((s) => s.lembaga_sekolah).filter(Boolean))
+  return Array.from(set).sort()
+})
+
 const filteredSantri = computed(() => {
-  let list = santriList.value
+  let list = santriList.value.filter((s) => allowSantri(s.id)) // v.111: scope Gedung
   if (filterLembaga.value) list = list.filter((s) => s.lembaga === filterLembaga.value)
+  if (filterSekolah.value) list = list.filter((s) => s.lembaga_sekolah === filterSekolah.value)
   if (filterTunggakan.value) list = list.filter((s) => (tunggakanMap.value[s.id]?.count || 0) > 0)
   const q = search.value.trim().toLowerCase()
   if (q) {
@@ -379,70 +430,47 @@ const filteredSantri = computed(() => {
   return list.slice(0, 50)
 })
 
-// v.95.0626: derive periode tagihan -> "Juni 2026" dari periode/bulan/jatuh_tempo (utk rincian struk)
-const _BLN_ID = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
-function _namaBulan(n) {
-  const i = parseInt(n, 10) - 1
-  return _BLN_ID[i] || ''
-}
-function periodeTagihan(t) {
-  if (!t) return ''
-  // periode "2026-06" / "2026_6" -> "Juni 2026"
-  let m = String(t.periode || '').match(/^(\d{4})[-_](\d{1,2})$/)
-  if (m) return _namaBulan(m[2]) + ' ' + m[1]
-  // periode sudah teks ("Juni 2026") -> pakai apa adanya
-  if (t.periode && /[A-Za-z]/.test(String(t.periode))) return String(t.periode).trim()
-  // bulan (angka/nama) + tahun (field tahun / dari jatuh_tempo)
-  if (t.bulan) {
-    const bln = /^\d+$/.test(String(t.bulan).trim()) ? _namaBulan(t.bulan) : String(t.bulan).trim()
-    const thn = t.tahun || (String(t.jatuh_tempo || '').match(/^(\d{4})/) || [])[1] || ''
-    if (bln) return (thn ? bln + ' ' + thn : bln)
-  }
-  // jatuh_tempo "2026-06-05" -> "Juni 2026"
-  m = String(t.jatuh_tempo || '').match(/^(\d{4})-(\d{2})/)
-  if (m) return _namaBulan(m[2]) + ' ' + m[1]
-  return ''
-}
-
 async function openModal(s) {
   selectedSantri.value = s
   // v.94.0626: buka selalu di mode form (bukan sisa layar sukses transaksi sebelumnya)
   lastTrx.value = null
   loadingCart.value = true
-  pendingTagihan.value = []
-  prepaidPeriodes.value = []
+  allTagihan.value = []
+  posPayments.value = []
   try {
-    const tagCol = collection(db, 'keuangan_tagihan')
-    // v.95.0626: FIX tagihan khusus tak muncul di POS — cocokkan santri_id sbg STRING (+ NUMBER bila numerik),
-    //   tanpa limit, supaya SAMA dgn yg dilihat akun wali (yg pakai String(santri_id)).
+    // v.1.2.x: matriks butuh SEMUA tagihan santri (segala status), bukan cuma yg nunggak.
+    //   Cocokkan santri_id sbg STRING (+ NUMBER bila numerik) — sama spt yg dilihat akun wali.
     const sid = String(s.id)
-    const seen = new Map()
-    const qs = [getDocs(query(tagCol, where('santri_id', '==', sid)))]
     const sidNum = Number(sid)
-    if (!Number.isNaN(sidNum) && String(sidNum) === sid) qs.push(getDocs(query(tagCol, where('santri_id', '==', sidNum))))
-    const snaps = await Promise.all(qs)
-    for (const snp of snaps) for (const d of snp.docs) seen.set(d.id, { id: d.id, ...d.data() })
-    const pending = [...seen.values()]
-      .filter((t) => t.status === 'belum' || t.status === 'partial')
-      .sort((a, b) => (a.jatuh_tempo || '').localeCompare(b.jatuh_tempo || ''))
-    // v.21.87.0527: kirim sisa (remaining) + meta utk pembayaran sebagian (partial)
-    pendingTagihan.value = pending.map((t) => {
-      const penuh = Number(t.nominal || 0)
-      // v.21.104.0527: pakai 'bayar' fallback 'dibayar'
-      const dibayar = Number(t.bayar || t.dibayar || 0)
-      return {
-        tagihan_id: t.id,
-        jenis: t.jenis_label || t.jenis_id || t.kategori || 'Tagihan',
-        nominal: Math.max(0, penuh - dibayar),
-        nominal_penuh: penuh,
-        dibayar_lama: dibayar,
-        // v.95.0626: utamakan periode bersih "Juni 2026" utk rincian struk
-        keterangan: periodeTagihan(t) || t.keterangan || ''
-      }
-    })
-    prepaidPeriodes.value = [...seen.values()]
-      .filter((t) => t.periode_kode)
-      .map((t) => ({ jenis: String(t.jenis_label || t.jenis_id || t.kategori || '').toLowerCase().trim(), periode: String(t.periode_kode) }))
+    const numeric = !Number.isNaN(sidNum) && String(sidNum) === sid
+    const tagQs = [queryColl('keuangan_tagihan', [['santri_id', '==', sid]])]
+    if (numeric) tagQs.push(queryColl('keuangan_tagihan', [['santri_id', '==', sidNum]]))
+    const tagSnaps = await Promise.all(tagQs)
+    const seen = new Map()
+    for (const rows of tagSnaps) for (const t of rows) seen.set(t.id, t)
+    allTagihan.value = [...seen.values()]
+    // v.1.2.x: pembayaran POS santri (Buku Induk) → warnai sel bayar-muka yg TAK punya baris tagihan
+    try {
+      const payQs = [
+        queryColl('keuangan_buku_induk', [
+          ['santri_id', '==', sid],
+          ['sumber', '==', 'pos_santri']
+        ])
+      ]
+      if (numeric)
+        payQs.push(
+          queryColl('keuangan_buku_induk', [
+            ['santri_id', '==', sidNum],
+            ['sumber', '==', 'pos_santri']
+          ])
+        )
+      const paySnaps = await Promise.all(payQs)
+      const seenPay = new Map()
+      for (const rows of paySnaps) for (const p of rows) seenPay.set(p.id, p)
+      posPayments.value = [...seenPay.values()]
+    } catch (e) {
+      console.warn('[pos] load pembayaran POS fail:', e.message)
+    }
   } catch (e) {
     console.warn('[pos] load tagihan fail:', e.message)
   } finally {
@@ -453,10 +481,23 @@ async function openModal(s) {
 
 function closeModal() {
   modalOpen.value = false
-  pendingTagihan.value = []
+  allTagihan.value = []
+  posPayments.value = []
   // v.94.0626: reset transaksi terakhir + santri saat modal benar2 ditutup (selesai cetak)
   lastTrx.value = null
   selectedSantri.value = null
+}
+
+// v.1.2.6: nomor struk dibaca dari DB TEPAT saat menyimpan, disaring per TANGGAL transaksi
+//   (kolom riil → murah). Dulu dari counter lokal yang diisi 80 baris terakhir saja: hari
+//   ramai / halaman di-remount / kasir ke-2 → seq mundur → nomor kembar → dua transaksi
+//   menyatu di Riwayat. Gagal baca → jangan tebak nomor, batalkan (uang belum tercatat).
+async function ambilNomorStruk(tanggal) {
+  const rows = await queryColl('keuangan_buku_induk', [
+    ['sumber', '==', 'pos_santri'],
+    ['tanggal', '==', tanggal]
+  ])
+  return nomorStrukBerikutnya(tanggal, rows.map((r) => r.trx_id).filter(Boolean))
 }
 
 async function handleSimpan(payload) {
@@ -465,11 +506,11 @@ async function handleSimpan(payload) {
     const tanggal = payload.tanggal
     const op = payload.operator || operatorName.value
     // v.21.90.0527: format nomor struk MU-NNNddmmyy (seq harian + tgl)
-    todayTrxCount.value += 1
-    const seq = String(todayTrxCount.value).padStart(3, '0')
-    const dt = String(tanggal || '').split('-')
-    const ddmmyy = (dt[2] || '') + (dt[1] || '') + String(dt[0] || '').slice(-2)
-    const trxId = 'MU-' + seq + ddmmyy
+    const trxId = await ambilNomorStruk(tanggal)
+    // v.1.2.6: penanda unik transaksi — dipakai mesin utk mengelompokkan struk. Nomor struk
+    //   tetap nomor cantik utk manusia; kalaupun dua kasir berebut nomor yang sama pada
+    //   detik yang sama, strukanya TIDAK akan pernah menyatu lagi.
+    const trxUid = buatTrxUid(trxId)
     const santriRef = selectedSantri.value
     // v.94.0626: nama penyetor = nama walisantri (wali -> nama_wali -> ayah)
     const waliNama =
@@ -483,86 +524,164 @@ async function handleSimpan(payload) {
     let lunasCount = 0
     let partialCount = 0
     let totalMasuk = 0
-    for (const item of payload.items) {
-      const id = `pos_${Date.now()}_${Math.floor(Math.random() * 1000)}`
-      const docData = {
-        id,
-        tanggal,
-        tipe: 'masuk',
-        kategori: item.jenis,
-        nominal: item.nominal,
-        keterangan: `${item.jenis} — ${payload.santri_nama} (${payload.santri_nis || payload.santri_id})${item.keterangan ? ' — ' + item.keterangan : ''}`,
-        sumber: 'pos_santri',
-        trx_id: trxId,
-        metode: payload.metode || 'Tunai',
-        santri_id: payload.santri_id,
-        santri_nama: payload.santri_nama,
-        operator: op,
-        wali: waliNama,
-        createdAt: serverTimestamp()
+    // Resolusi Pos Dana (Uang Kegiatan/Buku) dari jenis pembayaran → tag baris buku induk.
+    // Pembayaran tetap masuk keuangan_buku_induk (ikut total); pos hanya penyaring rekap.
+    const posByLabel = {}
+    for (const j of settingsStore.settings?.keuTagihanJenis || []) {
+      const lbl = String(j?.label || j?.nama || j?.id || '').trim()
+      if (lbl && j?.pos) posByLabel[lbl] = String(j.pos)
+    }
+    // Kyai 4 Agu: kas per lembaga "sesuai label pembayaran". Ditulis di baris supaya
+    //   laporan bulan lalu tak bergeser kalau konfigurasi jenis diubah belakangan.
+    //   Baris pecahan K1 dapat lembaga KOMPONENNYA sendiri, bukan lembaga tagihan induk.
+    const petaKas = petaKasLembaga(settingsStore.settings?.keuTagihanJenis || [])
+    const tabWajibItems = [] // item pos 'tabungan_wajib' -> picu push ke wali (lihat setelah writes)
+    let barisMasuk = 0 // jumlah BARIS buku induk (bisa > jumlah item krn tagihan gabungan)
+    for (const [itemIdx, item] of payload.items.entries()) {
+      // tag pos: utamakan pos eksplisit dari tagihan (generate khusus), fallback dari jenis
+      const _pos = item.pos || posByLabel[item.jenis] || ''
+      // K1 (Kyai): tagihan gabungan (sekolah sudah termasuk ngaji) dicatat DIPECAH di Buku
+      //   Induk — wali cuma lihat 1 tagihan, tapi kasnya jadi 2 baris supaya laporan per
+      //   lembaga & Buku Kas per gedung tetap benar. Uang yang dipecah = yang BENAR-BENAR
+      //   diterima (bisa < nominal tagihan kalau bayar sebagian), dan `pecahProporsional`
+      //   menjamin jumlah baris tepat sama dengan uang itu sampai rupiah terakhir.
+      const pecahan = pecahProporsional(item.komponen, item.nominal)
+      const barisItem = pecahan.length
+        ? pecahan.map((k) => ({
+            kategori: String(k.label || item.jenis),
+            nominal: Number(k.nominal || 0),
+            pos: String(k.pos || '') || _pos,
+            // jejak: baris ini bagian dari tagihan jenis apa (utk audit & rekap gabungan)
+            induk_jenis: item.jenis
+          }))
+        : [{ kategori: item.jenis, nominal: Number(item.nominal || 0), pos: _pos, induk_jenis: '' }]
+      for (const [kompIdx, baris] of barisItem.entries()) {
+        // Baris bernominal 0 (mis. komponen ngaji tergerus pembayaran sebagian) jangan
+        // ditulis — cuma jadi sampah di buku kas.
+        if (baris.nominal <= 0) continue
+        // audit B1: id WAJIB unik per BARIS. Dulu `pos_${Date.now()}_${rand(0..999)}` —
+        //   dalam 1 keranjang loop sinkron → Date.now() SAMA, hanya random pembeda →
+        //   tabrakan (ulang tahun) → INSERT PK dobel gagal → Promise.all reject SETELAH
+        //   sebagian tertulis = commit keuangan PARSIAL. Index = pembeda deterministik.
+        const id = `pos_${trxId}_${itemIdx}_${kompIdx}_${Math.random().toString(36).slice(2, 7)}`
+        const docData = {
+          id,
+          tanggal,
+          tipe: 'masuk',
+          kategori: baris.kategori,
+          nominal: baris.nominal,
+          keterangan: `${baris.kategori} — ${payload.santri_nama} (${payload.santri_nis || payload.santri_id})${item.keterangan ? ' — ' + item.keterangan : ''}${baris.induk_jenis && baris.kategori !== baris.induk_jenis ? ' — bagian dari ' + baris.induk_jenis : ''}`,
+          sumber: 'pos_santri',
+          trx_id: trxId,
+          trx_uid: trxUid,
+          metode: payload.metode || 'Tunai',
+          santri_id: payload.santri_id,
+          santri_nama: payload.santri_nama,
+          operator: op,
+          wali: waliNama,
+          createdAt: serverTimestamp()
+        }
+        // Jejak potongan (Kyai 5 Agu 2026). `nominal` baris tetap UANG RIIL yang diterima —
+        //   pecahProporsional sudah memecah dari nominal neto — jadi laporan kas tak berubah.
+        //   Potongannya dicatat sekali di baris PERTAMA item saja; kalau ditempel ke semua
+        //   baris pecahan, rekap akan menjumlahkannya berkali-kali.
+        if (kompIdx === 0 && Number(item.potongan_nominal || 0) > 0) {
+          docData.potongan_nominal = Number(item.potongan_nominal)
+          docData.potongan_label = String(item.potongan_label || 'Potongan')
+          docData.keterangan += ` — potongan ${docData.potongan_label} ${fmtRp(docData.potongan_nominal)}`
+        }
+        if (baris.pos) docData.pos = baris.pos
+        const kasLemb = kasLembagaBaris(
+          { kategori: baris.kategori, induk_jenis: baris.induk_jenis },
+          petaKas
+        )
+        if (kasLemb) docData.lembaga = kasLemb
+        // v.1.2.x: penanda periode utk matriks POS mewarnai sel bayar-muka (tanpa baris tagihan)
+        if (item.periode_kode) docData.periode_kode = item.periode_kode
+        // Tabungan Wajib (dana kelulusan): wali diberi tahu. Pos lain tidak — utk syahriyah dsb
+        // walinya justru sedang di depan kasir, push cuma jadi berisik.
+        if (baris.pos === 'tabungan_wajib' && !tabWajibItems.includes(item))
+          tabWajibItems.push(item)
+        writes.push(setOne('keuangan_buku_induk', id, docData))
+        histori.value.unshift(docData)
+        barisMasuk++
       }
-      writes.push(setDoc(doc(db, 'keuangan_buku_induk', id), docData))
-      histori.value.unshift(docData)
       totalMasuk += Number(item.nominal || 0)
       // v.21.87.0527: tagihan → lunas penuh atau partial (bayar sebagian)
       if (item.tagihan_id) {
         const penuh = Number(item.nominal_penuh || 0)
+        const potongan = Number(item.potongan_nominal || 0)
         const newDibayar = Number(item.dibayar_lama || 0) + Number(item.nominal || 0)
-        const isLunas = penuh <= 0 || newDibayar >= penuh - 0.5
+        // Potongan IKUT menutup tagihan (keputusan Kyai 5 Agu 2026): tagihan 300rb dengan
+        //   potongan 150rb + uang 150rb = LUNAS. Tanpa ini tiap potongan melahirkan
+        //   tunggakan palsu yang mengejar santri di daftar tagihan & laporan.
+        const isLunas = lunasDenganPotongan(penuh, item.dibayar_lama, item.nominal, potongan)
         const upd = isLunas
           ? {
               status: 'lunas',
-              bayar: penuh || newDibayar,
-              dibayar: penuh || newDibayar,
+              terbayar: penuh || newDibayar,
               tanggal_lunas: tanggal,
               dibayar_via: 'pos_santri',
               operator_pelunasan: op
             }
-          : { status: 'partial', bayar: newDibayar, dibayar: newDibayar, dibayar_via: 'pos_santri', operator_pelunasan: op }
+          : {
+              status: 'partial',
+              terbayar: newDibayar,
+              dibayar_via: 'pos_santri',
+              operator_pelunasan: op
+            }
+        // Jejak di tagihan: tanpa ini "lunas" dengan uang < nominal tampak seperti selisih
+        //   kas yang tak bisa dijelaskan saat diperiksa belakangan.
+        if (potongan > 0) {
+          upd.potongan_nominal = potongan
+          upd.potongan_label = String(item.potongan_label || 'Potongan')
+        }
         if (isLunas) lunasCount++
         else partialCount++
         writes.push(
-          updateDoc(doc(db, 'keuangan_tagihan', item.tagihan_id), upd).catch((e) => {
+          updateOne('keuangan_tagihan', item.tagihan_id, upd).catch((e) => {
             console.warn('[pos] update tagihan fail:', item.tagihan_id, e.message)
             tagUpdErr = e.message || String(e)
           })
         )
-      } else if (item.prepay && item.periode) {
-        // v.108: bayar di muka — tagihan bulan depan belum ada, buat baru langsung LUNAS
-        const tagId = `tagihan_${payload.santri_id}_${Date.now()}_${Math.floor(Math.random() * 1000)}`
-        writes.push(
-          setDoc(doc(db, 'keuangan_tagihan', tagId), {
-            id: tagId,
-            santri_id: payload.santri_id,
-            santri_nama: payload.santri_nama,
-            kategori: item.jenis,
-            periode: item.periode_label || item.periode,
-            periode_kode: item.periode,
-            nominal: Number(item.nominal),
-            bayar: Number(item.nominal),
-            dibayar: Number(item.nominal),
-            status: 'lunas',
-            jatuh_tempo: item.periode + '-10',
-            tanggal_lunas: tanggal,
-            dibayar_via: 'pos_santri',
-            operator_pelunasan: op,
-            trx_id: trxId,
-            createdAt: serverTimestamp()
-          }).catch((e) => {
-            console.warn('[pos] buat tagihan prepay fail:', tagId, e.message)
-            tagUpdErr = e.message || String(e)
-          })
-        )
-        lunasCount++
       }
+      // v.1.2.x: item TANPA tagihan_id (sintesis / bayar di muka) → SENGAJA tidak membuat baris
+      //   keuangan_tagihan. Aturan Kyai: yang sudah lunas jangan masuk daftar tagihan. Pembayaran
+      //   cukup tercatat di Buku Induk + periode_kode; matriks POS mewarnai selnya hijau dari situ.
     }
     await Promise.all(writes)
+    // Push ke WALI utk setoran Tabungan Wajib (dana kelulusan): yang menyetor sering santrinya,
+    // jadi wali perlu diberi tahu. target {type:'santri',id} -> dispatch-push me-resolve token
+    // santri + wali (via pencocokan WA/ayah). Sengaja SETELAH writes sukses: jangan kabari
+    // wali kalau pencatatannya sendiri gagal.
+    if (tabWajibItems.length) {
+      const _totalTw = tabWajibItems.reduce((a, i) => a + Number(i.nominal || 0), 0)
+      const _nid = `ntf_tw_${trxId}`
+      try {
+        await setOne('notif_queue', _nid, {
+          id: _nid,
+          judul: 'Setoran Tabungan Wajib diterima',
+          pesan: `Setoran Tabungan Wajib a.n. ${payload.santri_nama} sebesar ${fmtRp(_totalTw)} telah diterima. Terima kasih.`,
+          kategori: 'pembayaran',
+          target: { type: 'santri', id: String(payload.santri_id) },
+          link: '/tabungan-wajib',
+          ref_id: trxId,
+          dibaca: false,
+          status: 'pending',
+          created_at: new Date().toISOString()
+        })
+      } catch (e) {
+        // best-effort: pembayaran SUDAH tercatat, jangan gagalkan transaksi gara-gara notif
+        console.warn('[pos] notif tabungan wajib gagal:', e?.message || e)
+      }
+    }
     // v.95.0626: kalau update tagihan gagal (mis. dok tak ada / izin), beri tahu — jangan diam (bug cicil tetap 1jt)
-    if (tagUpdErr) toast.error('Pembayaran tercatat, TAPI sisa tagihan GAGAL diperbarui: ' + tagUpdErr)
+    if (tagUpdErr)
+      toast.error('Pembayaran tercatat, TAPI sisa tagihan GAGAL diperbarui: ' + tagUpdErr)
     if (histori.value.length > 5) histori.value = histori.value.slice(0, 5)
     // Update ringkasan harian
     todayStats.value = {
-      count: todayStats.value.count + payload.items.length,
+      count: todayStats.value.count + barisMasuk, // BARIS, sepakat dengan hitungan dari DB
       total: todayStats.value.total + totalMasuk
     }
     const parts = []
@@ -594,7 +713,14 @@ async function handleSimpan(payload) {
       items: payload.items.map((i) => ({
         jenis: i.jenis,
         nominal: Number(i.nominal),
-        keterangan: i.keterangan || ''
+        // K1: di struk tetap SATU baris (wali membayar satu tagihan), rinciannya menempel di
+        //   keterangan — semua pencetak struk (PDF, slip, ESC/P) sudah menampilkan keterangan
+        //   dalam tanda kurung, jadi tak ada renderer yang perlu diubah.
+        // Potongan ikut lewat jalur yang sama: wali berhak melihat bahwa nominalnya sudah
+        //   dipotong, dan berapa dari berapa — tanpa itu struk tampak seperti salah tarif.
+        keterangan: [i.keterangan || '', rincianKomponen(i), rincianPotongan(i)]
+          .filter(Boolean)
+          .join(' — ')
       })),
       total: _total,
       bayar: Number(payload.total_bayar || 0),
@@ -602,7 +728,6 @@ async function handleSimpan(payload) {
     }
     // v.94.0626: JANGAN tutup modal — tampilkan state sukses + tombol cetak DI DALAM modal POS.
     //   (lastTrx terisi -> ModalPOS otomatis pindah ke layar sukses.)
-    pendingTagihan.value = []
   } catch (e) {
     toast.error('Gagal simpan: ' + e.message)
   } finally {
@@ -612,6 +737,32 @@ async function handleSimpan(payload) {
 
 function fmtRp(n) {
   return 'Rp ' + new Intl.NumberFormat('id-ID').format(Math.round(n || 0))
+}
+
+/**
+ * Teks rincian utk struk tagihan gabungan: "termasuk Syahriyah Qiraati Pagi Rp 90.000".
+ * Komponen ke-0 = porsi jenis induk (sekolah) — tak perlu disebut, karena label barisnya
+ * sudah jenis itu sendiri. '' bila bukan tagihan gabungan.
+ */
+function rincianKomponen(item) {
+  const k = Array.isArray(item?.komponen) ? item.komponen : []
+  if (k.length < 2) return ''
+  const ikut = k.slice(1).filter((x) => Number(x?.nominal) > 0)
+  if (!ikut.length) return ''
+  return 'termasuk ' + ikut.map((x) => `${x.label} ${fmtRp(x.nominal)}`).join(', ')
+}
+
+/**
+ * Teks potongan untuk struk: "potongan Anak Guru Rp 150.000 dari Rp 300.000".
+ * Menyebut brutonya penting — tanpa itu wali melihat angka yang lebih kecil dari tarif
+ * yang ia tahu, dan struk justru menimbulkan pertanyaan.
+ */
+function rincianPotongan(item) {
+  const pot = Number(item?.potongan_nominal || 0)
+  if (pot <= 0) return ''
+  const bruto = Number(item?.nominal_bruto || 0)
+  const label = String(item?.potongan_label || 'Potongan')
+  return `potongan ${label} ${fmtRp(pot)}` + (bruto > 0 ? ` dari ${fmtRp(bruto)}` : '')
 }
 
 // v.21.88.0527: cetak struk transaksi terakhir
@@ -642,7 +793,10 @@ async function cetakLangsung() {
     if (paper === '9.5') {
       // v.96.0626: cetak GRAFIS RASTER via ESC/P (bypass driver Windows -> TANPA feed 5cm, tetap Arial).
       //   Slip dirender ke canvas lalu dikirim sbg bit-image ESC/P langsung ke printer (print:raw).
-      const res = await printRaw({ base64: buildStrukSlipEscpBase64(lastTrx.value, s), deviceName: printerName || undefined })
+      const res = await printRaw({
+        base64: buildStrukSlipEscpBase64(lastTrx.value, s),
+        deviceName: printerName || undefined
+      })
       if (res && res.ok === false) throw new Error(res.error || 'Print gagal')
     } else {
       const html = buildStrukHtml(lastTrx.value, s)

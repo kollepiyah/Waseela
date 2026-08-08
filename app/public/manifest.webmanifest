@@ -1,7 +1,7 @@
 {
-  "name": "Waseela — Portal Manajemen",
+  "name": "Waseela — Portal Manajemen Lembaga",
   "short_name": "Waseela",
-  "description": "Portal manajemen pondok pesantren: santri, guru, keuangan, rapor, absensi & kegiatan.",
+  "description": "Sistem manajemen lembaga pendidikan: santri, guru, keuangan, rapor, kegiatan.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
@@ -10,7 +10,7 @@
   "lang": "id",
   "dir": "ltr",
   "background_color": "#F2FEF9",
-  "theme_color": "#065F46",
+  "theme_color": "#0F766E",
   "icons": [
     {
       "src": "/pwa-192.png",

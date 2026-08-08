@@ -1,13 +1,20 @@
 // useGuruForm — manage guru CRUD form state
 // Phase 5.13b (v.41.0526) — port logic legacy simpanGuru + editAdminGuru
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { setDoc, doc, getDoc, collection, onSnapshot } from 'firebase/firestore'
-import { db } from '@/services/firebase'
-import { subscribeDoc, getAll } from '@/services/firestore'
+import { getOne, mergeOne, subscribeDoc, getAll } from '@/services/db'
+import { provisionAkunSenyap } from '@/services/authSupabase' // K1-b: akun login ikut lahir
 import { nextNigForNew } from '@/utils/nigGenerator' // v.100 Batch16: NIG guru baru = append (lanjut NNN)
 import { useToast } from '@/composables/useToast'
 import { useAuthStore } from '@/stores/auth'
+import { useSettingsStore } from '@/stores/settings'
 import { toTitleCase, normalizeWA } from '@/utils/format'
+import { gedungList } from '@/utils/gedung'
+// v.1.1.9: shift ikut master; shiftsForGuru dipakai utk menurunkan centangan awal data lama.
+import { shiftsForGuru } from '@/utils/shiftDerive'
+import { shiftList, shiftIdsToLegacy } from '@/utils/shiftMaster'
+// v.1.1.9: unit tugas dari master/jabatan (ganti tebakan regex lama)
+import { unitsOfGuru, fieldForUnit, namaLembaga, pecahJabatan } from '@/utils/jabatanUnit'
+import { isSekolahLembaga } from '@/composables/useLembaga' // v.1.2.1: sumber tunggal deteksi sekolah
 
 function emptyForm() {
   return {
@@ -20,7 +27,11 @@ function emptyForm() {
     jabatan_tambahan: '',
     lembaga: '',
     lembaga_sekolah: '',
+    // Kyai 7 Agu 2026: `tanggal_tugas` kini berlabel "Tgl. Syahadah" (kuncinya sengaja
+    //   tetap — NIG diturunkan darinya). `tanggal_mengabdi` = field baru "Tgl. Tugas",
+    //   satu-satunya dasar masa pengabdian & tunjangannya.
     tanggal_tugas: '',
+    tanggal_mengabdi: '',
     no_nig: '',
     // v.97.0626: nomor rekening BMT guru (tujuan pencairan bisyaroh via BMT)
     rek_bmt: '',
@@ -28,9 +39,13 @@ function emptyForm() {
     status: 'Aktif',
     id_fingerprint: '',
     tipe_pegawai: 'guru',
-    shift: 'pagi_sore',
-    shift_pegawai: 'pagi_sore', // v.99: shift kerja PEGAWAI (terpisah dari shift mengajar Qiraati) — utk dual-role
+    // v.1.1.9: shift_ids[] = SUMBER KEBENARAN, satu daftar utk shift mengajar & kerja.
+    //   Menggantikan pasangan shift/shift_pegawai yang artinya berganti-ganti tergantung
+    //   tipe_pegawai. Keduanya masih DITULIS sbg cermin (lihat save) demi fp_sync.py.
+    shift_ids: [],
     role_sistem: 'user',
+    // v.111: gedung yang dikelola (khusus admin_keuangan → scope Buku Kas + akademik)
+    gedung: '',
     custom_fields: {}
   }
 }
@@ -52,6 +67,8 @@ export const JABATAN_OPTIONS = [
   'Admin Yayasan',
   // v.21.109.0527: Direktur/Supervisor — akses menu Data Supervisi
   'Direktur/Supervisor',
+  // Koordinator Lapangan (KORLAP) — akses baca Layanan Pengaduan
+  'Koordinator Lapangan',
   'Pengasuh',
   'Keamanan',
   'Kebersihan'
@@ -63,6 +80,7 @@ export const JABATAN_NO_LEMBAGA = [
   'Admin Yayasan',
   // v.21.109.0527: Direktur/Supervisor lintas lembaga (no-lembaga)
   'Direktur/Supervisor',
+  'Koordinator Lapangan',
   'Pengasuh',
   'Keamanan',
   'Kebersihan',
@@ -105,11 +123,8 @@ export const TIPE_PEGAWAI_OPTIONS = [
   { value: 'pegawai_guru', label: 'Pegawai + Guru (dual role)' }
 ]
 
-export const SHIFT_OPTIONS = [
-  { value: 'pagi', label: 'Pagi saja' },
-  { value: 'sore', label: 'Sore saja' },
-  { value: 'pagi_sore', label: 'Pagi + Sore' }
-]
+// v.1.1.9: konstanta SHIFT_OPTIONS (pagi/sore/pagi_sore) DIHAPUS — pilihan shift kini
+//   dari master (lihat shiftOptions di useGuruForm), supaya shift buatan sendiri ikut muncul.
 
 export const ROLE_SISTEM_OPTIONS = [
   { value: 'user', label: 'User Biasa' },
@@ -145,7 +160,62 @@ export function useGuruForm() {
     return base
   })
 
-  const lembagaSekolahOptions = computed(() => ['TK', 'SDI', 'PKBM'])
+  // v.1.2.1: daftar sekolah DIBACA dari master/lembaga (tipe 'Formal'), dulu literal
+  //   ['TK','SDI','PKBM'] — sekolah yang Kyai tambah sendiri tak pernah muncul di sini.
+  //   Baris varian TK (tk_group) dilewati: ia kelas di bawah payung "TK", bukan lembaga
+  //   tersendiri — samakan dengan kelasSekolahOptions. Fallback hanya dipakai selama
+  //   master/lembaga belum termuat.
+  const SEKOLAH_FALLBACK = ['TK', 'SDI', 'PKBM']
+  const lembagaSekolahOptions = computed(() => {
+    const fromMaster = lembagaRaw.value
+      .filter((l) => !l.tk_group && isSekolahLembaga(namaLembaga(l), lembagaRaw.value))
+      .map((l) => namaLembaga(l))
+      .filter(Boolean)
+    return fromMaster.length > 0 ? fromMaster : SEKOLAH_FALLBACK
+  })
+
+  // ── v.1.1.9: Unit tugas dari master/jabatan (items[].units) ──────────────
+  // Gabungan unit jabatan utama + tambahan. [] = GLOBAL (jabatan "Guru") → pakai
+  // dropdown Qiraati/Sekolah seperti biasa. Ada isinya → lembaga guru dikunci/dibatasi
+  // ke unit itu, menggantikan tebakan regex lama di useGuru.deriveGuruLembagaRefs.
+  const unitsJabatan = computed(() =>
+    unitsOfGuru(jabatanItemsFromMaster.value, form.value.jabatan, form.value.jabatan_tambahan)
+  )
+  const jabatanPunyaUnit = computed(() => unitsJabatan.value.length > 0)
+
+  // Unit yang sedang terpilih — dibaca dari field mana pun yang menampungnya.
+  const unitTerpilih = computed({
+    get() {
+      const cand = [form.value.lembaga, form.value.lembaga_sekolah].filter(Boolean)
+      return (
+        cand.find((c) =>
+          unitsJabatan.value.some((u) => u.toLowerCase() === String(c).toLowerCase())
+        ) || ''
+      )
+    },
+    set(v) {
+      const nama = String(v || '')
+      form.value.lembaga = ''
+      form.value.lembaga_sekolah = ''
+      if (!nama) return
+      form.value[fieldForUnit(lembagaRaw.value, nama)] = nama
+    }
+  })
+
+  // Jabatan berubah → selaraskan lembaga dgn unit jabatan.
+  //   1 unit  → terisi OTOMATIS (mis. Keamanan → Sarana & Prasarana).
+  //   >1 unit → biarkan Kyai pilih; buang pilihan yang tak lagi sah.
+  //   global  → jangan sentuh apa pun.
+  function syncUnitKeJabatan() {
+    const units = unitsJabatan.value
+    if (units.length === 0) return
+    if (units.length === 1) {
+      unitTerpilih.value = units[0]
+      return
+    }
+    const cur = unitTerpilih.value
+    if (cur && !units.some((u) => u.toLowerCase() === cur.toLowerCase())) unitTerpilih.value = ''
+  }
 
   // v.21.17b.0526: Jabatan dinamis dari master/jabatan Firestore doc (legacy fallback)
   const jabatanFromMaster = ref([])
@@ -269,19 +339,99 @@ export function useGuruForm() {
   // v.99: BUTUH LEMBAGA dari master/jabatan items[].tipe_lembaga (kyai: "mana jabatan yg butuh lembaga dan tidak").
   //   Fallback: JABATAN_NO_LEMBAGA hardcoded → 'non-lembaga'; selain itu → 'lembaga'.
   const jabatanTipeLembaga = computed(() => {
-    const j = String(form.value.jabatan || '').toLowerCase().trim()
-    const item = jabatanItemsFromMaster.value.find((it) => it && String(it.nama || '').toLowerCase().trim() === j)
+    const j = String(form.value.jabatan || '')
+      .toLowerCase()
+      .trim()
+    const item = jabatanItemsFromMaster.value.find(
+      (it) =>
+        it &&
+        String(it.nama || '')
+          .toLowerCase()
+          .trim() === j
+    )
     if (item && item.tipe_lembaga) return item.tipe_lembaga
     if (JABATAN_NO_LEMBAGA.some((n) => String(n).toLowerCase() === j)) return 'non-lembaga'
     return 'lembaga'
   })
-  const butuhLembaga = computed(() => jabatanTipeLembaga.value !== 'non-lembaga')
-  // Lembaga (Qiraati & Sekolah) tampil & disimpan HANYA bila jabatan butuh lembaga.
+  // v.110.0625: PENGAJAR tetap butuh lembaga walau JABATAN UTAMA non-lembaga (mis. Direktur + jabatan tambahan Guru).
+  //   Pemicu: tipe_pegawai 'guru'/'pegawai_guru' (dual role) ATAU jabatan tambahan termasuk grup guru.
+  const isPengajar = computed(() => {
+    const tipe = String(form.value.tipe_pegawai || '').toLowerCase()
+    if (tipe === 'guru' || tipe === 'pegawai_guru') return true
+    // Kyai 7 Agu 2026: jabatan tambahan kini boleh lebih dari satu — cukup SALAH SATU
+    //   bergrup guru untuk membuatnya pengajar.
+    return pecahJabatan(form.value.jabatan_tambahan).some(
+      (jt) =>
+        JABATAN_GURU_GROUP.some((n) => n.toLowerCase() === jt.toLowerCase()) || /guru/i.test(jt)
+    )
+  })
+  // Butuh lembaga bila: jabatan utama butuh lembaga, ATAU orangnya mengajar (dual-role / jabatan tambahan guru).
+  const butuhLembaga = computed(
+    () => jabatanTipeLembaga.value !== 'non-lembaga' || isPengajar.value
+  )
+  // Lembaga (Qiraati & Sekolah) tampil & disimpan bila butuh lembaga.
   const showLembagaSekolah = computed(() => butuhLembaga.value)
   const showLembagaQiraati = computed(() => butuhLembaga.value)
 
   // Apakah user current admin (untuk show role_sistem option)
   const isSuperAdmin = computed(() => auth.sesiAktif?.role_sistem === 'super_admin')
+
+  // v.111: opsi Gedung (utk picker saat role_sistem = admin_keuangan)
+  const settings = useSettingsStore()
+  const gedungOptions = computed(() => gedungList(settings.settings || {}))
+
+  // v.1.1.9: pilihan shift dari MASTER, disaring per tipe pegawai —
+  //   guru → shift 'guru' (mengajar); pegawai → shift 'pegawai' (kerja); dual-role → dua-duanya.
+  const shiftOptions = computed(() => {
+    const all = shiftList(settings.settings || {})
+    const tipe = String(form.value.tipe_pegawai || 'guru').toLowerCase()
+    const byTipe =
+      tipe === 'pegawai_guru'
+        ? all
+        : tipe === 'pegawai'
+          ? all.filter((s) => s.untuk === 'pegawai')
+          : all.filter((s) => s.untuk === 'guru')
+    // v.1.1.x: shift ber-scope lembaga hanya muncul bila cocok lembaga guru (kosong = semua).
+    //   Shift yg SUDAH terpilih tetap tampil (agar bisa di-uncheck walau lembaga berubah).
+    const lembagaGuru = new Set(
+      [form.value.lembaga, form.value.lembaga_sekolah]
+        .map((x) =>
+          String(x || '')
+            .trim()
+            .toLowerCase()
+        )
+        .filter(Boolean)
+    )
+    const dipilih = new Set((form.value.shift_ids || []).map(String))
+    return byTipe.filter((s) => {
+      if (!Array.isArray(s.lembaga) || s.lembaga.length === 0) return true
+      if (dipilih.has(String(s.id))) return true
+      return s.lembaga.some((l) =>
+        lembagaGuru.has(
+          String(l || '')
+            .trim()
+            .toLowerCase()
+        )
+      )
+    })
+  })
+
+  function toggleShift(id) {
+    const cur = Array.isArray(form.value.shift_ids) ? [...form.value.shift_ids] : []
+    const i = cur.indexOf(id)
+    if (i >= 0) cur.splice(i, 1)
+    else cur.push(id)
+    form.value.shift_ids = cur
+  }
+
+  // Ganti tipe pegawai → buang shift yang tak lagi ditawarkan (mis. guru→pegawai:
+  //   shift mengajar gugur). Dulu ini `form.shift = ''` yang justru MENGOSONGKAN input
+  //   shift kerja pegawai yang baru mau diisi → tersimpan '' → pembaca legacy
+  //   menerjemahkannya 'pagi_sore' → pegawai shift pagi dihitung hadir 2 shift.
+  function syncShiftIdsKeTipe() {
+    const boleh = new Set(shiftOptions.value.map((s) => s.id))
+    form.value.shift_ids = (form.value.shift_ids || []).filter((id) => boleh.has(id))
+  }
 
   function resetForm() {
     form.value = emptyForm()
@@ -297,12 +447,11 @@ export function useGuruForm() {
     isLoading.value = true
     errorMsg.value = null
     try {
-      const snap = await getDoc(doc(db, 'guru', String(id)))
-      if (!snap.exists()) {
+      const g = await getOne('guru', String(id))
+      if (!g) {
         errorMsg.value = 'Guru tidak ditemukan'
         return
       }
-      const g = snap.data()
       form.value = {
         id: g.id,
         nama: g.nama || '',
@@ -313,9 +462,13 @@ export function useGuruForm() {
         lembaga: g.lembaga || '',
         lembaga_sekolah: g.lembaga_sekolah || '',
         tanggal_tugas: g.tanggal_tugas || '',
+        tanggal_mengabdi: g.tanggal_mengabdi || '',
         // v.100 Batch11: EKGQ → NIG (Nomor Induk Guru). Field baru `nig`, fallback baca data lama.
         no_nig: g.nig || g.ekgq || g.no_ekgq || g.no_syahadah || '',
         wa: g.wa || '',
+        // v.1.1.9: rek_bmt DULU tak dimuat/disimpan form (bug: ketik di form → hilang).
+        //   Fallback baca `no_rek_bmt` (dipakai jalur impor mapGuruRow lama).
+        rek_bmt: g.rek_bmt || g.no_rek_bmt || '',
         status: g.status || 'Aktif',
         id_fingerprint: g.id_fingerprint || '',
         // v.21.18.0526: migrate old tipe values (ngaji/sekolah/ngaji_sekolah/admin) → new (guru/pegawai/pegawai_guru)
@@ -326,9 +479,15 @@ export function useGuruForm() {
           if (['guru', 'pegawai', 'pegawai_guru'].includes(old)) return old
           return 'guru'
         })(),
-        shift: g.shift || 'pagi_sore',
-        shift_pegawai: g.shift_pegawai || 'pagi_sore', // v.99: shift kerja pegawai (dual-role)
+        // v.1.1.9: data lama belum punya shift_ids → turunkan dari shift/shift_pegawai
+        //   lewat shiftsForGuru (sumber tunggal), jadi centangan awal = shift yg selama
+        //   ini memang berlaku bagi dia.
+        shift_ids:
+          Array.isArray(g.shift_ids) && g.shift_ids.length > 0
+            ? g.shift_ids.map(String)
+            : [...shiftsForGuru(g, settings.settings || {})],
         role_sistem: g.role_sistem || 'user',
+        gedung: g.gedung || '',
         custom_fields: g.custom_fields || {}
       }
       editingId.value = String(id)
@@ -343,11 +502,16 @@ export function useGuruForm() {
     const f = form.value
     if (!String(f.nama || '').trim()) return 'Nama wajib diisi'
     if (!f.jabatan) return 'Jabatan wajib dipilih'
-    if (f.jabatan_tambahan && f.jabatan_tambahan === f.jabatan) {
-      return 'Jabatan tambahan harus berbeda dari jabatan utama'
-    }
-    // v.21.18.0526: tipe pegawai → no lembaga; tipe guru/pegawai_guru → minimal 1 lembaga
-    if (butuhLembaga.value && !f.lembaga && !f.lembaga_sekolah) {
+    const jtSama = pecahJabatan(f.jabatan_tambahan).find(
+      (x) => x.toLowerCase() === String(f.jabatan || '').toLowerCase()
+    )
+    if (jtSama) return `Jabatan tambahan "${jtSama}" sama dengan jabatan utama — pilih yang lain`
+    // v.1.2.3: lembaga (Qiraati/Sekolah) hanya WAJIB utk PENGAJAR (isPengajar) — bukan
+    //   butuhLembaga. Bug lama: pegawai murni yang jabatannya ber-unit lembaga (mis. Admin
+    //   Keuangan → Yayasan) bikin butuhLembaga=true, padahal picker lembaga disembunyikan
+    //   utk pegawai → deadlock: wajib diisi tapi tak bisa dipilih → shift_ids tak bisa
+    //   disimpan. isPengajar sudah mencakup guru/pegawai_guru + jabatan tambahan Guru.
+    if (isPengajar.value && !f.lembaga && !f.lembaga_sekolah) {
       return 'Pilih minimal 1 lembaga (Qiraati atau Sekolah)'
     }
     if (!String(f.wa || '').trim()) return 'No WA wajib diisi'
@@ -360,7 +524,10 @@ export function useGuruForm() {
   async function propagateGuruRename(oldNama, newNama) {
     try {
       const allSantri = await getAll('santri')
-      const eq = (v) => String(v || '').trim().toLowerCase() === String(oldNama).trim().toLowerCase()
+      const eq = (v) =>
+        String(v || '')
+          .trim()
+          .toLowerCase() === String(oldNama).trim().toLowerCase()
       let count = 0
       for (const s of allSantri) {
         const patch = {}
@@ -374,7 +541,7 @@ export function useGuruForm() {
           patch.guru_sekolah = newNama
         }
         if (Object.keys(patch).length) {
-          await setDoc(doc(db, 'santri', String(s.id)), patch, { merge: true })
+          await mergeOne('santri', String(s.id), patch)
           count++
         }
       }
@@ -408,15 +575,24 @@ export function useGuruForm() {
         lembaga: butuhLembaga.value ? f.lembaga : '',
         lembaga_sekolah: butuhLembaga.value ? f.lembaga_sekolah : '',
         tanggal_tugas: f.tanggal_tugas || '',
+        tanggal_mengabdi: f.tanggal_mengabdi || '',
         nig: f.no_nig || '', // v.100 Batch11: Nomor Induk Guru (dulu ekgq)
         wa: normalizeWA(f.wa), // v.99: auto leading-0
         username: defaultUsername,
         status: f.status,
+        // v.1.1.9: rek_bmt (tujuan transfer bisyaroh via BMT) — DULU tak ikut disimpan.
+        rek_bmt: String(f.rek_bmt || '').trim(),
         id_fingerprint: f.id_fingerprint || '',
         tipe_pegawai: f.tipe_pegawai,
-        shift: f.shift,
-        shift_pegawai: f.shift_pegawai || 'pagi_sore', // v.99: shift kerja pegawai (dual-role)
+        // v.1.1.9: shift_ids = sumber kebenaran. shift & shift_pegawai TETAP DITULIS
+        //   sebagai cermin — fp_sync.py (replika Python di luar repo) masih membacanya
+        //   dan belum mengenal shift_ids. Cermin kosong = 'kosong', bukan '' (string
+        //   kosong ditafsirkan pembaca legacy jadi 'pagi_sore' → bonus 2 shift).
+        shift_ids: [...(f.shift_ids || [])],
+        ...shiftIdsToLegacy(f.shift_ids, f.tipe_pegawai),
         role_sistem: isSuperAdmin.value ? f.role_sistem : 'user',
+        // v.111: gedung hanya bermakna utk admin_keuangan; selain itu kosongkan
+        gedung: isSuperAdmin.value && f.role_sistem === 'admin_keuangan' ? f.gedung || '' : '',
         custom_fields: f.custom_fields || {},
         // v.102: field `password` plaintext DIHAPUS — login pakai Firebase Auth (sandi awal '1234' via lazy-migration)
         foto: ''
@@ -425,9 +601,8 @@ export function useGuruForm() {
       let _oldNama = '' // v.100e: nama guru SEBELUM edit (deteksi rename → propagasi ke santri)
       if (editingId.value) {
         try {
-          const oldSnap = await getDoc(doc(db, 'guru', String(editingId.value)))
-          if (oldSnap.exists()) {
-            const old = oldSnap.data()
+          const old = await getOne('guru', String(editingId.value))
+          if (old) {
             _oldNama = old.nama || ''
             data.foto = old.foto || ''
             data.username = old.username || defaultUsername
@@ -453,11 +628,21 @@ export function useGuruForm() {
         try {
           const allGuru = await getAll('guru')
           data.nig = nextNigForNew(allGuru, data.tanggal_tugas)
-        } catch (e) { /* gagal hitung → biarkan kosong, bisa digenerate via impor/tombol */ }
+        } catch (e) {
+          /* gagal hitung → biarkan kosong, bisa digenerate via impor/tombol */
+        }
       }
-      await setDoc(doc(db, 'guru', String(data.id)), data, { merge: true })
+      await mergeOne('guru', String(data.id), data)
+      // K1-b: akun login lahir bersama datanya (senyap — simpan tak boleh gagal
+      //   gara-gara pembuatan akun). Juga saat EDIT: kunci akun guru diturunkan
+      //   dari username/WA, jadi mengubahnya butuh akun baru.
+      provisionAkunSenyap({ collection: 'guru', docId: data.id })
       // v.100e: rename guru → perbarui nama tersimpan di referensi santri (denormalisasi)
-      if (editingId.value && _oldNama && _oldNama.trim().toLowerCase() !== String(data.nama).trim().toLowerCase()) {
+      if (
+        editingId.value &&
+        _oldNama &&
+        _oldNama.trim().toLowerCase() !== String(data.nama).trim().toLowerCase()
+      ) {
         await propagateGuruRename(_oldNama, data.nama)
       }
       toast.success(editingId.value ? 'Data guru diupdate' : 'Guru baru disimpan')
@@ -472,9 +657,8 @@ export function useGuruForm() {
 
   // v.21.22.0526: Lembaga di doc master/lembaga (list), bukan collection
   onMounted(() => {
-    unsubLembaga = onSnapshot(doc(db, 'master', 'lembaga'), (snap) => {
-      const data = snap.data()
-      lembagaRaw.value = Array.isArray(data?.list) ? data.list : []
+    unsubLembaga = subscribeDoc('master', 'lembaga', (m) => {
+      lembagaRaw.value = Array.isArray(m?.list) ? m.list : []
     })
     _unsubJabatan = subscribeDoc('master', 'jabatan', (docData) => {
       jabatanFromMaster.value = Array.isArray(docData?.list) ? docData.list : []
@@ -507,18 +691,25 @@ export function useGuruForm() {
     editingId,
     JABATAN_OPTIONS,
     TIPE_PEGAWAI_OPTIONS,
-    SHIFT_OPTIONS,
+    shiftOptions,
+    toggleShift,
+    syncShiftIdsKeTipe,
     ROLE_SISTEM_OPTIONS,
     JABATAN_GURU_GROUP,
     JABATAN_PEGAWAI_GROUP,
     lembagaPondokOptions,
     lembagaSekolahOptions,
+    unitsJabatan,
+    jabatanPunyaUnit,
+    unitTerpilih,
+    syncUnitKeJabatan,
     jabatanOptionsDynamic,
     jabatanOptionsFiltered,
     showLembagaSekolah,
     showLembagaQiraati,
     butuhLembaga,
     isSuperAdmin,
+    gedungOptions,
     resetForm,
     loadGuru,
     validate,

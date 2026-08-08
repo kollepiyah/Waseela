@@ -1,0 +1,77 @@
+{
+  "name": "waseela-desktop",
+  "version": "1.3.4",
+  "description": "Waseela — Portal Manajemen Lembaga (Desktop)",
+  "author": "Bakafrawi Project",
+  "main": "build/index.js",
+  "license": "UNLICENSED",
+  "_catatan_publisherName": "JANGAN kembalikan `publisherName` ke build.win selama installer belum ditandatangani (belum ada certificateFile/cscLink). electron-builder menuliskannya ke app-update.yml, dan NsisUpdater lalu MEMVERIFIKASI tanda tangan Authenticode installer yang baru diunduh lewat PowerShell Get-AuthenticodeSignature. Installer kita tidak bersertifikat -> Status NotSigned -> update DITOLAK ('is not signed by the application owner'). Itulah sebab 'auto-update tidak bisa di beberapa PC' (Kyai, 5 Agu 2026): di PC yang PowerShell-nya diblok/bermasalah, verifikasi DILEWATI dan update justru jalan — jadi gagalnya tampak acak. Kalau nanti sertifikat code-signing dibeli, publisherName boleh (dan sebaiknya) dipasang kembali. Catatan ini sengaja di ROOT package.json, BUKAN di dalam `build` — electron-builder 24 menolak properti tak dikenal di dalam `build` (ValidationError).",
+  "scripts": {
+    "build": "tsc",
+    "electron:start-live": "node ./live-runner.js",
+    "electron:start": "npm run build && electron .",
+    "electron:pack": "npm run build && electron-builder build --dir",
+    "electron:make": "npm run build && electron-builder build --win nsis",
+    "electron:make:win7": "npm run build && electron-builder build --win nsis --config.electronVersion=22.3.27 --config.nsis.artifactName=Waseela-Setup-Win7-${version}.${ext}",
+    "electron:publish:win7": "npm run build && electron-builder build --win nsis --publish always --config.electronVersion=22.3.27 --config.nsis.artifactName=Waseela-Setup-Win7-${version}.${ext} --config.nsis.differentialPackage=false",
+    "electron:publish": "npm run build && electron-builder build --win nsis --publish always"
+  },
+  "build": {
+    "appId": "id.waseela.app.desktop",
+    "productName": "Waseela",
+    "asar": true,
+    "asarUnpack": [
+      "assets/**/*"
+    ],
+    "directories": {
+      "buildResources": "resources",
+      "output": "dist"
+    },
+    "files": [
+      "build/**/*",
+      "app/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "publish": {
+      "provider": "github",
+      "owner": "kollepiyah",
+      "repo": "waseela",
+      "releaseType": "release"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/appIcon.ico"
+    },
+    "nsis": {
+      "artifactName": "Waseela-Setup-${version}.${ext}",
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Waseela",
+      "installerIcon": "assets/appIcon.ico",
+      "uninstallerIcon": "assets/appIcon.ico"
+    }
+  },
+  "dependencies": {
+    "electron-unhandled": "^4.0.1",
+    "electron-updater": "^6.1.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4",
+    "typescript": "^5.2.0"
+  }
+}

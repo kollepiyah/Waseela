@@ -29,12 +29,12 @@
       <button
         v-for="t in tabs"
         :key="t.id"
-        @click="section = t.id"
         :class="[
           'group relative overflow-hidden bg-gradient-to-br rounded-xl p-2.5 md:p-3 text-left text-white shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 ease-out cursor-pointer flex items-center gap-2',
           t.gradient,
           section === t.id ? 'ring-2 ring-white/70 ring-offset-1 ring-offset-cyan-50' : ''
         ]"
+        @click="section = t.id"
       >
         <i :class="['fas', t.icon, 'text-base md:text-lg drop-shadow flex-shrink-0']"></i>
         <h3 class="text-[11px] md:text-xs font-black leading-tight drop-shadow-sm">
@@ -121,8 +121,8 @@
               type="file"
               accept="image/*"
               :disabled="uploading === 'logoUrl'"
-              @change="handleUpload($event, 'logoUrl', 'app_logos')"
               class="text-xs flex-1"
+              @change="handleUpload($event, 'logoUrl', 'app_logos')"
             />
           </div>
           <p class="text-[10px] text-emerald-700 italic">Tampil di sidebar + login.</p>
@@ -142,8 +142,8 @@
               type="file"
               accept="image/*"
               :disabled="uploading === 'logoKop'"
-              @change="handleUpload($event, 'logoKop', 'app_logos')"
               class="text-xs flex-1"
+              @change="handleUpload($event, 'logoKop', 'app_logos')"
             />
           </div>
           <p class="text-[10px] text-cyan-700 italic">
@@ -165,8 +165,8 @@
               type="file"
               accept="image/*"
               :disabled="uploading === 'logoQiraati'"
-              @change="handleUpload($event, 'logoQiraati', 'app_logos')"
               class="text-xs flex-1"
+              @change="handleUpload($event, 'logoQiraati', 'app_logos')"
             />
           </div>
           <p class="text-[10px] text-emerald-700 italic">Untuk header rapor + rekap Qiraati.</p>
@@ -190,14 +190,14 @@
               type="file"
               accept="image/*"
               :disabled="uploading === 'bgImage'"
-              @change="handleUpload($event, 'bgImage', 'app_bg')"
               class="text-xs flex-1"
+              @change="handleUpload($event, 'bgImage', 'app_bg')"
             />
           </div>
           <button
             v-if="form.bgImage"
-            @click="form.bgImage = ''"
             class="text-[10px] text-rose-600 font-bold underline"
+            @click="form.bgImage = ''"
           >
             <Trash2Icon class="w-3 h-3 inline" /> Hapus BG
           </button>
@@ -223,8 +223,8 @@
               type="file"
               accept="image/*"
               :disabled="uploading === 'bgRaporTPQ'"
-              @change="handleUpload($event, 'bgRaporTPQ', 'app_bg')"
               class="text-xs flex-1"
+              @change="handleUpload($event, 'bgRaporTPQ', 'app_bg')"
             />
           </div>
           <p class="text-[10px] text-teal-700 italic">
@@ -232,8 +232,8 @@
           </p>
           <button
             v-if="form.bgRaporTPQ"
-            @click="form.bgRaporTPQ = ''"
             class="text-[10px] text-rose-600 font-bold underline mt-1"
+            @click="form.bgRaporTPQ = ''"
           >
             <Trash2Icon class="w-3 h-3 inline" /> Hapus
           </button>
@@ -259,8 +259,8 @@
               type="file"
               accept="image/*"
               :disabled="uploading === 'bgRaporDiniyah'"
-              @change="handleUpload($event, 'bgRaporDiniyah', 'app_bg')"
               class="text-xs flex-1"
+              @change="handleUpload($event, 'bgRaporDiniyah', 'app_bg')"
             />
           </div>
           <p class="text-[10px] text-teal-700 italic">
@@ -268,8 +268,8 @@
           </p>
           <button
             v-if="form.bgRaporDiniyah"
-            @click="form.bgRaporDiniyah = ''"
             class="text-[10px] text-rose-600 font-bold underline mt-1"
+            @click="form.bgRaporDiniyah = ''"
           >
             <Trash2Icon class="w-3 h-3 inline" /> Hapus
           </button>
@@ -324,14 +324,11 @@
       class="mb-4"
     >
       <div class="grid md:grid-cols-2 gap-3">
-        <UiInput
-          v-model="form.adminUsername"
-          label="Username Admin Built-in"
-        />
+        <UiInput v-model="form.adminUsername" label="Username Admin Built-in" />
       </div>
       <form
-        @submit.prevent="changeAdminPassword"
         class="mt-4 p-3 bg-cyan-50 border border-cyan-200 rounded-lg"
+        @submit.prevent="changeAdminPassword"
       >
         <p class="text-xs font-black text-cyan-800 mb-2 uppercase">Ganti Password Admin</p>
         <input
@@ -462,6 +459,12 @@
         <label
           class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded"
         >
+          <input v-model="form.fiturPengaduan" type="checkbox" class="w-4 h-4 accent-teal-600" />
+          Layanan Pengaduan
+        </label>
+        <label
+          class="flex items-center gap-2 cursor-pointer p-2 hover:bg-[var(--bg-card-elevated)] rounded"
+        >
           <input v-model="form.fiturNotifikasi" type="checkbox" class="w-4 h-4 accent-teal-600" />
           Notifikasi FCM
           <span class="text-[10px] text-[var(--text-tertiary)] italic"
@@ -522,135 +525,428 @@
     </UiCard>
 
     <!-- ============================================================
-         SECTION: Jam Shift (Pagi · Sore · Sekolah)
+         SECTION: Master Shift — v.1.1.9
+         Dulu 5 kartu jam hardcoded (Pagi/Sore/Sekolah/Peg.Pagi/Peg.Sore).
+         Kini tabel master: shift bisa ditambah sendiri, jam tersimpan di
+         dalam item. 5 shift bawaan tetap memakai id lama + jamnya dicermin
+         ke setting-key lama saat simpan → fp_sync.py tak perlu diubah.
          ============================================================ -->
     <UiCard
       v-show="section === 'shift'"
-      title="Pengaturan Jam Shift"
-      subtitle="Jam mulai / selesai / batas terlambat — Pagi · Sore · Sekolah"
+      title="Master Shift"
+      subtitle="Daftar shift mengajar & kerja beserta jamnya — bisa ditambah sendiri"
       class="mb-4"
     >
-      <div class="grid md:grid-cols-3 gap-4">
-        <!-- Shift Pagi -->
-        <div class="p-3 bg-cyan-50 border border-cyan-200 rounded-xl">
-          <p class="text-xs font-black text-cyan-800 uppercase mb-2">
-            <i class="fas fa-sun mr-1"></i>SHIFT PAGI
-          </p>
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <p class="text-[11px] text-[var(--text-secondary)] italic">
+          <i class="fas fa-info-circle mr-1"></i>Jam <b>Terlambat</b> = batas kehadiran masih
+          dianggap "Hadir"; lewat dari ini &rarr; status auto "Terlambat".
+        </p>
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold px-4 py-2 rounded-lg text-xs"
+          @click="openShiftBaru"
+        >
+          <i class="fas fa-plus"></i>Tambah Shift
+        </button>
+      </div>
+      <div class="border border-[var(--border-subtle)] rounded-xl overflow-hidden overflow-x-auto">
+        <table class="w-full text-sm min-w-[620px]">
+          <thead>
+            <tr
+              class="bg-[var(--bg-card-elevated)] text-[10px] uppercase tracking-wider text-[var(--text-secondary)]"
+            >
+              <th class="text-left px-3 py-2.5 font-black w-10">No</th>
+              <th class="text-left px-3 py-2.5 font-black">Nama Shift</th>
+              <th class="text-left px-3 py-2.5 font-black">Untuk</th>
+              <th class="text-left px-3 py-2.5 font-black">Mulai</th>
+              <th class="text-left px-3 py-2.5 font-black">Terlambat</th>
+              <th class="text-left px-3 py-2.5 font-black">Selesai</th>
+              <th class="text-center px-3 py-2.5 font-black w-20">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[var(--border-subtle)]">
+            <tr
+              v-for="(sh, idx) in form.shiftMaster"
+              :key="sh.id || idx"
+              class="hover:bg-[var(--bg-card-elevated)] transition"
+            >
+              <td class="px-3 py-2 text-[var(--text-tertiary)]">{{ idx + 1 }}</td>
+              <td class="px-3 py-2 font-bold text-[var(--text-primary)]">
+                {{ sh.label }}
+                <span
+                  v-if="!sh.bawaan"
+                  class="ml-1 text-[9px] font-black bg-teal-100 text-teal-800 px-1.5 py-0.5 rounded uppercase"
+                  >Baru</span
+                >
+                <span
+                  v-if="sh.hadir_ikut && sh.hadir_ikut.length"
+                  class="block text-[9px] text-teal-600 dark:text-teal-400 italic font-sans font-normal"
+                  >&#8618; hadir ikut {{ sh.hadir_ikut.map(shiftLabelById).join(', ') }}</span
+                >
+              </td>
+              <td class="px-3 py-2 text-[var(--text-secondary)] text-xs">
+                {{ sh.untuk === 'pegawai' ? 'Pegawai' : 'Guru' }}
+              </td>
+              <td class="px-3 py-2 font-mono text-xs">
+                {{ sh.mulai || '—' }}
+                <span
+                  v-if="sh.toleransi_awal"
+                  class="block text-[9px] text-teal-600 dark:text-teal-400 italic font-sans"
+                  >boleh &minus;{{ sh.toleransi_awal }} mnt</span
+                >
+              </td>
+              <td class="px-3 py-2 font-mono text-xs">{{ sh.terlambat || '—' }}</td>
+              <td class="px-3 py-2 font-mono text-xs">
+                {{ sh.selesai || '—' }}
+                <span
+                  v-if="sh.toleransi_telat"
+                  class="block text-[9px] text-teal-600 dark:text-teal-400 italic font-sans"
+                  >masih masuk +{{ sh.toleransi_telat }} mnt</span
+                >
+                <span
+                  v-if="!sh.mulai && !sh.terlambat && sh.fallback"
+                  class="block text-[9px] text-[var(--text-tertiary)] italic font-sans"
+                  >ikut jam {{ sh.fallback }}</span
+                >
+                <span
+                  v-if="sh.pulang_default"
+                  class="block text-[9px] text-[var(--text-tertiary)] italic font-sans"
+                  >pulang ~{{ sh.pulang_default }}</span
+                >
+              </td>
+              <td class="px-3 py-2">
+                <div class="flex items-center justify-center gap-1">
+                  <button
+                    type="button"
+                    class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 flex items-center justify-center"
+                    title="Ubah"
+                    @click="openShiftDialog(sh, idx)"
+                  >
+                    <i class="fas fa-pen text-xs"></i>
+                  </button>
+                  <button
+                    type="button"
+                    :title="sh.bawaan ? 'Hapus shift bawaan (hati-hati)' : 'Hapus'"
+                    class="w-7 h-7 rounded-lg border border-[var(--border-default)] text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center justify-center"
+                    @click="hapusShift(idx)"
+                  >
+                    <i class="fas fa-trash text-xs"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-[10px] text-[var(--text-tertiary)] italic mt-2">
+        Urutan baris = prioritas bila satu jam scan masuk ke lebih dari satu shift. Shift
+        <b>bawaan</b> dikenali mesin absensi (fp_sync.py); shift <b>baru</b> baru terbaca lewat
+        input manual &amp; sync Desktop.
+      </p>
+    </UiCard>
+
+    <!-- Dialog Tambah/Ubah Shift -->
+    <div
+      v-if="dlgShiftOpen && dlgShift"
+      class="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4"
+      @click.self="dlgShiftOpen = false"
+    >
+      <div
+        class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col"
+      >
+        <div
+          class="flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)] shrink-0"
+        >
+          <h3 class="text-base font-black">
+            <i class="fas fa-user-clock text-teal-500 mr-1.5"></i
+            >{{ dlgShiftIsNew ? 'Tambah' : 'Ubah' }} Shift
+          </h3>
+          <button
+            class="text-[var(--text-secondary)] hover:text-rose-500 p-1"
+            aria-label="Tutup"
+            @click="dlgShiftOpen = false"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-5 space-y-3 overflow-y-auto flex-1 min-h-0">
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Nama Shift</label
+            >
+            <input
+              v-model="dlgShift.label"
+              type="text"
+              placeholder="mis. Piket Malam"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
+            />
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Untuk</label
+            >
+            <select
+              v-model="dlgShift.untuk"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
+            >
+              <option v-for="o in SHIFT_UNTUK_OPTIONS" :key="o.value" :value="o.value">
+                {{ o.label }}
+              </option>
+            </select>
+            <p v-if="dlgShift.bawaan" class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+              Shift bawaan (id <b>{{ dlgShift.id }}</b> dikenali fp_sync.py). Nama, jam, dan "Untuk"
+              bebas diubah — <b>id tetap</b> supaya absensi lama tak yatim.
+            </p>
+          </div>
           <div class="grid grid-cols-3 gap-2">
             <div>
-              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
                 >Mulai</label
               >
               <input
-                v-model="form.shiftPagiMulai"
+                v-model="dlgShift.mulai"
                 type="time"
-                class="w-full px-2 py-1.5 text-sm border border-cyan-300 rounded bg-[var(--bg-card)]"
+                class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
               />
             </div>
             <div>
-              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
                 >Terlambat</label
               >
               <input
-                v-model="form.shiftPagiTerlambat"
+                v-model="dlgShift.terlambat"
                 type="time"
-                class="w-full px-2 py-1.5 text-sm border border-rose-300 rounded bg-[var(--bg-card)]"
+                class="w-full px-2 py-1.5 text-sm border border-rose-300 rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
               />
             </div>
             <div>
-              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
                 >Selesai</label
               >
               <input
-                v-model="form.shiftPagiSelesai"
+                v-model="dlgShift.selesai"
                 type="time"
-                class="w-full px-2 py-1.5 text-sm border border-cyan-300 rounded bg-[var(--bg-card)]"
+                class="w-full px-2 py-1.5 text-sm border border-[var(--border-default)] rounded bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
               />
             </div>
+          </div>
+          <p v-if="dlgShift.fallback" class="text-[10px] text-[var(--text-tertiary)] italic">
+            Kosongkan Mulai &amp; Terlambat &rarr; ikut jam shift
+            <b>{{ dlgShift.fallback }}</b> (perilaku lama).
+          </p>
+          <!-- Kyai, 6 Agu 2026: scan di luar Mulai..Selesai dulu HILANG tanpa jadi absen —
+               guru yang ceklok kepagian atau jauh setelah shift bubar tak tercatat sama
+               sekali. Dua angka ini melebarkan window itu; 0 = persis seperti dulu. -->
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+                >Boleh Scan Lebih Awal</label
+              >
+              <div class="flex items-center gap-1.5">
+                <input
+                  v-model.number="dlgShift.toleransi_awal"
+                  type="number"
+                  min="0"
+                  :max="MAKS_TOLERANSI_MENIT"
+                  step="5"
+                  class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
+                />
+                <em class="text-[10px] text-[var(--text-tertiary)] not-italic shrink-0">menit</em>
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+                >Masih Masuk Setelah Selesai</label
+              >
+              <div class="flex items-center gap-1.5">
+                <input
+                  v-model.number="dlgShift.toleransi_telat"
+                  type="number"
+                  min="0"
+                  :max="MAKS_TOLERANSI_MENIT"
+                  step="5"
+                  class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
+                />
+                <em class="text-[10px] text-[var(--text-tertiary)] not-italic shrink-0">menit</em>
+              </div>
+            </div>
+          </div>
+          <p class="text-[10px] text-[var(--text-tertiary)] italic">
+            Window scan efektif jadi <b class="font-mono">{{ windowEfektifLabel }}</b
+            >. Isi <b>0</b> untuk perilaku lama (hanya jam Mulai&ndash;Selesai yang dihitung).
+            Datang lebih awal tetap <b>hadir</b>; scan setelah Selesai dihitung <b>terlambat</b>.
+          </p>
+          <p
+            v-if="peringatanToleransi"
+            class="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-2.5 py-1.5"
+          >
+            <i class="fas fa-triangle-exclamation mr-1"></i>{{ peringatanToleransi }}
+          </p>
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Urutan Prioritas</label
+            >
+            <input
+              v-model.number="dlgShift.urutan"
+              type="number"
+              min="1"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-bold"
+            />
+            <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+              Angka kecil menang bila jam scan masuk ke lebih dari satu shift.
+            </p>
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Jam Pulang Default (opsional)</label
+            >
+            <input
+              v-model="dlgShift.pulang_default"
+              type="time"
+              class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] font-mono"
+            />
+            <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+              Untuk prefill &amp; isi-massal absen pulang. Tidak memengaruhi status hadir.
+            </p>
+          </div>
+          <div v-if="shiftLainOptions.length">
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Hadir Otomatis Ikut Shift</label
+            >
+            <div class="flex flex-wrap gap-1.5">
+              <label
+                v-for="o in shiftLainOptions"
+                :key="o.id"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg border cursor-pointer"
+                :class="
+                  dlgShift.hadir_ikut.includes(o.id)
+                    ? 'border-teal-400 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 font-bold'
+                    : 'border-[var(--border-default)] text-[var(--text-secondary)]'
+                "
+              >
+                <input
+                  v-model="dlgShift.hadir_ikut"
+                  type="checkbox"
+                  :value="o.id"
+                  class="accent-teal-500"
+                />
+                {{ o.label }}
+              </label>
+            </div>
+            <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+              Guru yang hadir di shift tercentang otomatis dianggap hadir di shift ini — mis.
+              <b>Sekolah</b> ikut <b>Pagi</b> (guru gabungan cukup 1&times; scan pagi). Kosongkan
+              bila tak perlu.
+            </p>
+          </div>
+          <div v-if="(lembagaRaw || []).length">
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Khusus Lembaga (kosong = semua)</label
+            >
+            <div class="flex flex-wrap gap-1.5">
+              <label
+                v-for="l in lembagaRaw"
+                :key="l.lembaga"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg border cursor-pointer"
+                :class="
+                  dlgShift.lembaga.includes(l.lembaga)
+                    ? 'border-cyan-400 bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 font-bold'
+                    : 'border-[var(--border-default)] text-[var(--text-secondary)]'
+                "
+              >
+                <input
+                  v-model="dlgShift.lembaga"
+                  type="checkbox"
+                  :value="l.lembaga"
+                  class="accent-cyan-500"
+                />
+                {{ l.lembaga }}
+              </label>
+            </div>
+            <p class="text-[10px] text-[var(--text-tertiary)] italic mt-1">
+              Bila diisi, shift ini hanya muncul di form guru lembaga tersebut. Kosongkan = berlaku
+              semua lembaga.
+            </p>
           </div>
         </div>
-
-        <!-- Shift Sore -->
-        <div class="p-3 bg-cyan-50 border border-cyan-200 rounded-xl">
-          <p class="text-xs font-black text-cyan-800 uppercase mb-2">
-            <i class="fas fa-moon mr-1"></i>SHIFT SORE
-          </p>
-          <div class="grid grid-cols-3 gap-2">
-            <div>
-              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
-                >Mulai</label
-              >
-              <input
-                v-model="form.shiftSoreMulai"
-                type="time"
-                class="w-full px-2 py-1.5 text-sm border border-cyan-300 rounded bg-[var(--bg-card)]"
-              />
-            </div>
-            <div>
-              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
-                >Terlambat</label
-              >
-              <input
-                v-model="form.shiftSoreTerlambat"
-                type="time"
-                class="w-full px-2 py-1.5 text-sm border border-rose-300 rounded bg-[var(--bg-card)]"
-              />
-            </div>
-            <div>
-              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
-                >Selesai</label
-              >
-              <input
-                v-model="form.shiftSoreSelesai"
-                type="time"
-                class="w-full px-2 py-1.5 text-sm border border-cyan-300 rounded bg-[var(--bg-card)]"
-              />
-            </div>
-          </div>
-        </div>
-
-        <!-- Shift Sekolah -->
-        <div class="p-3 bg-teal-50 border border-teal-200 rounded-xl">
-          <p class="text-xs font-black text-teal-800 uppercase mb-2">
-            <i class="fas fa-school mr-1"></i>SHIFT SEKOLAH
-          </p>
-          <div class="grid grid-cols-3 gap-2">
-            <div>
-              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
-                >Mulai</label
-              >
-              <input
-                v-model="form.shiftSekolahMulai"
-                type="time"
-                class="w-full px-2 py-1.5 text-sm border border-teal-300 rounded bg-[var(--bg-card)]"
-              />
-            </div>
-            <div>
-              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
-                >Terlambat</label
-              >
-              <input
-                v-model="form.shiftSekolahTerlambat"
-                type="time"
-                class="w-full px-2 py-1.5 text-sm border border-rose-300 rounded bg-[var(--bg-card)]"
-              />
-            </div>
-            <div>
-              <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase block mb-1"
-                >Selesai</label
-              >
-              <input
-                v-model="form.shiftSekolahSelesai"
-                type="time"
-                class="w-full px-2 py-1.5 text-sm border border-teal-300 rounded bg-[var(--bg-card)]"
-              />
-            </div>
-          </div>
+        <div
+          class="flex justify-end gap-2 px-5 py-3 border-t border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] rounded-b-2xl shrink-0"
+        >
+          <button
+            type="button"
+            class="px-4 py-2 text-xs font-bold rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)]"
+            @click="dlgShiftOpen = false"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            class="px-4 py-2 text-xs font-black rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white"
+            @click="simpanShiftDialog"
+          >
+            <i class="fas fa-check mr-1"></i>Terapkan
+          </button>
         </div>
       </div>
+    </div>
+
+    <!-- ============================================================
+         SECTION: Kategori Cuti & Kuota (super_admin)
+         ============================================================ -->
+    <UiCard
+      v-show="section === 'cuti'"
+      title="Kategori Cuti & Kuota"
+      subtitle="Jenis cuti pegawai + jatah hari per tahun (0 = tak terbatas). Dipakai di menu Perizinan & Cuti."
+      class="mb-4"
+    >
+      <div class="space-y-2">
+        <div
+          v-for="(k, idx) in form.cuti_kategori"
+          :key="k.id || idx"
+          class="flex items-center gap-2 bg-[var(--bg-card-elevated)] rounded-xl px-3 py-2"
+        >
+          <input
+            v-model="k.nama"
+            type="text"
+            placeholder="Nama kategori (mis. Cuti Tahunan)"
+            class="flex-1 px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-violet-500"
+          />
+          <div class="flex items-center gap-1 shrink-0">
+            <input
+              v-model.number="k.kuota_hari"
+              type="number"
+              min="0"
+              class="w-20 px-2 py-2 text-sm text-right rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-violet-500"
+            />
+            <span class="text-[10px] text-[var(--text-secondary)]">hari/th</span>
+          </div>
+          <button
+            class="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 px-2 py-2 rounded-lg shrink-0"
+            title="Hapus kategori"
+            @click="form.cuti_kategori.splice(idx, 1)"
+          >
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+        <p
+          v-if="!form.cuti_kategori.length"
+          class="text-xs text-[var(--text-tertiary)] italic text-center py-3"
+        >
+          Belum ada kategori cuti. Tambah di bawah (mis. Cuti Tahunan, Melahirkan, Menikah).
+        </p>
+      </div>
+      <button
+        class="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-900/30 px-3 py-2 rounded-lg hover:bg-violet-100 dark:hover:bg-violet-900/50"
+        @click="addCutiKategori"
+      >
+        <i class="fas fa-plus"></i>Tambah Kategori
+      </button>
       <p class="text-[10px] text-[var(--text-secondary)] italic mt-3">
-        <i class="fas fa-info-circle mr-1"></i>Jam <b>Terlambat</b> = batas waktu kehadiran masih
-        dianggap "Hadir"; lewat dari ini &rarr; status auto "Terlambat" saat impor fingerprint.
+        <i class="fas fa-info-circle mr-1"></i>Kuota = jatah hari per tahun per pegawai. Sisa
+        dihitung otomatis dari pengajuan cuti yang <b>disetujui</b>. Melebihi kuota = peringatan
+        (penyetuju tetap bisa menyetujui). Hari cuti tidak mendapat bonus shift, sama seperti
+        izin/sakit.
       </p>
     </UiCard>
 
@@ -675,8 +971,8 @@
             class="flex-1 bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none"
           />
           <button
-            @click="form.rekapSchemaDiniyah.splice(idx, 1)"
             class="text-rose-600 hover:bg-rose-50 px-2 py-1 rounded text-xs cursor-pointer"
+            @click="form.rekapSchemaDiniyah.splice(idx, 1)"
           >
             <i class="fas fa-trash"></i>
           </button>
@@ -691,13 +987,13 @@
       <div class="flex gap-2">
         <input
           v-model="newMapel"
-          @keyup.enter="addMapel"
           type="text"
           class="flex-1 px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)]"
+          @keyup.enter="addMapel"
         />
         <button
-          @click="addMapel"
           class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-2 rounded-lg text-xs whitespace-nowrap cursor-pointer"
+          @click="addMapel"
         >
           <i class="fas fa-plus mr-1"></i>Tambah
         </button>
@@ -725,8 +1021,8 @@
             <div class="flex items-center justify-between mb-2">
               <p class="text-xs font-black text-teal-800 uppercase">&#x1F4DA; Kelas {{ kelas }}</p>
               <button
-                @click="delete form.rekapSchemaDiniyahPerKelas[kelas]"
                 class="text-rose-600 text-xs font-bold hover:bg-rose-50 px-2 py-0.5 rounded"
+                @click="delete form.rekapSchemaDiniyahPerKelas[kelas]"
               >
                 <i class="fas fa-trash mr-1"></i>Hapus kelas
               </button>
@@ -742,15 +1038,15 @@
                   class="bg-transparent w-24 outline-none text-[11px]"
                 />
                 <button
-                  @click="form.rekapSchemaDiniyahPerKelas[kelas].splice(mi, 1)"
                   class="text-rose-400 text-[10px]"
+                  @click="form.rekapSchemaDiniyahPerKelas[kelas].splice(mi, 1)"
                 >
                   <i class="fas fa-times"></i>
                 </button>
               </span>
               <button
-                @click="form.rekapSchemaDiniyahPerKelas[kelas].push('Mapel Baru')"
                 class="bg-teal-200 hover:bg-teal-300 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded"
+                @click="form.rekapSchemaDiniyahPerKelas[kelas].push('Mapel Baru')"
               >
                 + Mapel
               </button>
@@ -764,8 +1060,8 @@
             class="flex-1 px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)]"
           />
           <button
-            @click="addKelasOverride"
             class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-2 rounded-lg text-xs cursor-pointer"
+            @click="addKelasOverride"
           >
             <i class="fas fa-plus mr-1"></i>Tambah Kelas
           </button>
@@ -774,11 +1070,11 @@
     </UiCard>
 
     <!-- ============================================================
-         SECTION: Pengaturan Postingan / Channel
+         SECTION: Pengaturan Postingan / Kanal Informasi
          ============================================================ -->
     <UiCard
       v-show="section === 'postingan'"
-      title="Pengaturan Postingan / Channel"
+      title="Pengaturan Postingan / Kanal Informasi"
       subtitle="Hak akses + limit upload"
       class="mb-4"
     >
@@ -885,9 +1181,9 @@
         </div>
         <button
           type="button"
-          @click="tesGsheet"
           :disabled="gsheetTesting || !form.gsheetUrl"
           class="px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white"
+          @click="tesGsheet"
         >
           <i :class="['fas mr-1', gsheetTesting ? 'fa-spinner fa-spin' : 'fa-vial']"></i
           >{{ gsheetTesting ? 'Menguji…' : 'Tes Koneksi' }}
@@ -945,8 +1241,8 @@
               Setelah custom, template default tidak dipakai lagi untuk lembaga ini.
             </p>
             <button
-              @click="resetSchemaTemplate"
               class="mt-2 text-[10px] font-black px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer"
+              @click="resetSchemaTemplate"
             >
               <i class="fas fa-undo mr-1"></i>Reset Ke Template Default
             </button>
@@ -958,8 +1254,8 @@
             >
             <select
               :value="schemaType()"
-              @change="(ev) => initSchemaType(ev.target.value)"
               class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)]"
+              @change="(ev) => initSchemaType(ev.target.value)"
             >
               <option value="sections">
                 TPQ — Matrix Jilid (Pra-TK, A/B/C/D/E, Tahsin, Tahfidz)
@@ -982,7 +1278,7 @@
                 class="bg-[var(--bg-card)] border border-teal-200 px-2 py-1 rounded text-xs flex items-center gap-1"
               >
                 {{ f.label }}
-                <button @click="removeFieldNilai(fi)" class="text-rose-500 hover:text-rose-700">
+                <button class="text-rose-500 hover:text-rose-700" @click="removeFieldNilai(fi)">
                   <i class="fas fa-times text-[10px]"></i>
                 </button>
               </span>
@@ -990,13 +1286,13 @@
             <div class="flex gap-2">
               <input
                 v-model="newField"
-                @keyup.enter="addFieldNilai"
                 type="text"
                 class="flex-1 px-2 py-1 text-xs border border-[var(--border-default)] rounded bg-[var(--bg-card)]"
+                @keyup.enter="addFieldNilai"
               />
               <button
-                @click="addFieldNilai"
                 class="bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold px-3 py-1 rounded cursor-pointer"
+                @click="addFieldNilai"
               >
                 + Tambah
               </button>
@@ -1019,8 +1315,8 @@
                     class="text-xs px-2 py-1 border border-[var(--border-default)] rounded"
                   />
                   <button
-                    @click="form.raporSchemas[raporLembaga].levels.splice(li, 1)"
                     class="text-rose-500 text-xs hover:bg-rose-50 px-2 rounded"
+                    @click="form.raporSchemas[raporLembaga].levels.splice(li, 1)"
                   >
                     <i class="fas fa-trash mr-1"></i>Hapus Level
                   </button>
@@ -1047,24 +1343,24 @@
                       title="Multiplier (2x/3x/...)"
                     />
                     <button
-                      @click="level.khotamList.splice(ki, 1)"
                       class="text-rose-500 text-[11px] hover:bg-rose-100 rounded"
                       title="Hapus khotam"
+                      @click="level.khotamList.splice(ki, 1)"
                     >
                       <i class="fas fa-times"></i>
                     </button>
                   </div>
                   <button
-                    @click="addKhotam(level)"
                     class="text-[10px] bg-teal-200 hover:bg-teal-300 text-teal-800 font-bold px-2 py-0.5 rounded"
+                    @click="addKhotam(level)"
                   >
                     <i class="fas fa-plus mr-0.5"></i>Tambah Khotam
                   </button>
                 </div>
               </div>
               <button
-                @click="addLevel"
                 class="text-xs bg-teal-100 hover:bg-teal-200 text-teal-700 font-bold px-3 py-1 rounded"
+                @click="addLevel"
               >
                 + Tambah Level
               </button>
@@ -1085,8 +1381,8 @@
                   class="text-xs font-bold px-2 py-1 border border-[var(--border-default)] rounded w-32"
                 />
                 <button
-                  @click="form.raporSchemas[raporLembaga].jenjang.splice(ji, 1)"
                   class="text-rose-500 text-xs"
+                  @click="form.raporSchemas[raporLembaga].jenjang.splice(ji, 1)"
                 >
                   <i class="fas fa-trash"></i>
                 </button>
@@ -1109,26 +1405,26 @@
                     class="w-12 text-[11px] px-1 py-0.5 border border-[var(--border-default)] rounded bg-[var(--bg-card)]"
                     title="KKM"
                   />
-                  <button @click="jen.mapel.splice(mi, 1)" class="text-rose-400 text-[10px]">
+                  <button class="text-rose-400 text-[10px]" @click="jen.mapel.splice(mi, 1)">
                     <i class="fas fa-times"></i>
                   </button>
                 </div>
               </div>
               <button
+                class="text-[10px] text-teal-700 font-bold mt-1"
                 @click="
                   () => {
                     jen.mapel = jen.mapel || []
                     jen.mapel.push({ id: 'mapel_' + Date.now(), nama: '', kkm: 80 })
                   }
                 "
-                class="text-[10px] text-teal-700 font-bold mt-1"
               >
                 + Tambah Mapel
               </button>
             </div>
             <button
-              @click="addJenjang"
               class="text-xs bg-teal-100 hover:bg-teal-200 text-teal-700 font-bold px-3 py-1 rounded"
+              @click="addJenjang"
             >
               + Tambah Jenjang
             </button>
@@ -1148,8 +1444,8 @@
                   class="text-xs font-bold px-2 py-1 border border-[var(--border-default)] rounded flex-1"
                 />
                 <button
-                  @click="form.raporSchemas[raporLembaga].sections.splice(si, 1)"
                   class="text-rose-500 text-xs hover:bg-rose-50 px-2 rounded"
+                  @click="form.raporSchemas[raporLembaga].sections.splice(si, 1)"
                 >
                   <i class="fas fa-trash"></i>
                 </button>
@@ -1168,18 +1464,18 @@
                       v-model="sec.rows[ri]"
                       class="bg-transparent border-0 outline-none text-[11px] w-16"
                     />
-                    <button @click="sec.rows.splice(ri, 1)" class="text-rose-400 text-[10px]">
+                    <button class="text-rose-400 text-[10px]" @click="sec.rows.splice(ri, 1)">
                       <i class="fas fa-times"></i>
                     </button>
                   </span>
                   <button
+                    class="bg-teal-200 hover:bg-teal-300 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded"
                     @click="
                       () => {
                         sec.rows = sec.rows || []
                         sec.rows.push('Baru')
                       }
                     "
-                    class="bg-teal-200 hover:bg-teal-300 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded"
                   >
                     + Row
                   </button>
@@ -1207,18 +1503,18 @@
                     <option value="date">Tanggal</option>
                     <option value="auto_predikat">Predikat (auto)</option>
                   </select>
-                  <button @click="sec.fields.splice(fi, 1)" class="text-rose-500 text-[11px]">
+                  <button class="text-rose-500 text-[11px]" @click="sec.fields.splice(fi, 1)">
                     <i class="fas fa-times"></i>
                   </button>
                 </div>
                 <button
+                  class="bg-teal-200 hover:bg-teal-300 text-[10px] font-bold px-2 py-0.5 rounded"
                   @click="
                     () => {
                       sec.fields = sec.fields || []
                       sec.fields.push({ id: 'f_' + Date.now(), label: 'Baru', type: 'number' })
                     }
                   "
-                  class="bg-teal-200 hover:bg-teal-300 text-[10px] font-bold px-2 py-0.5 rounded"
                 >
                   + Field
                 </button>
@@ -1268,8 +1564,18 @@ import { useConfirm } from '@/composables/useConfirm'
 import { useLembaga } from '@/composables/useLembaga'
 import { useGoogleSheet } from '@/composables/useGoogleSheet'
 import { uploadBase64 } from '@/services/storage'
-import { setOne } from '@/services/firestore'
-import { toAuthPassword } from '@/services/auth'
+import { setOne } from '@/services/db'
+// v.1.1.9: master shift (dulu 15 setting-key hardcoded shiftPagiMulai dst)
+import {
+  shiftList,
+  normalizeShift,
+  slugShiftId,
+  shiftMasterToLegacy,
+  SHIFT_UNTUK_OPTIONS,
+  MAKS_TOLERANSI_MENIT,
+  normToleransi
+} from '@/utils/shiftMaster'
+import { toAuthPassword } from '@/services/authSupabase'
 import {
   ArrowLeft as ArrowLeftIcon,
   Image as ImageIcon,
@@ -1281,6 +1587,7 @@ import UiInput from '@/components/ui/UiInput.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 // v.21.105.0527: pakai shared masehiToHijri supaya preview match dgn kalender + widget
 import { masehiToHijri } from '@/utils/hijri'
+import { BRAND } from '@/config/brand'
 
 // ============================================================
 // Setup: stores, composables, route
@@ -1300,12 +1607,12 @@ function defaultForm() {
     txtAppName: '',
     txtAppDesc: '',
     txtSidebarTitle: '',
-    txtHeaderBar: 'Waseela',
+    txtHeaderBar: BRAND.txtHeaderBar,
     txtPeriode: '',
     txtWelcome: 'Ahlan',
     alamat: '',
     noTelp: '',
-    namaChannel: 'Channel',
+    namaChannel: BRAND.namaChannel,
     kopLine1: '',
     kopLine2: '',
     kopLine3: '',
@@ -1319,6 +1626,8 @@ function defaultForm() {
     namaPengasuh: '',
     rekapSchemaDiniyah: ['Aqidah Akhlak', 'Fiqh', 'Tarikh', 'Bahasa Arab'],
     rekapSchemaDiniyahPerKelas: {},
+    // Kategori cuti pegawai + kuota hari/tahun (0 = tak terbatas). Dipakai useIzinGuru.
+    cuti_kategori: [],
     postinganHanyaAdmin: false,
     postinganAutoApprove: true,
     postinganMaxImages: 5,
@@ -1334,17 +1643,23 @@ function defaultForm() {
     themeTextColor: '#1e293b',
     sidebarBgColor: '#0f172a',
     kalibrasiHijri: 0,
-    adminUsername: 'admin',
+    adminUsername: 'adminmu',
     // v.100g: adminPassword TIDAK lagi di form publik (dulu ikut ter-save ke
     //   settings/general+web yg read publik → sandi admin bocor). Ganti sandi admin
     //   kini lewat changeAdminPassword() → Firebase Auth + settings/admin (read:false).
     fiturBeranda: true,
     fiturKalender: true,
     fiturKritikSaran: true,
+    fiturPengaduan: true,
     fiturNotifikasi: true,
     autoNotifPostingan: true,
     softDelete: false,
     capacitorMode: 'remote',
+    // v.1.1.9: daftar shift + jamnya. Diisi hydrateForm() — bila settings belum punya
+    //   shiftMaster, di-seed dari setting-key lama di bawah ini.
+    shiftMaster: [],
+    // Setting-key lama TETAP ADA: jadi nilai awal seed + dicermin balik saat simpan
+    //   (fp_sync.py di luar repo masih membacanya).
     shiftPagiMulai: '06:00',
     shiftPagiSelesai: '12:00',
     shiftPagiTerlambat: '06:15',
@@ -1354,6 +1669,13 @@ function defaultForm() {
     shiftSekolahMulai: '07:00',
     shiftSekolahSelesai: '13:00',
     shiftSekolahTerlambat: '07:15',
+    // Shift Pegawai (jam sendiri). KOSONG = fallback ke jam guru pagi/sore.
+    shiftPegawaiPagiMulai: '',
+    shiftPegawaiPagiSelesai: '',
+    shiftPegawaiPagiTerlambat: '',
+    shiftPegawaiSoreMulai: '',
+    shiftPegawaiSoreSelesai: '',
+    shiftPegawaiSoreTerlambat: '',
     // v.100 Batch11: integrasi Google Sheet (Apps Script Web App)
     gsheetUrl: '',
     gsheetToken: ''
@@ -1420,6 +1742,12 @@ const tabs = [
     gradient: 'from-cyan-500 dark:from-cyan-700 to-cyan-700 dark:to-cyan-900'
   },
   {
+    id: 'cuti',
+    label: 'Cuti & Izin',
+    icon: 'fa-calendar-minus',
+    gradient: 'from-violet-500 dark:from-violet-700 to-violet-700 dark:to-violet-900'
+  },
+  {
     id: 'postingan',
     label: 'Pengaturan Postingan',
     icon: 'fa-bullhorn',
@@ -1444,6 +1772,11 @@ function hydrateForm() {
     ...defaultForm(),
     ...Object.fromEntries(Object.keys(defaultForm()).map((k) => [k, s[k] ?? defaultForm()[k]]))
   }
+  // v.1.1.9: seed master shift dari form (BUKAN dari `s`) supaya jam default defaultForm()
+  //   ikut terpakai saat settings masih kosong — tampilan sama seperti 5 kartu jam lama.
+  form.value.shiftMaster = bersihkanHadirIkut(
+    shiftList({ ...form.value, shiftMaster: s.shiftMaster })
+  )
   dirty.value = false
 }
 
@@ -1580,23 +1913,21 @@ async function changeAdminPassword() {
   })
   if (ok) {
     try {
-      // v.100g: sandi admin tak lagi disimpan publik. Update Firebase Auth (sumber
-      //   kebenaran login) + salinan privat settings/admin (read:false). Apply langsung.
-      const { getAuth, updatePassword } = await import('firebase/auth')
-      const u = getAuth().currentUser
-      if (!u) throw Object.assign(new Error('no-session'), { code: 'no-session' })
-      await updatePassword(u, toAuthPassword(pwdNew.value))
-      await setOne('settings', 'admin', { password: pwdNew.value })
+      // Migrasi Supabase: sandi admin = Supabase Auth (sumber kebenaran TUNGGAL).
+      //   Tak ada lagi salinan plaintext settings/admin (sejalan S1-S4). Admin sudah
+      //   ter-autentikasi di area ini → updateUser langsung (tanpa cek sandi lama).
+      const { supabase } = await import('@/services/supabase')
+      const { error } = await supabase.auth.updateUser({ password: toAuthPassword(pwdNew.value) })
+      if (error) throw error
       pwdNew.value = ''
       pwdConfirm.value = ''
       toast.success('Password admin berhasil diganti')
     } catch (e) {
-      if (e?.code === 'auth/requires-recent-login') {
-        toast.error('Demi keamanan, logout lalu login lagi sebelum ganti sandi admin')
-      } else if (e?.code === 'no-session') {
+      const msg = String(e?.message || e || '')
+      if (/reauth|recent|session missing|not authenticated/i.test(msg)) {
         toast.error('Sesi admin tak ditemukan. Logout lalu login lagi.')
       } else {
-        toast.error('Gagal ganti sandi: ' + (e?.message || e))
+        toast.error('Gagal ganti sandi: ' + msg)
       }
     }
   }
@@ -1923,16 +2254,190 @@ function buildLevel(id, label, baca, khotamCount, multiplier) {
 // ============================================================
 // Save all + Reset form
 // ============================================================
+function addCutiKategori() {
+  if (!Array.isArray(form.value.cuti_kategori)) form.value.cuti_kategori = []
+  form.value.cuti_kategori.push({ id: 'cuti_' + Date.now(), nama: '', kuota_hari: 12 })
+  dirty.value = true
+}
+
 function resetForm() {
   hydrateForm()
   toast.info('Form di-reset dari state tersimpan')
+}
+
+// ============================================================
+// v.1.1.9: Master Shift — tabel + dialog
+// ============================================================
+const dlgShiftOpen = ref(false)
+const dlgShift = ref(null)
+const dlgShiftIdx = ref(-1)
+const dlgShiftIsNew = ref(false)
+
+// Buang referensi hadir_ikut ke shift yang sudah TAK ADA (mis. sesudah rename/hapus) —
+//   kalau dibiarkan, materialisasi hadir otomatis diam-diam tak jalan.
+function bersihkanHadirIkut(list) {
+  const ada = new Set((list || []).map((x) => String(x.id)))
+  for (const x of list || []) {
+    if (Array.isArray(x.hadir_ikut)) x.hadir_ikut = x.hadir_ikut.filter((v) => ada.has(String(v)))
+  }
+  return list
+}
+
+// Shift lain (utk pilihan hadir_ikut) — kecuali shift yang sedang diedit.
+const shiftLainOptions = computed(() =>
+  (form.value.shiftMaster || []).filter((s) => s.id && s.id !== dlgShift.value?.id)
+)
+function shiftLabelById(id) {
+  return (form.value.shiftMaster || []).find((s) => s.id === id)?.label || id
+}
+
+// ── Toleransi scan (Kyai, 6 Agu 2026) ────────────────────────────────────────
+// Menit ⇄ 'HH:MM' lokal dialog. Dipakai memperlihatkan window EFEKTIF sebelum
+// disimpan, supaya Kyai tak perlu menghitung di kepala.
+function _menit(hhmm) {
+  const s = String(hhmm || '')
+  if (!/^\d{1,2}:\d{2}$/.test(s)) return null
+  return Number(s.slice(0, s.indexOf(':'))) * 60 + Number(s.slice(s.indexOf(':') + 1))
+}
+function _jam(menit) {
+  const j = Math.max(0, Math.min(23 * 60 + 59, menit))
+  const p = (n) => String(n).padStart(2, '0')
+  return p(Math.floor(j / 60)) + ':' + p(j % 60)
+}
+// Window efektif shift yang sedang diedit: [mulai − toleransi_awal, selesai + toleransi_telat].
+const windowEfektif = computed(() => {
+  const sh = dlgShift.value
+  const m = _menit(sh?.mulai)
+  const s = _menit(sh?.selesai)
+  if (m == null || s == null) return null
+  return {
+    dari: Math.max(0, m - normToleransi(sh.toleransi_awal)),
+    sampai: Math.min(23 * 60 + 59, s + normToleransi(sh.toleransi_telat))
+  }
+})
+const windowEfektifLabel = computed(() => {
+  const w = windowEfektif.value
+  return w ? `${_jam(w.dari)}–${_jam(w.sampai)}` : 'belum ada jam Mulai/Selesai'
+})
+// Window yang melar sampai menyentuh window INTI shift lain itu risiko nyata: scan
+// PULANG dari shift itu bisa terbaca sebagai jam MASUK shift ini. deriveShift memang
+// mendahulukan window inti, tapi peringatan ini mencegah Kyai menyetel angka yang
+// mustahil benar sejak awal.
+const peringatanToleransi = computed(() => {
+  const w = windowEfektif.value
+  const sh = dlgShift.value
+  if (!w || !sh) return ''
+  if (!normToleransi(sh.toleransi_awal) && !normToleransi(sh.toleransi_telat)) return ''
+  const bentrok = []
+  for (const lain of form.value.shiftMaster || []) {
+    if (!lain?.id || lain.id === sh.id) continue
+    const lm = _menit(lain.mulai)
+    const ls = _menit(lain.selesai)
+    if (lm == null || ls == null) continue
+    if (w.dari <= ls && lm <= w.sampai) bentrok.push(lain.label || lain.id)
+  }
+  if (!bentrok.length) return ''
+  return (
+    `Window ${windowEfektifLabel.value} menyentuh jam shift ${bentrok.join(', ')}. ` +
+    'Scan pulang dari shift itu bisa terbaca sebagai jam masuk shift ini — perpendek toleransinya.'
+  )
+})
+
+function openShiftBaru() {
+  dlgShiftIsNew.value = true
+  dlgShiftIdx.value = -1
+  dlgShift.value = normalizeShift({
+    label: '',
+    untuk: 'guru',
+    urutan: (form.value.shiftMaster || []).length + 1
+  })
+  dlgShiftOpen.value = true
+}
+
+function openShiftDialog(sh, idx) {
+  dlgShiftIsNew.value = false
+  dlgShiftIdx.value = idx
+  // Salin array hadir_ikut agar edit di dialog tak memutasi form.shiftMaster sebelum "Terapkan".
+  dlgShift.value = {
+    ...sh,
+    hadir_ikut: [...(sh.hadir_ikut || [])],
+    lembaga: [...(sh.lembaga || [])]
+  }
+  dlgShiftOpen.value = true
+}
+
+function hapusShift(idx) {
+  const sh = (form.value.shiftMaster || [])[idx]
+  if (!sh) return
+  // v.1.1.x: shift BAWAAN kini boleh dihapus juga (Kyai atur strukturnya sendiri),
+  //   tapi diberi peringatan tambahan: id bawaan dipakai cermin legacy fp_sync.py.
+  const extra = sh.bawaan
+    ? `\n\nPERHATIAN: ini shift BAWAAN (id "${sh.id}"). Mesin REVO lewat fp_sync.py hanya mengenal id bawaan — setelah dihapus, jalur itu tak lagi punya jam untuk shift ini (sync Desktop & HiView tetap jalan).`
+    : ''
+  if (
+    !confirm(
+      `Hapus shift "${sh.label}"?\n\nAbsensi lama dengan shift ini tetap tersimpan, tapi tidak lagi muncul di kolom absensi & bonus kehadiran. Guru yang memilih shift ini otomatis kehilangan shift tsb.${extra}`
+    )
+  )
+    return
+  const hapusId = String(sh.id || '')
+  form.value.shiftMaster.splice(idx, 1)
+  // Bersihkan referensi menggantung di hadir_ikut shift lain.
+  for (const x of form.value.shiftMaster || []) {
+    if (Array.isArray(x.hadir_ikut) && x.hadir_ikut.includes(hapusId)) {
+      x.hadir_ikut = x.hadir_ikut.filter((v) => v !== hapusId)
+    }
+  }
+  dirty.value = true
+}
+
+function simpanShiftDialog() {
+  const sh = dlgShift.value
+  if (!sh) return
+  const label = String(sh.label || '').trim()
+  if (!label) {
+    toast.warning('Nama shift wajib diisi')
+    return
+  }
+  // Id dikunci setelah dibuat: dipakai sbg absensi_shift_guru.shift, ganti id = data lama yatim.
+  const id = sh.id || slugShiftId(label)
+  if (!id) {
+    toast.warning('Nama shift harus mengandung huruf/angka')
+    return
+  }
+  const next = normalizeShift({ ...sh, id, label })
+  const bentrok = (form.value.shiftMaster || []).some(
+    (x, i) => x.id === next.id && i !== dlgShiftIdx.value
+  )
+  if (bentrok) {
+    toast.warning(`Shift "${label}" sudah ada`)
+    return
+  }
+  if (dlgShiftIsNew.value) form.value.shiftMaster.push(next)
+  else form.value.shiftMaster.splice(dlgShiftIdx.value, 1, next)
+  form.value.shiftMaster.sort((a, b) => a.urutan - b.urutan || String(a.id).localeCompare(b.id))
+  dirty.value = true
+  dlgShiftOpen.value = false
+  toast.info('Perubahan siap — klik "Simpan" untuk menyimpan permanen.')
+}
+
+// Payload simpan: cermin jam 5 shift BAWAAN balik ke setting-key lama supaya
+// fp_sync.py (replika Python, luar repo) tetap membaca aturan yang sama.
+// Shift baru tak punya padanan legacy — sengaja dilewati.
+function buildPayload() {
+  const payload = { ...form.value }
+  payload.shiftMaster = bersihkanHadirIkut(
+    (form.value.shiftMaster || []).map(normalizeShift).filter((x) => x.id)
+  )
+  Object.assign(payload, shiftMasterToLegacy(payload.shiftMaster))
+  return payload
 }
 
 async function simpanSemua() {
   if (saving.value) return
   saving.value = true
   try {
-    await settingsStore.save({ ...form.value })
+    await settingsStore.save(buildPayload())
     dirty.value = false
     toast.success('Pengaturan tersimpan')
   } catch (e) {
@@ -1954,14 +2459,14 @@ async function tesGsheet() {
   gsheetTesting.value = true
   try {
     // simpan dulu supaya composable (baca dari settings) pakai nilai terbaru
-    await settingsStore.save({ ...form.value })
+    await settingsStore.save(buildPayload())
     dirty.value = false
     const { sendToSheet } = useGoogleSheet()
     const { url: sheetUrl } = await sendToSheet({
-      title: 'Tes Koneksi',
+      title: `Tes Koneksi ${BRAND.appName}`,
       sheetName: 'Tes',
       kop: [
-        settingsStore.settings?.kopLine1 || '',
+        settingsStore.settings?.kopLine1 || BRAND.kopLine1,
         'Tes Integrasi Google Sheet'
       ],
       subtitle: 'Dibuat ' + new Date().toLocaleString('id-ID'),
