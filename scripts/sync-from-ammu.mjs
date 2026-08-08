@@ -70,6 +70,7 @@ const ABAIKAN = [
 //
 // Menyusut seiring waktu: kalau sebuah berkas ternyata bisa diurus aturan, buang dari sini.
 const MILIK_WASEELA = [
+  'app/src/services/supabase.js', // terima ANON_KEY *atau* PUBLISHABLE_KEY
   'app/src/stores/settings.js', // DEFAULT_SETTINGS + watch setKopImage
   'app/src/main.js', // release Sentry
   'app/src/views/LoginView.vue', // judul & motto dari settings

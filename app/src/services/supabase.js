@@ -7,7 +7,12 @@
 import { createClient } from '@supabase/supabase-js'
 
 const url = import.meta.env.VITE_SUPABASE_URL
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+// Supabase menamai kunci publik ini `anon key` (lama) atau `publishable key` (baru) —
+// dashboard sekarang menampilkan yang kedua. Terima KEDUANYA: pernah terjadi client
+// jadi null diam-diam hanya karena .env.local memakai nama yang satunya, dan gejalanya
+// cuma "login gagal" tanpa petunjuk apa pun.
+const anonKey =
+  import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
 
 // Guard: kalau env belum diisi, export null (JANGAN throw saat boot app).
 // Saat adapter mulai memakai ini (F4/F6), ketiadaan env akan ketahuan eksplisit.
@@ -28,7 +33,7 @@ export const supabase =
 
 if (!supabase && import.meta.env.DEV) {
   console.warn(
-    '[supabase] VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY belum di-set (.env.local) — client = null (scaffold F1).'
+    '[supabase] VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY (atau VITE_SUPABASE_PUBLISHABLE_KEY) belum di-set di .env.local — client = null.'
   )
 }
 
