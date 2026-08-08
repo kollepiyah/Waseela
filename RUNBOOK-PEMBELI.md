@@ -8,54 +8,116 @@ berakhir dengan build yang gagal di tengah jalan.
 
 ---
 
-## 0. Aset merek yang masih kurang
+## 0. Aset merek — ✅ SELESAI
 
-`node scripts/apply-brand.mjs` saat ini melaporkan tiga berkas belum ada. Ikon web &
-PWA sudah memakai logo Waseela; yang kurang adalah versi **persegi** untuk native:
+`node scripts/apply-brand.mjs` melaporkan **"Semua aset merek terpasang"**.
 
-| Berkas | Spesifikasi | Kalau dibiarkan |
-|---|---|---|
-| `brand-assets/icon.png` | PERSEGI 1024×1024 | ikon aplikasi Android & Electron masih logo lembaga lain |
-| `brand-assets/splash.png` | PERSEGI 2732×2732 | splash screen masih milik lembaga lain |
-| `brand-assets/ic_stat.png` | 96×96, silhouette PUTIH, latar transparan | ikon notifikasi status bar salah |
-
-Logo Waseela yang ada (`waseela.png` 560×312) berformat lanskap — kalau dipakai sebagai
-ikon aplikasi ia akan terpotong atau gepeng. Perlu versi persegi tersendiri.
+Logo Waseela (`waseela.png` 560×312) berformat lanskap, sedangkan ikon aplikasi wajib
+persegi — `scripts/make-icons.mjs` menyusunnya di kanvas persegi. Kalau nanti ada desain
+ikon final dari desainer, cukup timpa `brand-assets/icon.png` lalu:
 
 ```bash
-node scripts/apply-brand.mjs                 # sebar + audit
-cd app && npx capacitor-assets generate --android   # regenerasi ikon launcher Android
+node scripts/apply-brand.mjs
+cd app && npx @capacitor/assets generate --android
 ```
 
-`apply-brand.mjs` keluar dengan kode ≠ 0 selama masih ada aset yang identik dengan repo
-hulu. Itu disengaja — jangan rilis sebelum bersih.
+`apply-brand.mjs` keluar dengan kode ≠ 0 selama ada aset yang masih byte-identik dengan
+repo hulu. Itu disengaja — jangan rilis sebelum bersih.
 
 ---
 
-## 1. Supabase (data, auth, storage)
+## 1. Supabase — project `vfbmaywcjurykxfetbia`
 
-1. Buat project **baru** milik pembeli, region `ap-southeast-1` (Singapura).
-2. Terapkan 41 migrasi di `supabase/migrations/` berurutan. DB kosong → tak ada
-   masalah reconcile versi.
-3. Deploy edge functions: `provision-akun`, `reset-user-password`,
-   `auto-generate-tagihan`, `dispatch-push`, `get-link-preview`, `hiview-absen`.
-   Isi secret-nya (FCM server key, dll).
-4. Auth → Providers: **Email = Enabled**, **Confirm email = OFF**.
-   (Domain `@waseela.local` tak bisa menerima surel, jadi konfirmasi harus mati.)
+**Status:** skema multi-tenant lama + seed demo sudah **di-reset** (8 Agu 2026).
+Schema `public` kosong, `private` dibuang, `auth.users` kosong, catatan migrasi kosong.
+Publication `supabase_realtime` dipertahankan (migrasi hanya `alter`, bukan `create`).
 
-**Dua jebakan yang pernah memakan waktu berjam-jam:**
+> Schema `app` (kosong) SENGAJA dibiarkan. Dulu dibuat untuk menambal PostgREST yang
+> me-list schema itu di *Exposed schemas*; menghapusnya sekarang akan mengulang
+> `PGRST002`. Bersihkan permanen lewat Dashboard → Settings → API → Exposed schemas,
+> baru boleh `drop schema app`.
 
-- **Settings → API → Exposed schemas**: pastikan tak me-list schema yang tak ada.
-  Pernah menyisakan schema hantu → PostgREST `PGRST002` permanen; restart tak
-  menyembuhkan karena ini konfigurasi, bukan warm-up.
-- **Auth → Hooks**: pastikan kosong. Hook `custom_access_token_hook` yang menunjuk
-  fungsi sudah di-drop membuat **login gagal 500** tanpa pesan yang jelas.
+### 1a. Terapkan 41 migrasi
+
+CLI sudah ter-login dan project sudah ter-link. `config.toml` sudah dikunci ke ref yang
+benar (sempat menunjuk DB produksi hulu — sudah diperbaiki).
+
+```bash
+cd "D:/Aplikasi Project/Waseela" && npx supabase db push --yes
+```
+
+Verifikasi: `npx supabase migration list` → kolom `remote` terisi untuk 41 baris.
+
+### 1b. Edge functions
+
+Perhatikan flag-nya — mencerminkan konvensi hulu:
+
+```bash
+npx supabase functions deploy reset-user-password
+npx supabase functions deploy provision-akun
+npx supabase functions deploy get-link-preview      --no-verify-jwt
+npx supabase functions deploy dispatch-push         --no-verify-jwt
+npx supabase functions deploy auto-generate-tagihan --no-verify-jwt
+npx supabase functions deploy hiview-absen          --no-verify-jwt
+```
+
+`--no-verify-jwt` = dipanggil pg_cron/anon, bukan sesi user; keamanannya dari
+service-role internal. `reset-user-password` SENGAJA tanpa flag karena ia memverifikasi
+JWT super_admin.
+
+### 1c. Secret — ⚠ jebakan Windows
+
+```powershell
+$json = Get-Content -Raw .\service-account.json | ConvertFrom-Json | ConvertTo-Json -Compress -Depth 10
+Set-Content -Path .cm.env -Value "FCM_SERVICE_ACCOUNT=$json" -NoNewline -Encoding utf8
+npx supabase secrets set --env-file .cm.env
+Remove-Item .cm.env   # berisi kunci privat Firebase — jangan ditinggal
+```
+
+**JANGAN pakai `supabase secrets set FCM_SERVICE_ACCOUNT="$(cat ...)"` gaya bash di
+PowerShell.** `$(cat ...)` tak dieksekusi PowerShell → yang tersimpan bukan JSON sah,
+dan `dispatch-push` membalas `500 FCM_SERVICE_ACCOUNT invalid` di SETIAP run cron.
+Ini sudah pernah memakan waktu di repo hulu (21 Jul 2026). JSON juga wajib dipadatkan
+satu baris — `private_key` penuh newline yang merusak nilai env.
+
+Opsional: `HIVIEW_PUSH_SECRET` (webhook mesin absensi), `IFRAMELY_KEY` (pratinjau link).
+`SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` otomatis tersedia —
+tak perlu di-set.
+
+### 1d. Ekstensi + Vault + cron
+
+```sql
+create extension if not exists pg_cron;
+create extension if not exists pg_net;
+
+select vault.create_secret('https://vfbmaywcjurykxfetbia.supabase.co', 'project_url');
+select vault.create_secret('<SERVICE_ROLE_KEY>', 'service_role_key');
+```
+
+Jadwal (mengikuti hulu): `dispatch-push` tiap menit · `auto-generate-tagihan` 01:00 WIB
+(18:00 UTC) · `cleanup_audit_log` 02:00 WIB (19:00 UTC). Pola `cron.schedule` +
+`net.http_post` lengkap ada di `docs/SUPABASE-EDGE-FUNCTIONS-DEPLOY.md` repo hulu §5.
+
+Verifikasi tanpa mengirim notifikasi — tunggu 1 menit lalu:
+
+```sql
+select status_code, content::text from net._http_response order by created desc limit 3;
+```
+Cari `200 {"ok":true,"processed":0}`.
+
+### 1e. Auth & konfigurasi dashboard
+
+- Auth → Providers: **Email = Enabled**, **Confirm email = OFF**
+  (domain `@waseela.local` tak bisa menerima surel).
+- Auth → **Hooks: pastikan KOSONG.** Hook `custom_access_token_hook` yatim membuat
+  **login gagal 500** tanpa pesan jelas.
+- Settings → API → **Exposed schemas**: jangan me-list schema yang tak ada.
 
 Isi `app/.env.local`:
 
 ```
-VITE_SUPABASE_URL=https://<ref>.supabase.co
-VITE_SUPABASE_ANON_KEY=<anon/publishable key>
+VITE_SUPABASE_URL=https://vfbmaywcjurykxfetbia.supabase.co
+VITE_SUPABASE_ANON_KEY=<anon / publishable key>
 VITE_APPCHECK_RECAPTCHA_KEY=
 ```
 
@@ -108,6 +170,9 @@ tercetak kosong — bukan nama lembaga lain. Itu memang perilaku yang diinginkan
 ## 5. Rilis
 
 ### Web
+Hosting tetap di site **`waseela`** (project Firebase `waseela-id`) — sudah tersetel di
+`.firebaserc` (`hosting:main` → `waseela`) dan `firebase.json` (`public` → `app/dist`).
+
 ```bash
 npm run deploy          # build + firebase deploy --only hosting:main
 ```
