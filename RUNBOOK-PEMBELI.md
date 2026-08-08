@@ -32,10 +32,21 @@ repo hulu. Itu disengaja — jangan rilis sebelum bersih.
 Schema `public` kosong, `private` dibuang, `auth.users` kosong, catatan migrasi kosong.
 Publication `supabase_realtime` dipertahankan (migrasi hanya `alter`, bukan `create`).
 
-> Schema `app` (kosong) SENGAJA dibiarkan. Dulu dibuat untuk menambal PostgREST yang
-> me-list schema itu di *Exposed schemas*; menghapusnya sekarang akan mengulang
-> `PGRST002`. Bersihkan permanen lewat Dashboard → Settings → API → Exposed schemas,
-> baru boleh `drop schema app`.
+> **⚠ Schema `app` masih dipakai — JANGAN di-drop dulu.** Diperiksa 8 Agu 2026:
+> Dashboard → Auth → Hooks masih **ENABLED** menunjuk `app.custom_access_token_hook`.
+> Men-drop fungsi/schema itu selagi hook aktif = **login gagal 500 seketika**
+> (persis kejadian Juli lalu). Hook itu peninggalan rancangan multi-tenant berbasis
+> klaim JWT yang sudah ditinggalkan — di single-tenant, peran ditegakkan RLS lewat
+> tabel `profiles`, bukan klaim token. Isinya sudah no-op (`select event`).
+>
+> **Urutan membersihkannya (jangan dibalik):**
+> 1. Dashboard → Auth → Hooks → menu ⋮ pada *Customize Access Token (JWT) Claims* →
+>    **Disable**, lalu hapus.
+> 2. Dashboard → Settings → API → **Exposed schemas** → buang `app` bila masih ter-list.
+>    (Dulu `app` ter-list padahal schema-nya tak ada → PostgREST `PGRST002` permanen;
+>    restart tak menyembuhkan karena ini konfigurasi.)
+> 3. Baru: `drop function if exists app.custom_access_token_hook(jsonb); drop schema if exists app;`
+> 4. Uji login sekali untuk memastikan token tetap terbit normal.
 
 ### 1a. Terapkan 41 migrasi
 
