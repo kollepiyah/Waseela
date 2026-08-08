@@ -120,7 +120,7 @@
     <!-- /card luar -->
 
     <!-- v.72.7.0526: Pengaturan Profil di BAWAH Data Pribadi -->
-    <ProfilPengaturanSaya role="admin" :entity-id="'admin'" :entity="{ username: 'adminmu' }" />
+    <ProfilPengaturanSaya role="admin" :entity-id="'admin'" :entity="{ username: 'admin' }" />
   </div>
 </template>
 

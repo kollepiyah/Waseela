@@ -33,6 +33,11 @@ export const RULES_SRC = [
   // Auth (DB pembeli bersih → tanpa alias legacy)
   ['@ammu.local', '@waseela.local'],
   ['mu_auth_', 'wsl_auth_'],
+  // Nama akun admin bawaan: huruf "mu" pada 'adminmu' = Mambaul Ulum. Kanoniknya
+  // 'admin' (lihat migrasi 20260808130000). 'adminmu' tetap DITERIMA sebagai masukan,
+  // jadi hanya nilai bawaan/kanonik yang diganti — bukan pengenalan aliasnya.
+  ["adminUsername: 'adminmu'", "adminUsername: 'admin'"],
+  ["{ username: 'adminmu' }", "{ username: 'admin' }"],
 
   // Nama event & resource
   ["'ammu:open-printer-settings'", "'waseela:open-printer-settings'"],
