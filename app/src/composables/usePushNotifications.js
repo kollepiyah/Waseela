@@ -14,10 +14,14 @@ import { useAuthStore } from '@/stores/auth'
 import { BRAND } from '@/config/brand'
 
 const CHANNEL_ID = 'waseela_default'
-// v.95.0626: VAPID public key (Firebase Console > Cloud Messaging > Web Push certificates)
-// v.95.0626b: FIX — key lama tidak cocok dgn project -> 401 token-subscribe-failed. Diganti key asli Console.
-const VAPID_KEY =
-  'BOEAStvEGgdHCSKGONFbPY0olQ7OEUUvhbX3NofzqWyFBvaXG0tceRbvNE36Bw7qv35ZL6fXtOPEa6Wyp8VBWfY'
+// VAPID key pindah ke config/brand.js — ia TERIKAT pada project Firebase, jadi
+// tempatnya bersama FIREBASE_CONFIG, bukan berserak di composable.
+//
+// Riwayat yang perlu diingat: kunci ini dulu ter-hardcode milik project repo asal.
+// Setelah Waseela memakai project sendiri, FCM menolak dengan `401
+// token-subscribe-failed` berbunyi "missing required authentication credential" —
+// terdengar seperti soal izin, padahal kuncinya sekadar bukan milik project ini.
+import { VAPID_KEY } from '@/config/brand'
 
 function isElectron() {
   return /electron/i.test((typeof navigator !== 'undefined' && navigator.userAgent) || '')
@@ -82,6 +86,15 @@ export function usePushNotifications() {
       // Electron & browser tanpa Notification membayarnya percuma tiap login.
       if (isElectron()) return // desktop Electron: tak ada web push
       if (!(typeof window !== 'undefined' && 'Notification' in window)) return
+      // Belum ada VAPID key → web push memang belum disiapkan. Berhenti DI SINI,
+      // sebelum meminta izin notifikasi ke pengguna: percuma memunculkan permintaan
+      // izin untuk fitur yang pasti gagal, dan konsol jadi bersih dari galat 401.
+      if (!VAPID_KEY) {
+        if (import.meta.env.DEV) {
+          console.info('[push-web] dilewati — VAPID_KEY kosong di config/brand.js')
+        }
+        return
+      }
       const { getMessaging, getToken, onMessage, isSupported } = await import('firebase/messaging')
       if (!(await isSupported().catch(() => false))) return
       let perm = Notification.permission

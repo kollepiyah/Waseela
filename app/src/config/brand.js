@@ -51,6 +51,19 @@ export const BRAND = {
 // Data, auth, dan storage semuanya Supabase — Firebase tidak menyentuh data lembaga.
 // Ganti blok ini dengan project Firebase milik pembeli saat provisioning (Fase 3),
 // lalu regenerate `public/firebase-messaging-sw.js` agar cocok.
+// Kunci VAPID (Web Push certificate) — TERIKAT pada project Firebase di bawah.
+// Ambil di: Firebase Console → Project settings → Cloud Messaging →
+//           Web Push certificates → Key pair.
+//
+// WAJIB dari project yang SAMA dengan FIREBASE_CONFIG. Kunci milik project lain
+// ditolak dengan `401 token-subscribe-failed`, dan pesannya menyesatkan — berbunyi
+// "missing required authentication credential", seolah masalah izin, padahal
+// kuncinya sekadar bukan milik project ini.
+//
+// Kosong = notifikasi web push DIMATIKAN dengan tenang (tanpa galat merah di konsol).
+// Fungsi lain aplikasi tak terpengaruh sama sekali.
+export const VAPID_KEY = ''
+
 export const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyDEd5UKDcsy0QC1B1x_75L1VaTgasTzGTE',
   authDomain: 'waseela-id.firebaseapp.com',

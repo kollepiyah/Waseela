@@ -150,6 +150,18 @@ Firebase di sini **hanya** pipa notifikasi + App Check. Tak menyimpan data lemba
    project lembaga lain.
 4. Kalau project Firebase berbeda dari bawaan, samakan **dua** tempat:
    `app/src/config/brand.js` → `FIREBASE_CONFIG`, dan `app/public/firebase-messaging-sw.js`.
+5. **Notifikasi web push (VAPID)** — Project settings → Cloud Messaging →
+   *Web Push certificates* → **Generate key pair**, salin ke `VAPID_KEY` di
+   `app/src/config/brand.js`.
+
+   > Kunci ini WAJIB dari project yang sama dengan `FIREBASE_CONFIG`. Kunci milik
+   > project lain ditolak `401 token-subscribe-failed` dengan pesan menyesatkan
+   > ("missing required authentication credential") — terdengar seperti soal izin,
+   > padahal kuncinya sekadar bukan milik project ini. Sudah pernah terjadi 8 Agu 2026.
+   >
+   > Dikosongkan = web push mati dengan tenang, tanpa galat merah. Notifikasi di
+   > aplikasi Android (FCM native) TIDAK terpengaruh — itu jalur terpisah lewat
+   > `google-services.json`.
 
 ---
 

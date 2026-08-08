@@ -106,6 +106,10 @@ const MILIK_WASEELA = [
   // app), env HIVIEW_PUSH_SECRET tinggal cadangan. Hulu masih env-only.
   'supabase/functions/hiview-absen/index.ts',
 
+  // VAPID key pindah ke config/brand.js (terikat project Firebase). Di hulu masih
+  // ter-hardcode milik project mereka — kalau tertarik lagi, web push balik 401.
+  'app/src/composables/usePushNotifications.js',
+
   // Tes yang diarahkan ulang ke penerus di app/src (hulu menunjuk helper legacy pra-Vue
   // `src/helpers.js` yang tak ikut ke Waseela) atau yang ekspektasinya khas Waseela.
   'tests/unit/_toAuthPassword.test.js',
