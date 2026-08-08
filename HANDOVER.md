@@ -5,6 +5,17 @@
 
 ---
 
+## ‼️ Cara berkomunikasi (jangan dilewat)
+
+- **Panggil beliau "Kyai"** — bukan "akhi", "user", "saudara", atau "Anda". Konvensi ini
+  sudah lama berlaku di repo Ammu (`docs/archive/PROMPT-NEXT-CHAT.md`) tapi sempat tak
+  ikut ke repo Waseela; jangan ulangi.
+- Bahasa Indonesia sederhana, mudah difahami.
+- **Diskusikan langkahnya dulu sebelum eksekusi** — minimal satu putaran konfirmasi.
+- Beliau developer berpengalaman, bukan pemula — jangan menjelaskan terlalu remedial.
+
+---
+
 ## TL;DR
 
 **Waseela** = produk portal manajemen lembaga pendidikan milik **Bakafrawi Project**,
