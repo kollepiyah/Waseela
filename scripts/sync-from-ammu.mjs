@@ -102,6 +102,10 @@ const MILIK_WASEELA = [
   'app/src/composables/useLembaga.js',
   'app/src/utils/santriSort.js',
 
+  // Secret webhook mesin absensi dibaca dari settings/mesin (bisa diatur pembeli dari
+  // app), env HIVIEW_PUSH_SECRET tinggal cadangan. Hulu masih env-only.
+  'supabase/functions/hiview-absen/index.ts',
+
   // Tes yang diarahkan ulang ke penerus di app/src (hulu menunjuk helper legacy pra-Vue
   // `src/helpers.js` yang tak ikut ke Waseela) atau yang ekspektasinya khas Waseela.
   'tests/unit/_toAuthPassword.test.js',

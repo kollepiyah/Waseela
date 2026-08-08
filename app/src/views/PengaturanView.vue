@@ -1196,6 +1196,122 @@
     </UiCard>
 
     <!-- ============================================================
+         SECTION: Mesin Absensi — pilih MEREK, aplikasi tentukan metodenya.
+         Tak semua mesin bisa mendorong (webhook); sebagian hanya bisa ditarik
+         dari jaringan lokal atau diekspor manual. Karena itu yang dipilih admin
+         adalah MEREK, lalu panel yang relevan saja yang ditampilkan.
+         ============================================================ -->
+    <UiCard
+      v-show="section === 'mesin'"
+      title="Mesin Absensi"
+      subtitle="Hubungkan mesin sidik jari / wajah ke absensi guru"
+      class="mb-4"
+    >
+      <div v-if="!bolehAturMesin" class="text-sm text-[var(--text-secondary)]">
+        <i class="fas fa-lock mr-1"></i> Hanya Administrator yang dapat mengubah setelan ini.
+      </div>
+
+      <div v-else class="space-y-3">
+        <div>
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+            >Merek / tipe mesin</label
+          >
+          <select
+            v-model="mesin.merek"
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)]"
+          >
+            <option v-for="m in MEREK_MESIN" :key="m.id" :value="m.id">{{ m.nama }}</option>
+          </select>
+          <p class="text-[11px] text-[var(--text-secondary)] mt-1.5 leading-relaxed">
+            <i class="fas fa-circle-info mr-1 text-emerald-600"></i>{{ merekAktif.penjelasan }}
+          </p>
+        </div>
+
+        <!-- METODE: mesin MENDORONG ke webhook -->
+        <template v-if="merekAktif.metode === 'webhook'">
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >URL tujuan (isikan di mesin)</label
+            >
+            <div class="flex gap-2">
+              <input
+                :value="webhookUrl"
+                readonly
+                class="flex-1 px-3 py-2 text-xs border border-[var(--border-default)] rounded-lg bg-[var(--bg-muted)] font-mono"
+              />
+              <UiButton variant="secondary" :disabled="!mesin.webhookSecret" @click="salin(webhookUrl)">
+                <i class="fas fa-copy mr-1"></i>Salin
+              </UiButton>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+              >Kunci rahasia</label
+            >
+            <div class="flex gap-2">
+              <input
+                :value="mesin.webhookSecret || '(belum dibuat)'"
+                readonly
+                class="flex-1 px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-muted)] font-mono"
+              />
+              <UiButton variant="secondary" @click="buatSecret">
+                <i class="fas fa-rotate mr-1"></i>{{ mesin.webhookSecret ? 'Ganti' : 'Buat' }}
+              </UiButton>
+            </div>
+            <p class="text-[11px] text-amber-700 dark:text-amber-400 mt-1.5 leading-relaxed">
+              <i class="fas fa-triangle-exclamation mr-1"></i>
+              Mengganti kunci membuat mesin lama <b>berhenti mengirim</b> sampai URL barunya
+              dimasukkan ulang ke mesin.
+            </p>
+          </div>
+        </template>
+
+        <!-- METODE: aplikasi Desktop MENARIK dari folder mesin -->
+        <div
+          v-else-if="merekAktif.metode === 'desktop'"
+          class="text-[11px] text-[var(--text-secondary)] bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3 leading-relaxed"
+        >
+          <i class="fas fa-desktop mr-1 text-emerald-600"></i>
+          Mesin ini ditarik oleh <b>aplikasi Desktop</b>, bukan mendorong sendiri. Buka menu
+          <b>Mesin Absensi</b> di aplikasi Desktop untuk menunjuk folder Personnel dan mengatur
+          jadwal sinkron. Tak ada kunci yang perlu diisi di sini.
+        </div>
+
+        <!-- METODE: impor berkas ekspor mesin -->
+        <div
+          v-else-if="merekAktif.metode === 'impor'"
+          class="text-[11px] text-[var(--text-secondary)] bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 leading-relaxed"
+        >
+          <i class="fas fa-file-arrow-up mr-1 text-amber-600"></i>
+          Belum ada sambungan langsung untuk merek ini. Ekspor data scan dari aplikasi bawaan
+          mesin (Excel/CSV), lalu unggah lewat menu <b>Impor</b>.
+        </div>
+
+        <div>
+          <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
+            >Catatan (opsional)</label
+          >
+          <input
+            v-model.trim="mesin.catatan"
+            type="text"
+            placeholder="mis. lokasi mesin, IP, nama teknisi"
+            class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card-elevated)]"
+          />
+        </div>
+
+        <UiButton :disabled="mesinSaving" @click="simpanMesin">
+          <i :class="['fas mr-1', mesinSaving ? 'fa-spinner fa-spin' : 'fa-save']"></i>
+          {{ mesinSaving ? 'Menyimpan…' : 'Simpan Setelan Mesin' }}
+        </UiButton>
+        <p class="text-[10px] text-[var(--text-tertiary)] italic">
+          Setelan ini tersimpan terpisah dan hanya terbaca Administrator — tombol
+          <b>Simpan</b> di bawah tidak mencakupnya.
+        </p>
+      </div>
+    </UiCard>
+
+    <!-- ============================================================
          SECTION: Schema Rapor per-Lembaga (sections / perLevel / perKelas)
          ============================================================ -->
     <UiCard
@@ -1559,12 +1675,13 @@
 import { ref, computed, reactive, watch, watchEffect, onMounted, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSettingsStore } from '@/stores/settings'
+import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useLembaga } from '@/composables/useLembaga'
 import { useGoogleSheet } from '@/composables/useGoogleSheet'
 import { uploadBase64 } from '@/services/storage'
-import { setOne } from '@/services/db'
+import { setOne, getOne, mergeOne } from '@/services/db'
 // v.1.1.9: master shift (dulu 15 setting-key hardcoded shiftPagiMulai dst)
 import {
   shiftList,
@@ -1595,6 +1712,7 @@ import { BRAND } from '@/config/brand'
 const router = useRouter()
 const route = useRoute()
 const settingsStore = useSettingsStore()
+const authStore = useAuthStore()
 const toast = useToast()
 const confirm = useConfirm()
 const { lembagaRaw } = useLembaga()
@@ -1758,6 +1876,12 @@ const tabs = [
     label: 'Google Sheet',
     icon: 'fa-table',
     gradient: 'from-emerald-500 dark:from-emerald-700 to-emerald-700 dark:to-emerald-900'
+  },
+  {
+    id: 'mesin',
+    label: 'Mesin Absensi',
+    icon: 'fa-fingerprint',
+    gradient: 'from-slate-500 dark:from-slate-700 to-slate-700 dark:to-slate-900'
   }
   // Note: section "rekapDiniyah" & "raporSchema" tetap render dari kartu di template
   // (akses via routing /pengaturan?section=rekapDiniyah / ?section=raporSchema)
@@ -2446,6 +2570,108 @@ async function simpanSemua() {
     saving.value = false
   }
 }
+
+// ============================================================
+// MESIN ABSENSI — baris settings/mesin (TERPISAH dari general/web).
+//
+// Kenapa baris sendiri: `settings/general` sengaja anon-readable (branding layar
+// login + formulir PSB publik membacanya). Menaruh kunci webhook di sana berarti
+// siapa pun bisa membacanya tanpa login lalu mengirim absensi PALSU. Baris `mesin`
+// hanya terbaca {super_admin, admin} — lihat migrasi 20260808120000_settings_mesin_key.
+//
+// Kenapa memilih MEREK, bukan metode: tak semua mesin bisa mendorong (webhook);
+// sebagian hanya bisa ditarik aplikasi Desktop atau diekspor manual. Admin memilih
+// mereknya, aplikasi yang menentukan metode + menampilkan panel yang relevan saja.
+// ============================================================
+const MEREK_MESIN = [
+  { id: '', nama: 'Belum dipakai', metode: '', penjelasan: 'Absensi guru diisi manual dari aplikasi.' },
+  {
+    id: 'hiview',
+    nama: 'HiView / Hikvision',
+    metode: 'webhook',
+    penjelasan:
+      'Mesin mengirim sendiri tiap scan ke aplikasi lewat internet. Isikan URL & kunci di bawah ke menu HTTP Listening pada mesin. Tak perlu PC menyala.'
+  },
+  {
+    id: 'fingerspot',
+    nama: 'Fingerspot',
+    metode: 'desktop',
+    penjelasan:
+      'Mesin tak mengirim sendiri; data ditarik aplikasi Desktop dari folder Personnel. Perlu PC yang menyala saat sinkron.'
+  },
+  {
+    id: 'lainnya',
+    nama: 'Merek lain (Solution, ZKTeco, dll)',
+    metode: 'impor',
+    penjelasan:
+      'Belum ada sambungan langsung. Ekspor berkas scan dari aplikasi bawaan mesin, lalu unggah lewat menu Impor.'
+  }
+]
+
+const mesin = ref({ merek: '', webhookSecret: '', catatan: '' })
+const mesinSaving = ref(false)
+const bolehAturMesin = computed(() =>
+  ['super_admin', 'admin'].includes(authStore?.sesiAktif?.role_sistem)
+)
+const merekAktif = computed(
+  () => MEREK_MESIN.find((m) => m.id === mesin.value.merek) || MEREK_MESIN[0]
+)
+const webhookUrl = computed(() => {
+  const base = String(import.meta.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '')
+  if (!base || !mesin.value.webhookSecret) return '(buat kunci dulu)'
+  return `${base}/functions/v1/hiview-absen?k=${mesin.value.webhookSecret}`
+})
+
+/** Kunci acak 16 char alfanumerik — batas yang diterima kolom isian mesin. */
+function buatSecret() {
+  const abjad = 'abcdefghijkmnpqrstuvwxyz23456789' // tanpa l/o/0/1 (mudah keliru saat diketik di mesin)
+  const buf = new Uint32Array(16)
+  crypto.getRandomValues(buf)
+  mesin.value.webhookSecret = Array.from(buf, (n) => abjad[n % abjad.length]).join('')
+}
+
+async function salin(teks) {
+  try {
+    await navigator.clipboard.writeText(String(teks))
+    toast.success('Tersalin.')
+  } catch {
+    toast.warning('Gagal menyalin — salin manual dari kotaknya.')
+  }
+}
+
+async function muatMesin() {
+  if (!bolehAturMesin.value) return
+  try {
+    const row = await getOne('settings', 'mesin')
+    if (row) mesin.value = { merek: '', webhookSecret: '', catatan: '', ...row }
+  } catch (e) {
+    // RLS menolak (bukan admin) atau baris belum ada — biarkan nilai kosong.
+    console.warn('[mesin] muat:', e?.message || e)
+  }
+}
+
+async function simpanMesin() {
+  if (mesinSaving.value) return
+  if (merekAktif.value.metode === 'webhook' && !mesin.value.webhookSecret) {
+    toast.warning('Buat kunci rahasianya dulu.')
+    return
+  }
+  mesinSaving.value = true
+  try {
+    await mergeOne('settings', 'mesin', {
+      merek: mesin.value.merek,
+      webhookSecret: mesin.value.webhookSecret,
+      catatan: mesin.value.catatan
+    })
+    toast.success('Setelan mesin tersimpan.')
+  } catch (e) {
+    toast.error('Gagal menyimpan: ' + (e?.message || e))
+  } finally {
+    mesinSaving.value = false
+  }
+}
+
+onMounted(muatMesin)
 
 // v.100 Batch11: Tes koneksi Google Sheet (Apps Script). Pakai URL/token dari form (belum harus disimpan).
 const gsheetTesting = ref(false)

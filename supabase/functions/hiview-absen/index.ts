@@ -17,19 +17,43 @@
 // sudah diterima & ditulis. Hanya 401/405/500 yg sengaja "gagal" (biar mesin retry).
 //
 // DEPLOY: supabase functions deploy hiview-absen --no-verify-jwt
-// SECRET: supabase secrets set HIVIEW_PUSH_SECRET="<8-16 char>"
+//   (verify_jwt=false juga dideklarasikan di supabase/config.toml)
+//
+// SECRET — dua sumber, DB lebih dulu:
+//   1. settings/mesin -> value->>'webhookSecret'  (diatur admin dari menu Mesin Absensi)
+//   2. env HIVIEW_PUSH_SECRET                      (cadangan, cara lama)
+// Sumber DB dipakai supaya pembeli bisa memasang & mengganti secret sendiri dari
+// aplikasi, tanpa membuka Dashboard Supabase. Baris settings/mesin HANYA terbaca
+// {super_admin, admin} — lihat migrasi 20260808120000_settings_mesin_key.sql.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders, handlePreflight, json } from '../_shared/cors.ts'
 import { deriveShift, statusFor, pilihShiftPulang, shiftsForGuru } from './shiftDerive.ts'
 
-const SECRET = Deno.env.get('HIVIEW_PUSH_SECRET') || ''
+const SECRET_ENV = Deno.env.get('HIVIEW_PUSH_SECRET') || ''
+
+// Cache singkat: mesin bisa mengirim beberapa event beruntun; tanpa cache tiap event
+// menambah satu query. 60 detik cukup pendek supaya ganti-secret cepat berlaku.
+let _secretDb = ''
+let _secretAt = 0
+async function secretAktif(db: ReturnType<typeof createClient>): Promise<string> {
+  const now = Date.now()
+  if (now - _secretAt < 60_000) return _secretDb || SECRET_ENV
+  try {
+    const { data } = await db.from('settings').select('value').eq('key', 'mesin').maybeSingle()
+    _secretDb = String((data?.value as Record<string, unknown>)?.webhookSecret || '')
+    _secretAt = now
+  } catch (_e) {
+    /* biarkan pakai nilai cache/env — jangan sampai gangguan DB mematikan absensi */
+  }
+  return _secretDb || SECRET_ENV
+}
 
 // Authorized bila secret cocok di query `?k=` ATAU password Basic-auth. Mesin
-// kirim salah satunya (lihat doc setel mesin). Tanpa SECRET ter-set -> tolak.
-function authorized(req: Request): boolean {
-  if (!SECRET) return false
+// kirim salah satunya (lihat doc setel mesin). Tanpa secret ter-set -> tolak.
+function cocok(req: Request, secret: string): boolean {
+  if (!secret) return false
   try {
-    if (new URL(req.url).searchParams.get('k') === SECRET) return true
+    if (new URL(req.url).searchParams.get('k') === secret) return true
   } catch {
     /* ignore */
   }
@@ -38,7 +62,7 @@ function authorized(req: Request): boolean {
     try {
       const dec = atob(h.slice(6).trim())
       const pass = dec.includes(':') ? dec.slice(dec.indexOf(':') + 1) : dec
-      if (pass === SECRET) return true
+      if (pass === secret) return true
     } catch {
       /* ignore */
     }
@@ -281,7 +305,14 @@ Deno.serve(async (req) => {
   // Health/handshake (GET, tanpa auth) — biar "uji koneksi" mesin tampil OK.
   if (req.method === 'GET') return json({ ok: true, service: 'hiview-absen' })
   if (req.method !== 'POST') return json({ ok: false, error: 'method' }, 405)
-  if (!authorized(req)) {
+
+  // Client dibuat SEBELUM cabang-cabang penolakan: secret dibaca dari settings/mesin,
+  // dan pencatat jejak juga memerlukannya — justru event yang ditolak itulah yang
+  // paling perlu meninggalkan jejak.
+  const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+
+  const secret = await secretAktif(db)
+  if (!cocok(req, secret)) {
     // Diagnostik 401 (TANPA bocorkan nilai secret — hanya panjang/keberadaan).
     try {
       const u = new URL(req.url)
@@ -289,7 +320,8 @@ Deno.serve(async (req) => {
       const hasBasic = (req.headers.get('authorization') || '').toLowerCase().startsWith('basic ')
       console.log(
         `[hiview] 401 path=${u.pathname} k=${k === null ? 'ABSENT' : 'len' + k.length} ` +
-          `secretLen=${SECRET.length} kMatch=${k === SECRET} basicAuth=${hasBasic}`
+          `secretLen=${secret.length} sumber=${_secretDb ? 'settings/mesin' : 'env'} ` +
+          `kMatch=${k === secret} basicAuth=${hasBasic}`
       )
     } catch {
       /* ignore */
@@ -302,10 +334,6 @@ Deno.serve(async (req) => {
   const major = Number(ace?.majorEventType)
   const empNo = String(ace?.employeeNoString ?? ace?.employeeNo ?? '').trim()
   const dateTime = String(ev?.dateTime || ace?.time || ace?.dateTime || '').trim()
-
-  // Client dibuat SEBELUM cabang-cabang penolakan: pencatat jejak memerlukannya, dan
-  // justru event yang ditolak itulah yang paling perlu meninggalkan jejak.
-  const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
   // Hanya event autentikasi orang (major 5 + ada employeeNo). Sisanya diabaikan
   // (isapiOk: balas statusCode 1 supaya mesin tak retry-storm & tak tampil "gagal").
