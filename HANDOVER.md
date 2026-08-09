@@ -24,8 +24,9 @@ diturunkan dari repo hulu **Ammu Online** (`D:\Aplikasi Project\Portal MU`).
 - **Single-tenant**: 1 pemasangan = 1 lembaga = 1 project Supabase sendiri.
 - **Backend**: Supabase (data/auth/storage). Firebase tinggal FCM + App Check + Hosting.
 - **Klien**: Vue 3 SPA + Android (Capacitor) + Desktop (Electron).
-- **Status**: kode SIAP — tes 867 hijau, build hijau, gerbang white-label lulus
-  (sumber + hasil build). Sisa = provisioning yang butuh akun (lihat RUNBOOK).
+- **Status (9 Agu 2026)**: **sudah LIVE** di Firebase Hosting, pembeli sudah bisa login
+  dan memakai. Tes 890 hijau, build hijau, empat gerbang white-label lulus.
+  Branch kerja: `refork/ammu-single-tenant`.
 
 ---
 
@@ -72,7 +73,8 @@ app/src/config/brand.js    # SUMBER TUNGGAL identitas produk + default merek + F
 app/src/stores/settings.js # DEFAULT_SETTINGS ← BRAND; watch → setKopImage
 app/src/utils/kopMuassis.js# kop baris-1 config-driven (settings.kopImageUrl)
 scripts/whitelabel-rules.mjs # aturan transformasi hulu → Waseela (SATU sumber)
-scripts/whitelabel.mjs       # terapkan + GERBANG audit (sumber & hasil build)
+scripts/whitelabel.mjs       # terapkan + GERBANG audit (sumber, hasil build, target backend)
+scripts/cek-kebocoran.mjs    # GERBANG pembanding: panen nilai identitas hulu, cari di repo kita
 scripts/apply-brand.mjs      # sebar aset gambar + audit aset
 scripts/sync-from-ammu.mjs   # tarik fitur baru, satu arah
 scripts/.sync-baseline.json  # sidik jari hulu saat sync terakhir
@@ -103,6 +105,33 @@ sengaja tak pernah menarik `kopMuassis.js` maupun `muassis.png`.
 `scripts/whitelabel-rules.mjs` — **jangan menambal berkasnya langsung**, tambalan itu
 hilang di sync berikutnya. Gerbang akan menolak sampai aturannya ada.
 
+### Dua cara kebocoran lolos (keduanya sudah kejadian)
+
+**1. Bentuknya bukan kata.** Gerbang teks mencari "ammu"/"mambaul". Yang lolos:
+ref project Supabase (`rzwefjilxzsqlokkwiyt`), VAPID key, foto latar login yang tersandi
+base64, dan — 9 Agu 2026 — **kota, alamat jalan, dan nomor telepon** lembaga hulu di
+rantai kop rapor. Penawarnya `cek-kebocoran.mjs`: ia **memanen** nilai-nilai itu dari repo
+hulu lalu mencarinya di repo kita, jadi tak perlu menebak bentuknya. Kalau menemukan
+literal identitas jenis baru, **tambahkan `panen()`-nya**, bukan cuma menambal berkasnya.
+
+**2. Letaknya di luar cakupan pindaian.** Ini yang paling sering terulang:
+
+| Luput | Akibat | Sekarang |
+|---|---|---|
+| `firebase.json` (root) | CSP memblokir seluruh Supabase | ikut `BERKAS_ROOT` |
+| `app/electron/src` | kotak "Tentang" menyebut yayasan lain | ikut `AREA` |
+| `app/android/.../main` | teks yang dilihat pembeli | ikut `AREA` |
+
+**Kalau menambah folder/berkas yang membawa teks atau gambar user-facing, daftarkan
+sekalian ke `AREA`/`BERKAS_ROOT`.** Gerbang yang tak memindai = gerbang yang bohong.
+
+### Istilah: "pondok" DIBUANG dari teks user-facing
+
+Lembaga pembeli **bukan pondok** (keputusan Kyai, 9 Agu 2026). Mis. "Alamat Pondok" →
+"Alamat". Nama variabel/kolom DB (`namaPondokSingkat`, dll) sengaja **tak** ikut diubah —
+biayanya besar, manfaatnya nol, dan tak terlihat pembeli. "pesantren"/"santri" **belum**
+diputuskan: `santri` menyentuh nama tabel DB, jadi jangan disapu tanpa arahan Kyai.
+
 ---
 
 ## Perubahan identifier (DB pembeli bersih → aman)
@@ -121,14 +150,28 @@ hilang di sync berikutnya. Gerbang akan menolak sampai aturannya ada.
 
 ## Sisa pekerjaan
 
-Semuanya butuh akun/aset — tak bisa diselesaikan dari repo. Detail di **RUNBOOK-PEMBELI.md**.
+Web sudah live. Yang tersisa (per 9 Agu 2026):
 
-1. **Aset persegi**: `brand-assets/{icon,splash,ic_stat}.png`. `apply-brand.mjs` masih
-   melaporkan 4 berkas identik dengan hulu (ikon Android/Electron & splash).
-2. **Supabase pembeli**: project baru → 41 migrasi → edge functions + secret → Auth config.
-3. **Firebase pembeli**: `google-services.json` untuk paket `id.waseela.app`.
-4. **Data awal**: seed lembaga/kelas, akun `admin`, impor data lama lewat menu Impor Supabase.
-5. **Keystore Android BARU** — simpan baik-baik; hilang = tak bisa update selamanya.
+**Wajib sebelum dianggap selesai**
+1. **Uji cetak kop kosong** — satu-satunya gerbang yang tak bisa diotomatiskan: cetak
+   **struk POS + rapor + rekap prestasi SEBELUM kop diisi**. Tak boleh muncul identitas
+   lembaga mana pun. Semua kebocoran fallback ketahuannya lewat jalur ini.
+2. **Data awal pembeli**: seed lembaga/kelas, akun `admin`, impor data lama lewat menu
+   **Impor Supabase** (jangan tulis skrip migrasi baru — importer-nya sudah ada).
+
+**Menunggu keputusan Kyai**
+3. Istilah **"pesantren"** (mudah) dan **"santri"** (dalam — menyentuh nama tabel DB).
+4. Bucket `psb` (bukti transfer) **publik terbaca lewat URL**. Tak ada tautan yang
+   membocorkannya, tapi URL yang tertebak = berkas terbuka. Perlu diputuskan mau
+   diprivatkan (butuh signed URL di sisi baca) atau dibiarkan.
+
+**Butuh akun/aset — detail di RUNBOOK-PEMBELI.md**
+5. **Android**: `google-services.json` untuk paket `id.waseela.app`, **keystore BARU**
+   (simpan baik-baik; hilang = tak bisa update selamanya), lalu setel `app-version.json`.
+6. **Desktop**: `npm install` dulu di `app/electron` (belum terpasang, `tsc` tak ada),
+   baru `npm run electron:make`. Berkas `build/index.js` yang ter-commit sudah bersih.
+7. **FCM + pg_cron/Vault**: secret notifikasi & penjadwalan tagihan otomatis.
+8. **Aset persegi** dari desainer, kalau ikon/splash bikinan skrip dirasa kurang.
 
 ---
 
