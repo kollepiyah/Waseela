@@ -666,7 +666,11 @@ function buildAppMenu() {
               type: 'info',
               title: 'Tentang Waseela',
               message: 'Waseela — Portal Manajemen Lembaga',
-              detail: 'Versi ' + app.getVersion() + '\nYayasan Al Manshur, Sidoarjo.'
+              // Kotak "Tentang" itu milik PRODUK, bukan lembaga pembeli — jadi isinya
+              // hak cipta pengembang, bukan nama/kota lembaga. (Baris warisan di sini
+              // sempat menyebut yayasan lain sampai 9 Agu 2026.)
+              detail:
+                'Versi ' + app.getVersion() + '\n© ' + new Date().getFullYear() + ' Bakafrawi Project'
             })
           }
         }

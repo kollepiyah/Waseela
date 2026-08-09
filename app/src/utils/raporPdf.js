@@ -285,15 +285,19 @@ async function drawKopRapor(doc, settings, lembaga, lembagaOverride = null, isDi
     (lembagaOverride && lembagaOverride.kop_line3) ||
     settings.kopLine3 ||
     settings.alamat ||
-    'Jl. Kol. Sugiono 112 Panjunan-Kepuh Kiriman Waru Sidoarjo'
+    BRAND.kopLine3
   doc.text(addr, pageW / 2, kopBase + 13, { align: 'center' })
 
   // Line 4: Telp (wired ke settings.kopLine4 atau settings.telp)
   const telp =
     (lembagaOverride && lembagaOverride.kop_line4) ||
     settings.kopLine4 ||
+    // `noTelp` = kunci yang BENAR-BENAR diisi lewat Pengaturan; `telp` tak pernah
+    // ditulis form mana pun, jadi nomor yang diketik admin dulu tak pernah sampai
+    // ke kop kecuali ia mengisi kopLine4 secara manual.
+    settings.noTelp ||
     settings.telp ||
-    'Telp. 031-8674713'
+    BRAND.kopLine4
   doc.text(telp, pageW / 2, kopBase + 17, { align: 'center' })
 
   // 2-line divider
@@ -435,7 +439,9 @@ async function drawSignBlocks(
 ) {
   const pageW = doc.internal.pageSize.getWidth()
   const font = doc._fontMU || 'times'
-  const tempat = settings.kota || 'Sidoarjo'
+  // Kota penerbitan rapor ("Dikeluarkan di"). Kosong = dibiarkan kosong, JANGAN
+  // jatuh ke kota lembaga lain — ini ikut tercetak di dokumen resmi.
+  const tempat = settings.kota || BRAND.kota
   // v.100c #3: tanggal terbit manual dari raporState.tanggal (sudah terformat ID); fallback hari ini.
   const today = raporState.tanggal || fmtTanggalID(new Date())
 

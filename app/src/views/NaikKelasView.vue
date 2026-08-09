@@ -3206,7 +3206,7 @@ async function eksporKartuPdf() {
       _kop.alamat ||
       settingsObj.kopLine3 ||
       settingsObj.alamat ||
-      'Jl. Kol. Sugiono 112 Panjunan-Kepuh Kiriman Waru Sidoarjo'
+      BRAND.kopLine3
     doc.text(kopLine3, pageW / 2, startY + 18, { align: 'center' })
     // Divider 2-line
     const dividerY = startY + 22

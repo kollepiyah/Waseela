@@ -55,6 +55,12 @@ panen(
 )
 // VAPID key web push (kunci base64url panjang)
 panen('vue-app/src/composables/usePushNotifications.js', /'(B[A-Za-z0-9_-]{40,})'/g, 'VAPID key hulu')
+// Alamat, telepon, dan kota lembaga hulu — ketiganya ikut TERCETAK di kop rapor,
+// dan tak satu pun memuat kata "ammu"/"mambaul" sehingga gerbang teks buta padanya.
+panen('vue-app/src/utils/raporPdf.js', /'(Jl\.[^']{10,})'/g, 'alamat lembaga hulu')
+panen('vue-app/src/utils/raporPdf.js', /'(Telp\.[^']{6,})'/g, 'telepon lembaga hulu')
+panen('vue-app/src/utils/raporPdf.js', /settings\.kota \|\| '([^']+)'/g, 'kota lembaga hulu', 4)
+
 // Domain hosting + repo rilis milik hulu
 for (const f of [
   'vue-app/src/utils/unduhan.js',

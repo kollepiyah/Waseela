@@ -39,6 +39,10 @@ export const BRAND = {
   kopLine2: '',
   kopImageUrl: '', // gambar baris-1 kop surat; kosong = pakai teks kopLine1
   motto: '',
+  // Kota penerbitan dokumen — tercetak di rapor sebagai "Dikeluarkan di …".
+  // Kosong, sama alasannya dengan kop: nilai bawaan di sini akan mencetak kota
+  // lembaga lain pada dokumen resmi milik pembeli.
+  kota: '',
   namaChannel: 'Channel',
 
   // ── Alamat layanan (diisi saat provisioning pembeli) ──────────────────────

@@ -34,23 +34,27 @@ describe('namaWaliSantri', () => {
 
 describe('alamatSantri', () => {
   it('memakai alamat datar kalau ada', () => {
-    expect(alamatSantri({ alamat: 'Jl. Kolonel Sugiono 112' })).toBe('Jl. Kolonel Sugiono 112')
+    expect(alamatSantri({ alamat: 'Jl. Merdeka 12' })).toBe('Jl. Merdeka 12')
   })
 
   it('merangkai dari alamat_detail kalau alamat datar kosong', () => {
     const s = {
       alamat: '',
       alamat_detail: {
-        dusun: 'Panjunan',
+        // Contoh sengaja NETRAL. Data contoh warisan dulu memakai alamat asli lembaga
+        // hulu, sehingga pemeriksa kebocoran menandainya sebagai jejak identitas.
+        dusun: 'Dusun Satu',
         rt: '01',
         rw: '02',
-        desa: 'Waru',
-        kecamatan: 'Waru',
-        kabupaten: 'Sidoarjo',
-        provinsi: 'Jawa Timur'
+        desa: 'Desa Dua',
+        kecamatan: 'Kecamatan Tiga',
+        kabupaten: 'Kabupaten Empat',
+        provinsi: 'Provinsi Lima'
       }
     }
-    expect(alamatSantri(s)).toBe('Panjunan, RT 01/RW 02, Waru, Waru, Sidoarjo, Jawa Timur')
+    expect(alamatSantri(s)).toBe(
+      'Dusun Satu, RT 01/RW 02, Desa Dua, Kecamatan Tiga, Kabupaten Empat, Provinsi Lima'
+    )
   })
 
   it('RT tanpa RW (dan sebaliknya) tak meninggalkan garis miring menggantung', () => {

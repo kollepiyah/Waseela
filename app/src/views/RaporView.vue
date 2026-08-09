@@ -2303,7 +2303,7 @@ const catatanRapor = computed(() => raporDoc.value?.catatan || '')
 
 // Samakan tampilan layar dengan PDF (kepribadian coret pilihan, kota TTD).
 const KEPRIBADIAN_OPTS = ['Baik', 'Cukup', 'Perlu Perhatian']
-const kotaRapor = computed(() => settingsStore.settings?.kota || 'Sidoarjo')
+const kotaRapor = computed(() => settingsStore.settings?.kota || BRAND.kota)
 const kepribadianRows = computed(() => [
   { label: 'Kelakuan', val: kepribadian.value?.kelakuan || 'Baik' },
   { label: 'Kerajinan', val: kepribadian.value?.kerajinan || 'Baik' },

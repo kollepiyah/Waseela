@@ -80,6 +80,7 @@ const DEFAULT_SETTINGS = {
   kopImageUrl: BRAND.kopImageUrl, // gambar baris-1 kop surat; kosong = pakai teks kopLine1
   psbPublicUrl: BRAND.psbUrl, // situs PSB/PPDB publik; kosong = tautan disembunyikan
   alamat: '',
+  kota: '', // kota penerbitan dokumen — tercetak di rapor "Dikeluarkan di …"
   noTelp: '',
   fiturBeranda: true,
   fiturKalender: true,

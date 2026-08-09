@@ -72,10 +72,16 @@
         <UiInput v-model="form.txtWelcome" label="Sapaan Ahlan" />
         <UiInput v-model="form.alamat" label="Alamat" />
         <UiInput v-model="form.noTelp" label="No. Telepon" />
+        <UiInput
+          v-model="form.kota"
+          label="Kota Penerbitan Dokumen"
+          placeholder="mis. Mataram"
+        />
         <UiInput v-model="form.namaChannel" label="Nama Channel Pesan" />
       </div>
       <p class="text-[11px] text-[var(--text-secondary)] mt-2 leading-relaxed">
         <i class="fas fa-circle-info mr-1 text-emerald-600"></i>
+        <b>Kota penerbitan</b> tercetak di rapor pada baris &ldquo;Dikeluarkan di&rdquo;.
         <b>Nama singkat</b> dipakai di rapor untuk menyusun label tanda tangan —
         mis. &ldquo;Kepala TPQ <i>&lt;nama singkat&gt;</i>&rdquo;. Kosongkan bila tak ingin
         ada tambahan nama di belakang jabatan.
@@ -1745,6 +1751,7 @@ function defaultForm() {
     // (mis. "Kepala TPQ <singkat>") — tapi tak pernah punya isian, sehingga terkunci di
     // nilai bawaan merek dan tercetak sebagai nama produk di rapor.
     namaLembaga: '',
+    kota: '', // tercetak di rapor: "Dikeluarkan di <kota>"
     namaPondokSingkat: '',
     motto: '',
     txtAppDesc: '',

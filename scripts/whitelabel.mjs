@@ -23,7 +23,13 @@ const AREA = [
   { dir: 'app/src', ext: EXT_SRC, rules: RULES_SRC, brand: true },
   { dir: 'supabase/migrations', ext: EXT_BACKEND, rules: RULES_BACKEND, brand: false },
   { dir: 'supabase/functions', ext: EXT_BACKEND, rules: RULES_BACKEND, brand: false },
-  { dir: 'tests', ext: /\.js$/, rules: RULES_BACKEND, brand: false }
+  { dir: 'tests', ext: /\.js$/, rules: RULES_BACKEND, brand: false },
+  // Shell Desktop & Android. Ditambahkan 9 Agu 2026 setelah kotak "Tentang" Electron
+  // ketahuan masih menyebut yayasan lain — keduanya membawa teks yang DILIHAT pembeli,
+  // tapi dulu di luar cakupan gerbang ini. `rules: []` = audit saja, tanpa mengubah:
+  // keduanya tak ikut sync dari hulu, jadi tak ada yang perlu ditulis ulang otomatis.
+  { dir: 'app/electron/src', ext: EXT_BACKEND, rules: [], brand: false },
+  { dir: 'app/android/app/src/main', ext: /\.(xml|java|kt)$/, rules: [], brand: false }
 ]
 
 function walk(dir, ext, out = []) {
@@ -141,7 +147,7 @@ if (sisa.length || sisaDist.length) {
   console.log('  langsung, tambalan itu akan hilang di sync berikutnya.\n')
   process.exit(1)
 }
-console.log('  ✓ Gerbang SUMBER lulus — nol jejak di app/src, supabase/, tests/.')
+console.log('  ✓ Gerbang SUMBER lulus — nol jejak di app/src, supabase/, tests/, electron/, android/.')
 console.log(
   existsSync(distDir)
     ? '  ✓ Gerbang HASIL BUILD lulus — nol jejak identitas di app/dist.'

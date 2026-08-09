@@ -63,6 +63,12 @@ export const RULES_SRC = [
   [/(\|\|\s*)'Ammu Channel'/g, '$1BRAND.namaChannel'],
   ["'Al Manshur Channel'", 'BRAND.namaChannel'],
 
+  // Alamat, telepon, dan kota lembaga hulu — IKUT TERCETAK di kop rapor.
+  ["'Jl. Kol. Sugiono 112 Panjunan-Kepuh Kiriman Waru Sidoarjo'", 'BRAND.kopLine3'],
+  ["'Telp. 031-8674713'", 'BRAND.kopLine4'],
+  [/(settings\.kota\s*\|\|\s*)'Sidoarjo'/g, '$1BRAND.kota'],
+  [/(settings\?\.kota\s*\|\|\s*)'Sidoarjo'/g, '$1BRAND.kota'],
+
   // URL layanan milik lembaga lain
   ["'https://github.com/kollepiyah/ammu/releases/latest'", "BRAND.releaseRepo + '/releases/latest'"],
   ["'https://github.com/kollepiyah/ammu/releases'", "BRAND.releaseRepo + '/releases'"],
