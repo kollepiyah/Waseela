@@ -3,13 +3,23 @@
 // kolom ekor jsonb `data` (TANPA migration), diisi MANUAL via form / template impor.
 // Lihat memori project_keuangan_gedung. (v.111)
 
-// Seed default — dipakai bila settings.gedung_list belum diisi admin (Master Data > Gedung).
-export const DEFAULT_GEDUNG = ['Gedung TPQ Pagi', 'Gedung Induk']
+// Tak ada gedung bawaan: nama gedung itu milik LEMBAGA, bukan milik aplikasi.
+// Repo asal mengisinya dengan nama gedung lembaganya sendiri, sehingga di pemasangan
+// baru daftar itu muncul seolah-olah milik pembeli. Admin mengisinya sendiri lewat
+// Master Data > Gedung. Kosong = penataan per-gedung tak dipakai (semua lihat semua).
+export const DEFAULT_GEDUNG = []
 
-// Daftar gedung aktif dari settings (fallback ke DEFAULT_GEDUNG).
+// Daftar gedung aktif dari settings.
+//
+// ⚠ Array KOSONG dihormati apa adanya — JANGAN dianggap "belum diisi".
+//   Syarat lama `arr.length ? arr : DEFAULT` membuat gedung TERAKHIR mustahil dihapus:
+//   begitu daftarnya kosong, nilai bawaan muncul lagi seolah penghapusan gagal.
+//   Persoalan yang sama pernah terjadi pada master JABATAN dan sudah diperbaiki di
+//   JabatanKelolaView dengan cara ini juga: hanya `undefined` yang berarti "belum diisi".
 export function gedungList(settings) {
   const arr = settings && settings.gedung_list
-  return Array.isArray(arr) && arr.length ? arr.filter(Boolean) : DEFAULT_GEDUNG.slice()
+  if (Array.isArray(arr)) return arr.filter(Boolean)
+  return DEFAULT_GEDUNG.slice()
 }
 
 // ---- scope (dipakai Fase 3 keuangan + Fase 4 akademik) --------------------

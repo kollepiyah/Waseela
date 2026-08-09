@@ -25,6 +25,7 @@ import { scanLembagaFix, applyLembagaFix, LEMBAGA_QIRAATI_OPSI } from '@/utils/v
 import { useAuthStore } from '@/stores/auth'
 import { provisionAkunSemua } from '@/services/authSupabase' // K1-b: buat akun login yang belum ada
 // v.100 Batch8: audit kesehatan data (integritas + kandidat duplikat fuzzy)
+import { gedungList } from '@/utils/gedung' // sumber tunggal daftar gedung (hormati daftar kosong)
 import { useDataAudit } from '@/composables/useDataAudit'
 import { useGuru } from '@/composables/useGuru'
 
@@ -665,10 +666,10 @@ async function hapusTp(idx) {
 }
 
 // v.111: KELOLA GEDUNG (penataan administrasi: scope keuangan Buku Kas + akademik)
-const gedungMaster = computed(() => {
-  const arr = settings.settings?.gedung_list
-  return Array.isArray(arr) && arr.length ? arr : ['Gedung TPQ Pagi', 'Gedung Induk']
-})
+// Pakai helper bersama, JANGAN salin logikanya ke sini. Dulu tersalin, lalu perbaikan
+// di utils/gedung.js tak berpengaruh di layar ini — daftar bawaan tetap muncul lagi
+// tiap gedung terakhir dihapus. Array kosong DIHORMATI (lihat catatan di gedungList).
+const gedungMaster = computed(() => gedungList(settings.settings))
 const gedungForm = reactive({ value: '', idx: null })
 const savingGedung = ref(false)
 function editGedung(idx) {
@@ -1412,7 +1413,7 @@ async function simpanPengaturanRekap() {
         <input
           v-model="gedungForm.value"
           type="text"
-          placeholder="mis. Gedung TPQ Pagi"
+          placeholder="mis. Gedung Putra, Gedung Putri"
           class="flex-1 px-3 py-2 text-sm rounded-lg border border-teal-300 bg-white dark:bg-slate-900 text-slate-800 dark:text-white"
         />
         <button
