@@ -48,7 +48,7 @@
           ]
         }
       ],
-      "icon": "assets/appIcon.ico"
+      "icon": "assets/appIcon.png"
     },
     "nsis": {
       "artifactName": "Waseela-Setup-${version}.${ext}",
