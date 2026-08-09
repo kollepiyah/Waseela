@@ -467,7 +467,10 @@ async function drawSignBlocks(
       searchTitle = 'KEPALA SEKOLAH'
     }
   }
-  labelKepala = `${labelKepala} ${nmPondok}`
+  // Nama singkat lembaga hanya DITEMPELKAN bila memang diisi. Sebelumnya selalu
+  // ditempel, sehingga saat kosong ia jatuh ke nilai bawaan merek dan rapor
+  // tercetak "PJ PTPT Waseela" — seolah Waseela nama lembaganya.
+  labelKepala = nmPondok ? `${labelKepala} ${nmPondok}` : labelKepala
 
   // v.21.47: tambah gap atas (y+5) supaya tidak nempel ke tabel
   const yStart = y + 5

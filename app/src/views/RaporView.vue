@@ -2802,7 +2802,10 @@ const jabatanKepala = computed(() => {
   else if (lnorm === 'ppph' || lnorm === 'p3h') label = 'PJ PPPH'
   else if (lnorm === 'sdi') label = 'Kepala SDI'
   else if (lnorm === 'pkbm') label = 'Kepala PKBM'
-  return `${label} ${nmPondok}`
+  // Nama singkat lembaga hanya DITEMPELKAN bila memang diisi. Sebelumnya selalu
+  // ditempel, sehingga saat kosong ia jatuh ke nilai bawaan merek dan rapor
+  // tercetak "PJ PTPT Waseela" — seolah Waseela nama lembaganya.
+  return nmPondok ? `${label} ${nmPondok}` : label
 })
 
 // v.95.0626: nama Guru Kelas — Diniyah = guru_sekolah; Qiraati/ngaji = guru, fallback

@@ -28,7 +28,13 @@ export const BRAND = {
   // Dipakai sebagai fallback saat settings belum terisi. Kosong = renderer melewati
   // baris itu, jadi tak ada nama lembaga asing yang tercetak.
   namaLembaga: 'Waseela',
-  namaPondokSingkat: 'Waseela',
+  // Sengaja KOSONG, tak seperti namaLembaga di atas.
+  //   namaLembaga hanya jadi cadangan tampilan di layar (sidebar, judul login) — memakai
+  //   nama produk di situ tak apa-apa.
+  //   namaPondokSingkat DICETAK DI RAPOR sebagai ekor jabatan penanda tangan, mis.
+  //   "PJ PTPT <singkat>". Memakai nama produk di situ salah arti: rapor jadi berbunyi
+  //   "PJ PTPT Waseela", seolah Waseela nama lembaganya. Kosong = jabatan dicetak polos.
+  namaPondokSingkat: '',
   kopLine1: '',
   kopLine2: '',
   kopImageUrl: '', // gambar baris-1 kop surat; kosong = pakai teks kopLine1

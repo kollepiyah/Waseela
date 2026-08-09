@@ -56,6 +56,17 @@
         <UiInput v-model="form.txtAppName" label="Nama Aplikasi" required />
         <UiInput v-model="form.txtAppDesc" label="Deskripsi / Sub-Title" />
         <UiInput v-model="form.txtSidebarTitle" label="Nama Sidebar / Lembaga" />
+        <UiInput
+          v-model="form.namaLembaga"
+          label="Nama Lembaga (lengkap)"
+          placeholder="mis. Yayasan Pendidikan Al-Qur'an Daarul Mujawwidin"
+        />
+        <UiInput
+          v-model="form.namaPondokSingkat"
+          label="Nama Lembaga (singkat)"
+          placeholder="mis. Daarul Mujawwidin"
+        />
+        <UiInput v-model="form.motto" label="Motto (tampil di layar login)" />
         <UiInput v-model="form.txtHeaderBar" label="Teks Header Bar" />
         <UiInput v-model="form.txtPeriode" label="Periode Aktif" />
         <UiInput v-model="form.txtWelcome" label="Sapaan Ahlan" />
@@ -63,6 +74,12 @@
         <UiInput v-model="form.noTelp" label="No. Telepon" />
         <UiInput v-model="form.namaChannel" label="Nama Channel Pesan" />
       </div>
+      <p class="text-[11px] text-[var(--text-secondary)] mt-2 leading-relaxed">
+        <i class="fas fa-circle-info mr-1 text-emerald-600"></i>
+        <b>Nama singkat</b> dipakai di rapor untuk menyusun label tanda tangan —
+        mis. &ldquo;Kepala TPQ <i>&lt;nama singkat&gt;</i>&rdquo;. Kosongkan bila tak ingin
+        ada tambahan nama di belakang jabatan.
+      </p>
     </UiCard>
 
     <!-- ============================================================
@@ -1723,6 +1740,13 @@ const { lembagaRaw } = useLembaga()
 function defaultForm() {
   return {
     txtAppName: '',
+    // Identitas LEMBAGA (beda dari identitas APLIKASI di atasnya). Ketiganya sudah lama
+    // dibaca kode — namaPondokSingkat dipakai rapor untuk menyusun label tanda tangan
+    // (mis. "Kepala TPQ <singkat>") — tapi tak pernah punya isian, sehingga terkunci di
+    // nilai bawaan merek dan tercetak sebagai nama produk di rapor.
+    namaLembaga: '',
+    namaPondokSingkat: '',
+    motto: '',
     txtAppDesc: '',
     txtSidebarTitle: '',
     txtHeaderBar: BRAND.txtHeaderBar,
