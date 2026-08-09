@@ -37,7 +37,7 @@ export function kunciJenis(v) {
  * Kas yang BUKAN baris master/lembaga.
  *
  * Kyai 4 Agu 2026: "belum ada, untuk lembaga TPQ (TPQ mencakup TPQ Pagi/TPQ Sore/
- *   Pra PTPT/PTPT/PPPH), Fullday, dan Ma'had (Uang Makan, Syahriyah Pondok)".
+ *   Pra PTPT/PTPT/PPPH), Fullday, dan Ma'had (Uang Makan, Syahriyah Asrama)".
  *   Ketiganya memang TAK BISA dipilih sebelum ini: pilihan "Masuk Kas Lembaga" diambil
  *   dari master/lembaga, dan di master (terverifikasi 4 Agu) tidak ada baris "TPQ"
  *   payung, tidak ada "Fullday", dan **tidak ada "Ma'had"** — Fullday & Ma'had itu
@@ -53,7 +53,7 @@ export function kunciJenis(v) {
 export const KAS_LEMBAGA_EKSTRA = [
   { nama: 'TPQ', ket: 'Gabungan TPQ Pagi/Sore, Pra PTPT, PTPT, PPPH' },
   { nama: 'Fullday', ket: 'Program fullday (status santri, bukan lembaga)' },
-  { nama: "Ma'had", ket: 'Asrama — uang makan & syahriyah pondok' }
+  { nama: "Ma'had", ket: 'Asrama — uang makan & syahriyah' }
 ]
 
 /**

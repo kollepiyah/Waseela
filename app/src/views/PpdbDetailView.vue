@@ -522,7 +522,7 @@ async function convertToSantri() {
     const p = pendaftar.value || {}
     const payload = {
       nama: p.nama || '',
-      nis: '', // v.100: No. Induk pondok — SELALU auto-generate di bawah (NNNN+DDMMYY)
+      nis: '', // v.100: No. Induk lembaga — SELALU auto-generate di bawah (NNNN+DDMMYY)
       nis_sekolah: p.nis_sekolah || p.nis || '', // v.100: NIS Dinas (manual) — nilai NIS dari form PSB (kalau ada) pindah ke sini
       nisn: p.nisn || '',
       nik: p.nik || '',

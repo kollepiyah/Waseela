@@ -532,7 +532,7 @@
         <h3
           class="text-xs font-black text-teal-800 dark:text-teal-300 uppercase tracking-wide mb-3"
         >
-          <i class="fas fa-book-quran text-teal-600 mr-1"></i>Pondok Qiraati *
+          <i class="fas fa-book-quran text-teal-600 mr-1"></i>Qiraati *
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>

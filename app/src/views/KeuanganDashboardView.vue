@@ -12,7 +12,7 @@
         <h1 class="text-base md:text-lg font-black text-[var(--text-primary)]">
           <i class="fas fa-chart-line text-teal-500 mr-2"></i>Dashboard Keuangan
         </h1>
-        <p class="text-xs text-[var(--text-secondary)] mt-0.5">Overview keuangan pondok realtime + tren 12 bulan</p>
+        <p class="text-xs text-[var(--text-secondary)] mt-0.5">Overview keuangan lembaga realtime + tren 12 bulan</p>
       </div>
 
       <!-- v.72.15.0526: 7 Quick Actions (+ Hutang Piutang baru) -->
@@ -191,7 +191,7 @@ function ymOf(val) {
   const d = new Date(s)
   return isNaN(d) ? null : { year: d.getFullYear(), month: d.getMonth() }
 }
-// tabungan TERPISAH dari kas pondok -> jangan dihitung di dashboard
+// tabungan TERPISAH dari kas lembaga -> jangan dihitung di dashboard
 function isTabungan(t) {
   const sumber = String(t.sumber || '').toLowerCase()
   return sumber.includes('tabungan') || String(t.kategori || '').toLowerCase() === 'tabungan'
@@ -227,7 +227,7 @@ const monthlyData = computed(() => {
     let masuk = 0
     let keluar = 0
     for (const t of bukuInduk.value) {
-      if (isTabungan(t)) continue // tabungan terpisah dari kas pondok
+      if (isTabungan(t)) continue // tabungan terpisah dari kas lembaga
       const ym = ymOf(t.tanggal)
       if (!ym || ym.year !== m.year || ym.month !== m.month) continue
       const a = arusOf(t)

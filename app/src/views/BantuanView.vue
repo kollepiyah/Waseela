@@ -358,7 +358,7 @@
       <h3 class="text-base font-bold text-[var(--text-primary)] mb-2">Lisensi Penggunaan</h3>
       <p>
         Aplikasi ini untuk penggunaan internal {{ lembagaName }}. Dilarang menggandakan,
-        mendistribusikan, atau memodifikasi tanpa izin pengelola pondok. Seluruh data santri, guru,
+        mendistribusikan, atau memodifikasi tanpa izin pengelola lembaga. Seluruh data santri, guru,
         dan keuangan bersifat rahasia dan menjadi tanggung jawab pengguna yang diberi akses.
       </p>
     </div>
@@ -705,7 +705,7 @@ const DEFAULT_PANDUAN = [
       'Menu Keuangan → POS Santri untuk transaksi cepat pembayaran.',
       'Tagihan Aktif untuk melihat & membuat tagihan.',
       'Verifikasi Bayar untuk menyetujui bukti transfer wali.',
-      'Buku Induk & Laporan untuk rekap kas pondok.'
+      'Buku Induk & Laporan untuk rekap kas lembaga.'
     ]
   }
 ]
@@ -731,7 +731,7 @@ const DEFAULT_FAQ = [
   },
   {
     q: 'Tabungan tidak masuk ke Buku Induk, apakah normal?',
-    a: 'Ya. Tabungan santri terpisah dari kas pondok, jadi memang tidak ikut dihitung di Buku Induk maupun dasbor keuangan.'
+    a: 'Ya. Tabungan santri terpisah dari kas lembaga, jadi memang tidak ikut dihitung di Buku Induk maupun dasbor keuangan.'
   },
   {
     q: 'Cetak slip/struk tidak keluar di printer dot-matrix?',
@@ -824,97 +824,23 @@ async function resetFaq() {
   }
 }
 
-// ⚠️ DAFTAR MANUAL — tidak terhubung ke CHANGELOG.md, jadi ia TIDAK ikut naik saat
-//   versi dibump. Sempat tertinggal jauh (isinya berhenti di v.98 Juni 2026 sementara
-//   aplikasi sudah v.1.2.9). Kalau menambah rilis, tulis untuk PEMBACA PONDOK: apa yang
-//   berubah di layar mereka, bukan nama fungsi. Cukup beberapa rilis terakhir —
-//   riwayat lengkap ada di CHANGELOG.md untuk pengembang.
+// ⚠️ DAFTAR MANUAL — tak terhubung ke CHANGELOG.md, jadi TIDAK ikut naik saat versi
+//   dibump. Tulis untuk PEMBACA AWAM: apa yang berubah di layar mereka, bukan nama
+//   fungsi. Cukup beberapa rilis terakhir; riwayat lengkap ada di CHANGELOG.md.
+//
+//   Riwayat v.1.3.x milik repo asal SENGAJA DIBUANG (9 Agu 2026): isinya perjalanan
+//   aplikasi lembaga lain selama berbulan-bulan, sedangkan aplikasi ini baru rilis
+//   pertama. Menampilkannya membuat pembaca mengira sudah melewati rilis yang tak
+//   pernah mereka alami.
 const rilis = [
   {
-    versi: 'v.1.3.4',
+    versi: 'v.1.0.0',
     tgl: 'Agustus 2026',
     items: [
-      'Alat "Rapikan Tagihan Gabungan" di Pengaturan Keuangan: menemukan tagihan ngaji yang sudah termasuk di syahriyah sekolah/pondok tapi masih tercatat belum bayar, lalu menghapusnya setelah diperiksa.',
-      'Generate Tagihan Khusus menampilkan pratinjau sasaran — sebaran per lembaga, total rupiah, dan daftar nama — sebelum tagihan benar-benar terbit.',
-      'Simulasi Pemasukan menampilkan berapa tagihan yang digabung beserta nilai komponen di dalamnya.'
-    ]
-  },
-  {
-    versi: 'v.1.3.3',
-    tgl: 'Agustus 2026',
-    items: [
-      'Kepala lembaga tak lagi menerima bisyaroh pokok guru di lembaga yang ia pimpin; jam mengajarnya tetap dibayar per JP.',
-      'Kepala yang juga mengaji tetap menerima bisyaroh pokok guru di lembaga ngajinya.',
-      'Simulasi Bisyaroh bisa diekspor ke PDF — rekap per jenis sekaligus rincian per orang.',
-      'Simulasi Pemasukan Bulanan di Pengaturan Keuangan: perkiraan uang masuk sebulan dari jenis bulanan saja.'
-    ]
-  },
-  {
-    versi: 'v.1.3.2',
-    tgl: 'Agustus 2026',
-    items: [
-      'Bisyaroh sekolah bisa dihitung per JP per BULAN (JP/minggu × tarif, dipotong sesuai kehadiran) — pilih cara hitung "× JP/minggu (bulanan)" di Jenis Bisyaroh.',
-      'Guru yang mengajar di lebih dari satu sekolah kini terbayar untuk semuanya; cukup tambahkan barisnya di menu Beban Mengajar.',
-      'Jabatan Tambahan boleh lebih dari satu, jadi yang merangkap tiga jabatan tertampung.',
-      'Simulasi Plafon kini ikut menghitung tunjangan.'
-    ]
-  },
-  {
-    versi: 'v.1.3.1',
-    tgl: 'Agustus 2026',
-    items: [
-      'Tunjangan bisyaroh kini berkategori seperti Jenis Bisyaroh: tunjangan jabatan (mis. Kepala Lembaga), tunjangan pengabdian yang dikali tahun mengabdi, tunjangan khusus masa kerja tertentu, dan tunjangan berprestasi bagi yang tepat waktu.',
-      'Data guru: "Tanggal Tugas" kini bernama "Tgl. Syahadah" dan boleh dikosongkan; ada field baru "Tgl. Tugas" sebagai dasar masa pengabdian.',
-      'Simulasi Plafon Bisyaroh kini juga merinci per guru/pegawai.',
-      'POS: tagihan bulanan tak lagi terdampar di daftar Nonbulanan.'
-    ]
-  },
-  {
-    versi: 'v.1.3.0',
-    tgl: 'Agustus 2026',
-    items: [
-      'Simulasi Plafon Bisyaroh — coba nominal sebelum diputuskan, tak ada yang disimpan.',
-      'Input Absensi Harian bisa memilih tanggal, termasuk hari yang sudah lewat (super admin).',
-      'Kolom Saldo di Buku Induk tak lagi menabrak kolom Keluar.'
-    ]
-  },
-  {
-    versi: 'v.1.2.9',
-    tgl: 'Agustus 2026',
-    items: [
-      'Toleransi scan per shift — guru yang datang lebih awal tak lagi terbaca alpa.',
-      'Tab "Jejak Mesin" di Absensi Guru: bukti scan sampai atau tidak ke server.',
-      'Kolom Saldo di laporan Buku Induk kini mengikuti penyaring yang diekspor.',
-      "Uang Saku menampilkan seluruh santri ma'had, tanpa lewat Input Mutasi dulu.",
-      'Login tak lagi gagal karena salah memilih tab Santri/Wali vs Guru/Pegawai.',
-      'Tombol unduh aplikasi Desktop diperbaiki (sempat membuka halaman kosong).'
-    ]
-  },
-  {
-    versi: 'v.1.2.8',
-    tgl: 'Agustus 2026',
-    items: [
-      'Perizinan yang disetujui tak lagi luput dari absensi.',
-      'Tampilan tak lagi terlihat "ke-zoom" di HP dengan ukuran font besar.',
-      'Pembaruan aplikasi Android bisa diunduh langsung tanpa menunggu Play Store.',
-      'Ekspor PDF harian untuk Tabungan.'
-    ]
-  },
-  {
-    versi: 'v.1.2.7',
-    tgl: 'Agustus 2026',
-    items: [
-      'Syahriyah gabungan: ngaji menempel ke syahriyah sekolah/pondok, tak tertagih dua kali.',
-      'Kas per lembaga di Buku Induk, Uang Pos, dan Tabungan.',
-      'Laporan PDF harian per lembaga, berkas tunai dan transfer terpisah.'
-    ]
-  },
-  {
-    versi: 'v.1.2.6',
-    tgl: 'Juli 2026',
-    items: [
-      "Jenis pembayaran bisa ditargetkan ke status santri (Non-mukim / Ma'had / Fullday).",
-      'Admin keuangan yang merangkap guru kini melihat kelasnya sendiri di menu Pendidikan.'
+      'Rilis pertama. Data santri & guru, absensi, rapor, kartu kenaikan, dan kegiatan dalam satu aplikasi.',
+      'Keuangan: syahriyah & tagihan, POS pembayaran, buku induk kas, tabungan santri, serta bisyaroh guru beserta simulasinya.',
+      'Identitas lembaga diatur sendiri lewat Pengaturan — nama, kop surat, logo, dan alamat — tanpa perlu bantuan pengembang.',
+      'Tersedia di web, aplikasi Android, dan aplikasi Desktop.'
     ]
   }
 ]

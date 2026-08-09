@@ -35,12 +35,12 @@
         </div>
 
         <template v-else>
-          <!-- Pondok Qiraati -->
+          <!-- Qiraati -->
           <div class="rounded-xl border border-teal-200 dark:border-teal-800 p-3 space-y-2.5">
             <p
               class="text-[10px] font-black text-teal-700 dark:text-teal-300 uppercase tracking-wide"
             >
-              <i class="fas fa-book-quran mr-1"></i>Pondok Qiraati
+              <i class="fas fa-book-quran mr-1"></i>Qiraati
             </p>
             <div>
               <label :class="labelCls">Lembaga Qiraati</label>

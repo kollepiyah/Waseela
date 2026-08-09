@@ -236,7 +236,7 @@
         class="bg-gradient-to-br from-cyan-600 to-teal-700 dark:from-cyan-800 dark:to-teal-900 rounded-2xl p-5 text-white shadow-lg"
       >
         <p class="text-[10px] font-bold uppercase opacity-80 tracking-wider mb-3">
-          <i class="fas fa-university mr-1"></i>Rekening Pondok
+          <i class="fas fa-university mr-1"></i>Rekening Lembaga
         </p>
         <div v-if="rekInfo.bank_nama || rekInfo.bank_nomor">
           <p class="text-lg font-black drop-shadow">{{ rekInfo.bank_nama || '— Bank —' }}</p>
@@ -259,7 +259,7 @@
           <i class="fas fa-exclamation-circle text-2xl mb-2 opacity-80"></i>
           <p class="text-sm font-bold">Belum ada rekening yang di-set</p>
           <p class="text-[10px] opacity-80 italic mt-1">
-            Hubungi admin pondok untuk info rekening transfer.
+            Hubungi admin untuk info rekening transfer.
           </p>
         </div>
       </div>
@@ -648,7 +648,7 @@
         <i class="fas fa-exclamation-circle text-amber-400 text-3xl mb-2"></i>
         <p class="text-sm font-bold text-[var(--text-primary)]">Nomor VA belum tersedia</p>
         <p class="text-[11px] text-[var(--text-secondary)] italic mt-1">
-          Hubungi admin pondok untuk info Virtual Account santri.
+          Hubungi admin untuk info Virtual Account santri.
         </p>
       </div>
     </template>

@@ -5,7 +5,7 @@
       v-if="!isDesktop"
       icon="fa-users"
       title="Data Santri"
-      :subtitle="isFullAccess ? 'Semua santri pondok' : 'Santri yang Anda ampu'"
+      :subtitle="isFullAccess ? 'Semua santri' : 'Santri yang Anda ampu'"
     >
       <template #stats>
         <div
@@ -1177,17 +1177,17 @@ async function onImportSantri(e) {
       return ''
     }
     // Pemetaan nomor identitas (v.1.1.9 — laporan Kyai 21 Jul 2026):
-    //   'No. Induk' -> santri.nis          = nomor pondok, DIGENERATE APLIKASI (planAppendNis)
+    //   'No. Induk' -> santri.nis          = nomor induk lembaga, DIGENERATE APLIKASI (planAppendNis)
     //   'NIS'       -> santri.nis_sekolah  = NIS Dinas, diisi manual
     //
     // DULU ada heuristik `hasNoIndukCol`: kalau file tak punya kolom 'No. Induk',
-    // kolom 'NIS' dianggap nomor pondok dan ditulis ke `nis`. Itu meleset untuk file
+    // kolom 'NIS' dianggap nomor induk lembaga dan ditulis ke `nis`. Itu meleset untuk file
     // Excel lama Kyai yang kolom NIS-nya berisi NIS DINAS — akibatnya NIS Dinas
     // MENIMPA No. Induk yang sudah digenerate aplikasi.
     //
     // Sekarang tanpa tebak-tebakan: tiap kolom dipetakan ke field-nya sendiri, dan
     // `nis` HANYA ditulis bila kolom 'No. Induk' benar-benar terisi — jadi impor tak
-    // akan pernah lagi menimpa nomor pondok hasil generate.
+    // akan pernah lagi menimpa nomor induk lembaga hasil generate.
     for (const r of rows) {
       const namaRaw = String(_pick(r, 'Nama Santri', 'Nama', 'NAMA', 'nama') || '').trim()
       if (!namaRaw) {

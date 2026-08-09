@@ -173,7 +173,7 @@
               Penggabungan hanya mengatur tagihan yang <b>akan</b> terbit. Tagihan ngaji yang
               terlanjur terbit <b>sebelum</b> "Gabung ke" disetel tetap ada di database, dan wali
               melihatnya sebagai <b>belum bayar</b> — padahal nominalnya sudah termasuk di syahriyah
-              sekolah/pondoknya. Periksa dulu, baru hapus.
+              sekolahnya. Periksa dulu, baru hapus.
             </p>
             <div v-if="rapiHasil" class="mt-2 space-y-2">
               <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
@@ -232,7 +232,7 @@
                 class="text-[10px] text-amber-900 dark:text-amber-200 bg-amber-100/70 dark:bg-amber-900/40 rounded-lg p-2"
               >
                 <i class="fas fa-lightbulb mr-1"></i>Yang "perlu diperbaiki dulu" biasanya karena
-                tagihan syahriyah sekolah/pondoknya terbit <b>sebelum</b> digabung, jadi nominalnya
+                tagihan syahriyah sekolahnya terbit <b>sebelum</b> digabung, jadi nominalnya
                 masih tarif lama. Perbaiki tagihan tujuannya dulu (hapus lalu Generate ulang bulan
                 itu), baru periksa lagi.
               </div>
@@ -2164,7 +2164,7 @@
       <h3
         class="text-xs md:text-sm font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 border-b border-[var(--border-subtle)] pb-2"
       >
-        <i class="fas fa-university text-cyan-600 mr-1"></i>Rekening Bank Pondok
+        <i class="fas fa-university text-cyan-600 mr-1"></i>Rekening Bank Lembaga
       </h3>
       <p class="text-[10px] text-[var(--text-tertiary)] italic mb-3">
         Akan tampil di struk POS jika metode bayar = transfer.
@@ -3447,7 +3447,7 @@ const sectionMeta = computed(() => {
     },
     bank: {
       t: 'Bank & Virtual Account',
-      s: 'Rekening bank pondok & integrasi BMT PETA (VA).'
+      s: 'Rekening bank lembaga & integrasi BMT PETA (VA).'
     }
   }
   return m[activeTab.value] || m.tagihan

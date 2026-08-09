@@ -765,9 +765,9 @@ const headerTitle = computed(() => {
   return 'Statistik'
 })
 const headerSubtitle = computed(() => {
-  if (isAdminMode.value) return 'Data ringkas seluruh pondok.'
+  if (isAdminMode.value) return 'Data ringkas seluruh lembaga.'
   if (role.value === 'guru') return 'Santri yang Anda ajar & data kehadiran Anda.'
-  if (role.value === 'santri') return 'Pencapaian & prestasi Anda di pondok.'
+  if (role.value === 'santri') return 'Pencapaian & prestasi Anda.'
   return ''
 })
 

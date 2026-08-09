@@ -15,7 +15,7 @@ import { shiftNgajiOf } from '@/utils/kelasHitung' // v.1.2.4: shift ngaji santr
 function emptyForm() {
   return {
     id: null,
-    nis: '', // No. Induk pondok (auto NNNN+DDMMYY via nisGenerator; bisa diisi manual)
+    nis: '', // No. Induk lembaga (auto NNNN+DDMMYY via nisGenerator; bisa diisi manual)
     nisn: '', // v.95.0626d: Nomor Induk Siswa Nasional
     nis_sekolah: '', // v.100: NIS dari Dinas (manual) — khusus santri sekolah TK/SDI/PKBM
     nik: '', // v.99: NIK santri (16 digit KTP) — sebelumnya ada di form tapi tak ter-load/simpan
@@ -352,7 +352,7 @@ export function useSantriForm() {
     const f = form.value
     if (!String(f.nama || '').trim()) return 'Nama wajib diisi'
     if (!f.tgl_lahir) return 'Tanggal lahir wajib diisi'
-    if (!f.lembaga) return 'Lembaga pondok wajib dipilih'
+    if (!f.lembaga) return 'Lembaga wajib dipilih'
     if (!f.kelas) return 'Kelas wajib dipilih'
     if (!f.guru_pagi && !f.guru_sore) return 'Pilih minimal 1 guru pengajar dengan shift'
     if (!String(f.nama_wali || '').trim()) return 'Nama wali wajib diisi'

@@ -283,7 +283,7 @@ function _rowsLembaga(nama, noAwal = 0) {
 }
 
 /**
- * KOP milik LEMBAGA (Master Data -> Lembaga -> Pengaturan), jatuh ke KOP pondok bila
+ * KOP milik LEMBAGA (Master Data -> Lembaga -> Pengaturan), jatuh ke KOP lembaga bila
  * lembaganya belum punya. Rapor sudah memakai pola ini; ekspor ini dulu langsung memanggil
  * buildKopFromSettings() sehingga KOP PTPT/PPPH tak pernah terpakai (Kyai, 5 Agu 2026).
  */

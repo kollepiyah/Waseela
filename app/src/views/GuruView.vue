@@ -10,7 +10,7 @@
         Akses terbatas
       </p>
       <p class="text-xs text-[var(--text-secondary)] mt-1">
-        Halaman Data Guru hanya dapat diakses oleh admin pondok.
+        Halaman Data Guru hanya dapat diakses oleh admin.
       </p>
     </div>
 
@@ -36,7 +36,7 @@
               <i class="fas fa-chalkboard-teacher text-teal-500 mr-1"></i>Data Guru / Pegawai
             </h1>
             <p class="text-[11px] text-[var(--text-secondary)]">
-              — Master data guru &amp; pegawai pondok
+              — Master data guru &amp; pegawai
             </p>
           </div>
           <!-- Stats badges + tombol tambah — v.103 mobile: toolbar 1-baris scroll-samping -->

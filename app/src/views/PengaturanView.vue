@@ -59,7 +59,7 @@
         <UiInput v-model="form.txtHeaderBar" label="Teks Header Bar" />
         <UiInput v-model="form.txtPeriode" label="Periode Aktif" />
         <UiInput v-model="form.txtWelcome" label="Sapaan Ahlan" />
-        <UiInput v-model="form.alamat" label="Alamat Pondok" />
+        <UiInput v-model="form.alamat" label="Alamat" />
         <UiInput v-model="form.noTelp" label="No. Telepon" />
         <UiInput v-model="form.namaChannel" label="Nama Channel Pesan" />
       </div>
@@ -75,7 +75,7 @@
       class="mb-4"
     >
       <div class="grid gap-3">
-        <UiInput v-model="form.kopLine1" label="Baris 1 (KAPITAL, contoh: PONDOK PESANTREN...)" />
+        <UiInput v-model="form.kopLine1" label="Baris 1 (KAPITAL, contoh: NAMA LEMBAGA)" />
         <UiInput
           v-model="form.kopLine2"
           label="Baris 2 (BOLD BESAR, contoh: PORTAL PRESTASI QIRAATI)"

@@ -153,7 +153,7 @@ function bukaWaAdmin() {
     return
   }
   const msg = encodeURIComponent(
-    `Assalamu'alaikum Admin Pondok, saya lupa sandi akun Portal ${namaLembagaLogin.value}. Mohon bantu reset sandi. Terima kasih.`
+    `Assalamu'alaikum Admin, saya lupa sandi akun Portal ${namaLembagaLogin.value}. Mohon bantu reset sandi. Terima kasih.`
   )
   window.open(`https://wa.me/${wa}?text=${msg}`, '_blank')
 }
@@ -410,7 +410,7 @@ function bukaWaAdmin() {
           </div>
           <h3 class="text-lg font-black text-[var(--text-primary)] mb-1">Lupa Sandi?</h3>
           <p class="text-xs text-[var(--text-secondary)] mb-4">
-            Sandi hanya dapat di-reset oleh Admin Pondok.
+            Sandi hanya dapat di-reset oleh Admin.
           </p>
         </div>
         <div
@@ -418,7 +418,7 @@ function bukaWaAdmin() {
         >
           <p><i class="fas fa-info-circle text-cyan-600 mr-1"></i><b>Langkah:</b></p>
           <ol class="list-decimal ml-5 space-y-1">
-            <li>Hubungi Admin Pondok via WhatsApp/langsung</li>
+            <li>Hubungi Admin via WhatsApp/langsung</li>
             <li>Sebutkan nama lengkap + lembaga + status (santri/guru/pegawai)</li>
             <li>Admin akan reset sandi ke <b>1234</b></li>
             <li>Login dengan sandi baru, lalu ganti sandi di menu Profil</li>

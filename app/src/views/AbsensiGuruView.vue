@@ -2127,7 +2127,7 @@ function isLiburIso(iso, lembaga) {
   const [y, m, d] = String(iso).split('-').map(Number)
   const dow = new Date(y, m - 1, d).getDay()
   if (isLiburMingguan(dow)) return true // v.1.2.1: Ahad/Minggu libur (dulu Jumat)
-  if ((hariLibur.value || []).includes(iso)) return true // libur manual pondok = global
+  if ((hariLibur.value || []).includes(iso)) return true // libur manual lembaga = global
   return liburKenaLembaga(liburScopeMap.value, iso, lembaga) // v.1.2.3: event ber-scope lembaga
 }
 

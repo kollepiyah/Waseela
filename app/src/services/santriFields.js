@@ -619,14 +619,14 @@ function _nomor(v) {
 
 /**
  * Petakan dua nomor identitas dari 1 baris Excel.
- *   'No. Induk' -> nis         = nomor pondok, DIGENERATE APLIKASI (planAppendNis)
+ *   'No. Induk' -> nis         = nomor induk lembaga, DIGENERATE APLIKASI (planAppendNis)
  *   'NIS'       -> nis_sekolah = NIS Dinas, diisi manual
  *
  * Keduanya '' bila kolomnya tak ada / kosong — pemanggil WAJIB memperlakukan ''
  * sebagai "jangan sentuh", bukan "kosongkan".
  *
  * RIWAYAT BUG (Kyai 21 Jul 2026): dulu ada heuristik — kalau file tak punya kolom
- * 'No. Induk', kolom 'NIS' dianggap nomor pondok dan ditulis ke `nis`. Itu meleset
+ * 'No. Induk', kolom 'NIS' dianggap nomor induk lembaga dan ditulis ke `nis`. Itu meleset
  * untuk file Excel lama yang kolom NIS-nya berisi NIS DINAS: NIS Dinas MENIMPA
  * No. Induk yang sudah digenerate aplikasi. Sekarang tanpa tebak-tebakan — tiap
  * kolom ke field-nya sendiri. Jangan hidupkan lagi heuristiknya.

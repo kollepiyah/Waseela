@@ -6,7 +6,7 @@
       <p class="text-sm text-[var(--text-secondary)] mb-4">Formulir pendaftaran santri baru sekarang ada di sub-aplikasi terpisah:</p>
       <a v-if="psbUrl" :href="psbUrl" target="_blank" class="inline-block px-5 py-2.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-black rounded-xl text-sm shadow"><i class="fas fa-external-link-alt mr-1"></i>Buka Form PSB</a>
       <p v-else class="text-sm text-amber-600 dark:text-amber-400 font-semibold">Alamat formulir PSB belum diatur. Isi di Pengaturan → PSB.</p>
-      <p class="text-[11px] text-[var(--text-secondary)] mt-4">Atau scan QR yang dibagikan admin pondok.</p>
+      <p class="text-[11px] text-[var(--text-secondary)] mt-4">Atau scan QR yang dibagikan admin.</p>
     </div>
   </div>
 </template>

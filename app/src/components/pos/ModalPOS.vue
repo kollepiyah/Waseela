@@ -298,7 +298,7 @@ const matrix = computed(() => {
  *   `orphan` di `nonbulananRows` menampung SEMUA tagihan yang jenisnya tak dikenali —
  *   termasuk yang periodenya jelas-jelas satu BULAN. Jenis bisa hilang dari daftar aktif
  *   tanpa tagihannya ikut hilang: ia dibuat MENEMPEL ke jenis lain (`gabung_ke`, mis.
- *   Syahriyah Qiraati Pagi kini termasuk di Syahriyah Pondok), whitelist-nya
+ *   Syahriyah Qiraati Pagi kini termasuk di Syahriyah Asrama), whitelist-nya
  *   (lembaga/status/JK/shift) tak lagi memuat santri ini, atau labelnya diganti — sementara
  *   tagihan yang sudah terbit tetap memakai nama lama. Semuanya lalu tampil di bawah judul
  *   "Nonbulanan", bertentangan dengan Pengaturan yang jelas menulis "Auto · bulanan".

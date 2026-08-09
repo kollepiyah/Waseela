@@ -84,7 +84,7 @@ const allCards = [
   {
     icon: 'calendar',
     title: 'Kegiatan Pesantren',
-    desc: 'Kelola agenda & kegiatan pondok.',
+    desc: 'Kelola agenda & kegiatan lembaga.',
     to: '/kegiatan-pesantren',
     need: 'admin'
   },

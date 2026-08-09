@@ -31,7 +31,7 @@ function emptyForm() {
 }
 
 export const TIPE_OPTIONS = [
-  { value: 'Qiraati', label: 'Qiraati (Pondok)' },
+  { value: 'Qiraati', label: 'Qiraati' },
   { value: 'Formal', label: 'Formal (Sekolah)' },
   { value: 'Non Lembaga', label: 'Non-lembaga (Yayasan/Sarana)' }
 ]
