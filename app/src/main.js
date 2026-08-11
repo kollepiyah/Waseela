@@ -19,6 +19,66 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 
+// ── AUDIT AGU 2026 (#17): jaring galat GLOBAL ────────────────────────────────
+// Sebelum ini tak ada `app.config.errorHandler` sama sekali. Akibatnya DUA hal:
+//
+//   1. Sentry BUTA terhadap galat komponen. Sentry (dimuat dari CDN di bawah)
+//      memasang sendiri penangkap `window.onerror` + `unhandledrejection` — jadi
+//      galat JS biasa memang sudah terlapor. TAPI Vue MENELAN galat render /
+//      lifecycle / watcher / handler-event dan menyalurkannya ke errorHandler
+//      yang tak ada, sehingga galat itu tak pernah menyentuh window.onerror.
+//      Justru kelas galat inilah yang paling sering mematikan layar.
+//   2. Pengguna tak diberi tahu apa pun. Layar kosong atau beku, tanpa sepatah
+//      kata. Bagi staf lembaga yang bukan orang teknis hasilnya "aplikasinya
+//      rusak" — tanpa jalan keluar, dan tanpa bahan diagnosis.
+//
+// Sengaja TIDAK memakai @sentry/vue: SDK-nya dimuat dari CDN (menghemat ~250 KB
+// di tiap muat, lihat komentar di index.html), jadi integrasi resminya tak
+// tersedia sebagai modul. Tiga baris di bawah menggantikannya.
+const _GALAT_JEDA_MS = 8000
+let _galatTerakhir = 0
+
+function _laporGalat(sumber, err, info) {
+  // 1) Konsol — SELALU, dan paling dulu. Ini satu-satunya jejak yang tetap ada
+  //    saat Sentry gagal dimuat (CDN diblokir, luring, atau `defer` belum usai).
+  console.error(`[galat:${sumber}]`, err, info || '')
+
+  // 2) Sentry — inilah yang menutup kebutaan terhadap galat komponen Vue.
+  try {
+    window.Sentry?.captureException?.(err, { tags: { sumber }, extra: { info } })
+  } catch {
+    /* pelapor galat tak boleh ikut melempar galat */
+  }
+
+  // 3) Pengguna. Di-jeda: galat render bisa berulang tiap frame, dan toast
+  //    beruntun justru menutupi layar yang sedang coba dibaca pengguna.
+  try {
+    const now = Date.now()
+    if (now - _galatTerakhir < _GALAT_JEDA_MS) return
+    _galatTerakhir = now
+    useUiStore(pinia).toast.error(
+      'Terjadi galat tak terduga. Coba ulangi langkah tadi — bila tetap, tutup lalu buka lagi aplikasinya.',
+      6000
+    )
+  } catch {
+    /* store belum siap (galat sangat dini) — konsol & Sentry sudah menampung */
+  }
+}
+
+app.config.errorHandler = (err, _instance, info) => _laporGalat('vue', err, info)
+
+// Sentry sudah MELAPORKAN unhandledrejection sendiri; yang ditambahkan di sini
+// semata sisi PENGGUNA, supaya promise yang ditolak tak lagi berakhir sebagai
+// layar diam. Penolakan yang memang wajar disaring — batal-navigasi dan fetch
+// yang di-abort terjadi normal saat pengguna berpindah halaman dengan cepat,
+// dan memberi toast untuk itu hanya akan melatih pengguna mengabaikan toast.
+const _GALAT_WAJAR = /AbortError|Navigation (cancelled|aborted)|ResizeObserver|Load failed/i
+window.addEventListener('unhandledrejection', (ev) => {
+  const r = ev?.reason
+  if (_GALAT_WAJAR.test(String(r?.name || r?.message || r || ''))) return
+  _laporGalat('promise', r)
+})
+
 // F4 (migrasi Supabase): SWR cache utk view yang sudah cutover ke db.js (F6).
 // Additif — tak memengaruhi store/firestore yang masih jalan.
 import { VueQueryPlugin } from '@tanstack/vue-query'
