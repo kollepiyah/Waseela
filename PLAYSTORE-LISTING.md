@@ -182,12 +182,18 @@ kenyataan berisiko penangguhan, bukan sekadar penolakan.
 
 **Sebelum build**
 
-- [ ] `google-services.json` untuk paket `app.waseela.id` dari Firebase project
-      **`waseela-id`** → taruh di `app/android/app/`
-- [ ] Keystore dibuat + `app/android/key.properties` terisi
-- [ ] **Keystore dicadangkan ke tempat aman** — hilang = tak bisa memperbarui selamanya
-- [ ] Ikut **Play App Signing** (Google memegang kunci penandatangan; Kyai cukup
-      memegang upload key, yang masih bisa dipulihkan bila hilang)
+- [x] `google-services.json` untuk paket `app.waseela.id` dari Firebase project
+      **`waseela-id`** → `app/android/app/` — ✅ 11 Agu, terverifikasi paketnya cocok
+- [x] Keystore dibuat + `app/android/key.properties` terisi — ✅ 11 Agu
+- [x] Android SDK dikenali Gradle (`app/android/local.properties`) — ✅ 11 Agu
+- [x] **Gradle terbukti bisa MEMBUKA keystore** lewat `gradlew signingReport` — ✅ 11 Agu.
+      Ini uji yang sesungguhnya: menemukan berkasnya tak berarti apa-apa, sandi yang
+      salah baru ketahuan di sini, bukan di tengah build AAB
+- [ ] **Keystore dicadangkan ke tempat aman** — di luar laptop ini. Hilang tanpa Play
+      App Signing = tak bisa memperbarui selamanya
+- [ ] Ikut **Play App Signing** saat unggah pertama
+- [ ] **SHA upload key didaftarkan ke Firebase** (lihat bagian 8b) — tanpa ini Login
+      dengan Google ditolak
 - [ ] Akun peninjau dibuat (lihat bagian 9)
 
 **Build & uji**
@@ -210,6 +216,53 @@ kenyataan berisiko penangguhan, bukan sekadar penolakan.
       `apkUrl`) — dan `apkUrl` **harus** APK "Signed, universal APK" yang diunduh dari
       Play Console → App bundle explorer. APK build lokal ditandatangani kunci berbeda
       sehingga tak bisa menimpa pemasangan dari Play
+
+---
+
+## 8b. 🔴 Sidik jari SHA — jebakan DUA kunci yang hampir selalu memakan korban
+
+Aplikasi memakai **Login dengan Google** (`rgcfaIncludeGoogle = true` di
+`variables.gradle`), jadi sidik jari sertifikat penandatangan **wajib** terdaftar di
+Firebase. Notifikasi FCM tidak terpengaruh — ia memakai nama paket, bukan sidik jari.
+Yang gagal kalau ini terlewat hanya Login dengan Google.
+
+**Upload key** (dibuat 11 Agu 2026, dari `gradlew signingReport`):
+
+```
+SHA-1    79:AC:00:78:29:CF:52:E9:53:A6:C9:F5:2D:82:C1:80:4F:EE:97:03
+SHA-256  FC:72:F3:85:C6:23:DA:4D:A2:0D:69:78:7B:DA:46:DD:5A:F9:90:4A:7F:68:5F:5B:8B:05:F6:41:A2:FA:19:A2
+```
+
+> Sidik jari sertifikat **bukan rahasia** — siapa pun bisa mengekstraknya dari APK yang
+> sudah terbit. Aman dicatat di sini.
+
+### Kenapa satu saja TIDAK cukup
+
+Dengan **Play App Signing**, Google **menandatangani ulang** aplikasi memakai kunci milik
+mereka. Berkas `.jks` di atas hanya jadi *upload key*. Artinya sidik jari di atas
+**BUKAN** yang dipakai aplikasi yang dipasang pengguna dari Play.
+
+Kalau hanya upload key yang didaftarkan, gejalanya paling menyesatkan yang bisa terjadi:
+
+| Di mana | Login dengan Google |
+|---|---|
+| Build lokal & Internal testing | ✅ jalan |
+| Aplikasi yang diunduh pengguna dari Play | ❌ **gagal** |
+
+Dan mudah salah simpul — "kan sudah didaftarkan" — lalu waktu habis mencari di tempat
+yang salah.
+
+### Karena itu daftarkan DUA-DUANYA
+
+1. **Sekarang** — SHA upload key di atas. Firebase Console → project `waseela-id` →
+   Project settings → aplikasi Android `app.waseela.id` → **Add fingerprint** → lalu
+   **unduh ulang `google-services.json`** dan timpa yang lama.
+2. **Sesudah AAB pertama diunggah** — ambil SHA-1 & SHA-256 **App signing key** di
+   Play Console → Setelan → Integritas aplikasi → *App signing*. Daftarkan juga ke
+   Firebase, lalu **unduh ulang `google-services.json` sekali lagi**.
+
+Langkah kedua hanya bisa dikerjakan SETELAH unggahan pertama — jadi jangan dianggap
+selesai sebelum aplikasi benar-benar naik ke Play.
 
 ---
 
