@@ -8,7 +8,7 @@ mengalir ke project orang lain, sekaligus membocorkan identitas.
 
 1. Firebase Console → project **Waseela** (atau project milik pembeli).
 2. Project settings → *Your apps* → **Add app → Android**.
-3. Isi *Android package name* **PERSIS**: `id.waseela.app`
+3. Isi *Android package name* **PERSIS**: `app.waseela.id`
    (harus sama dengan `applicationId` & `namespace` di `app/build.gradle`).
 4. Unduh `google-services.json`, taruh di folder ini (`app/android/app/`).
 

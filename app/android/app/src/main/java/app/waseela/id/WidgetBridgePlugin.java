@@ -1,4 +1,4 @@
-package id.waseela.app;
+package app.waseela.id;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -9,8 +9,8 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
-import id.waseela.app.widgets.JamHijriWidget;
-import id.waseela.app.widgets.KalenderWidget;
+import app.waseela.id.widgets.JamHijriWidget;
+import app.waseela.id.widgets.KalenderWidget;
 
 /**
  * v.94.0626 — Jembatan app (web) -> widget home screen Android.

@@ -1,4 +1,4 @@
-package id.waseela.app.widgets;
+package app.waseela.id.widgets;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -13,8 +13,8 @@ import android.widget.RemoteViews;
 
 import java.util.Calendar;
 
-import id.waseela.app.MainActivity;
-import id.waseela.app.R;
+import app.waseela.id.MainActivity;
+import app.waseela.id.R;
 
 /**
  * v.94.0626 — Widget home screen "Jam Hijri" (Java; sebelumnya .kt yang TIDAK ter-compile
@@ -31,7 +31,7 @@ import id.waseela.app.R;
  */
 public class JamHijriWidget extends AppWidgetProvider {
 
-    private static final String ACTION_UPDATE = "id.waseela.app.widgets.JAM_HIJRI_UPDATE";
+    private static final String ACTION_UPDATE = "app.waseela.id.widgets.JAM_HIJRI_UPDATE";
     private static final String PREFS = "waseela_widget";
 
     private static final String[] ARABIC_DIGITS = {"٠","١","٢","٣","٤","٥","٦","٧","٨","٩"};

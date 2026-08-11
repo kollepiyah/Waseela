@@ -1,4 +1,4 @@
-package id.waseela.app.widgets;
+package app.waseela.id.widgets;
 
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
@@ -14,8 +14,8 @@ import android.widget.RemoteViews;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import id.waseela.app.MainActivity;
-import id.waseela.app.R;
+import app.waseela.id.MainActivity;
+import app.waseela.id.R;
 
 /**
  * v.94.0626 — Widget home screen "Kalender Pendidikan" (Java).

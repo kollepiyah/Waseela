@@ -360,7 +360,7 @@ Pemecahan chunk sudah baik — excel dan pdf tidak ikut terunduh di muat pertama
 | `targetSdkVersion` | ✅ **36** (Android 16) — memenuhi tenggat Play **31 Agu 2026** |
 | `minSdkVersion` | 23 |
 | Perubahan perilaku Android 16 | ✅ sudah ditelaah & didokumentasikan di `variables.gradle` |
-| `applicationId` | ✅ `id.waseela.app` |
+| `applicationId` | ✅ `app.waseela.id` |
 | `versionCode` | 1 (wajar untuk rilis perdana) |
 | `google-services.json` | ❌ sengaja tak ada — build gagal tanpa itu (disengaja) |
 | Keystore | ❌ belum dibuat |
@@ -410,7 +410,7 @@ flag itu menutup backup awan di semua versi, sedangkan berkas aturan menutup jal
 yang tak tersentuh flag — **transfer langsung antar-perangkat di Android 12+**, yang hanya
 patuh pada `dataExtractionRules`. Menyetel salah satunya saja meninggalkan separuh terbuka.
 
-**Masih dibutuhkan sebelum kirim ke Play:** `google-services.json` untuk `id.waseela.app`,
+**Masih dibutuhkan sebelum kirim ke Play:** `google-services.json` untuk `app.waseela.id`,
 keystore **baru** (hilang = tak bisa memperbarui selamanya), pengisian **Data Safety**
 (app mengumpulkan nama, foto, NIK, nomor HP, data keuangan — semua wajib dideklarasikan),
 dan tautan kebijakan privasi.

@@ -8,10 +8,10 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace "id.waseela.app"
+    namespace "app.waseela.id"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "id.waseela.app"
+        applicationId "app.waseela.id"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // v.74.0526: + kelas counter fix (unique lembaga+kelas yang ada santri), bersihkan notif feature.

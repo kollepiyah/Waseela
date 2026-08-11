@@ -143,7 +143,7 @@ diputuskan: `santri` menyentuh nama tabel DB, jadi jangan disapu tanpa arahan Ky
 | `ammu_provisioned` | `waseela_provisioned` | `app_metadata` — **gerbang trigger**, wajib serempak |
 | `ammu-*` (CSS) | `wsl-*` | ribbon.css dkk |
 | `ammu_*` / `portalMu_*` | `waseela_*` | kunci localStorage, SharedPreferences |
-| `app.ammu.id` | `id.waseela.app` | applicationId, namespace, paket Java |
+| `app.ammu.id` | `app.waseela.id` | applicationId, namespace, paket Java |
 | `ic_stat_ammu` | `ic_stat_waseela` | drawable + manifest + capacitor config |
 
 ---
@@ -166,7 +166,7 @@ Web sudah live. Yang tersisa (per 9 Agu 2026):
    diprivatkan (butuh signed URL di sisi baca) atau dibiarkan.
 
 **Butuh akun/aset — detail di RUNBOOK-PEMBELI.md**
-5. **Android**: `google-services.json` untuk paket `id.waseela.app`, **keystore BARU**
+5. **Android**: `google-services.json` untuk paket `app.waseela.id`, **keystore BARU**
    (simpan baik-baik; hilang = tak bisa update selamanya), lalu setel `app-version.json`.
 6. **Desktop**: `npm install` dulu di `app/electron` (belum terpasang, `tsc` tak ada),
    baru `npm run electron:make`. Berkas `build/index.js` yang ter-commit sudah bersih.

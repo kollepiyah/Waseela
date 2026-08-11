@@ -142,7 +142,7 @@ VITE_APPCHECK_RECAPTCHA_KEY=
 Firebase di sini **hanya** pipa notifikasi + App Check. Tak menyimpan data lembaga.
 
 1. Project Firebase untuk pembeli (atau pakai `waseela-id` bila satu kanal cukup).
-2. Add app → **Android**, package name **`id.waseela.app`** (harus sama persis dengan
+2. Add app → **Android**, package name **`app.waseela.id`** (harus sama persis dengan
    `applicationId` di `app/android/app/build.gradle`).
 3. Unduh `google-services.json` → taruh di `app/android/app/`.
    Berkas ini sengaja tidak ada di repo — lihat `app/android/app/GOOGLE-SERVICES-README.md`.

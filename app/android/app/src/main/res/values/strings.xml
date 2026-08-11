@@ -2,8 +2,8 @@
 <resources>
     <string name="app_name">Waseela</string>
     <string name="title_activity_main">Waseela</string>
-    <string name="package_name">id.waseela.app</string>
-    <string name="custom_url_scheme">id.waseela.app</string>
+    <string name="package_name">app.waseela.id</string>
+    <string name="custom_url_scheme">app.waseela.id</string>
     <string name="widget_jam_hijri_label">Jam Hijri Waseela</string>
     <string name="widget_jam_hijri_description">Jam digital + tanggal Masehi &amp; Hijriyah</string>
     <string name="widget_kalender_label">Kalender Pendidikan Waseela</string>

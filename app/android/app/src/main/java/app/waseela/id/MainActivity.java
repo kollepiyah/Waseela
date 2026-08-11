@@ -1,4 +1,4 @@
-package id.waseela.app;
+package app.waseela.id;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;

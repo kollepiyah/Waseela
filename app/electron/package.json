@@ -17,7 +17,7 @@
     "electron:publish": "npm run build && electron-builder build --win nsis --publish always"
   },
   "build": {
-    "appId": "id.waseela.app.desktop",
+    "appId": "app.waseela.id.desktop",
     "productName": "Waseela",
     "asar": true,
     "asarUnpack": [

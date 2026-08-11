@@ -182,7 +182,7 @@ kenyataan berisiko penangguhan, bukan sekadar penolakan.
 
 **Sebelum build**
 
-- [ ] `google-services.json` untuk paket `id.waseela.app` dari Firebase project
+- [ ] `google-services.json` untuk paket `app.waseela.id` dari Firebase project
       **`waseela-id`** → taruh di `app/android/app/`
 - [ ] Keystore dibuat + `app/android/key.properties` terisi
 - [ ] **Keystore dicadangkan ke tempat aman** — hilang = tak bisa memperbarui selamanya

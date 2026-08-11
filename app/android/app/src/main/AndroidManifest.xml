@@ -58,7 +58,7 @@
             android:label="@string/widget_jam_hijri_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="id.waseela.app.widgets.JAM_HIJRI_UPDATE" />
+                <action android:name="app.waseela.id.widgets.JAM_HIJRI_UPDATE" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_jam_hijri_info" />
         </receiver>
