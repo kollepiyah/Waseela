@@ -72,7 +72,7 @@ export const BRAND = {
 //
 // Kosong = notifikasi web push DIMATIKAN dengan tenang (tanpa galat merah di konsol).
 // Fungsi lain aplikasi tak terpengaruh sama sekali.
-export const VAPID_KEY = ''
+export const VAPID_KEY = 'BAL1MWvc1cgk4tpyUvgCVZ2ihWipvy0lqqL5zkpDVpy75Vv5yNZixSqKeFATwR4tOw2E6_m4wT4GkipeT_W_e2A'
 
 export const FIREBASE_CONFIG = {
   apiKey: 'AIzaSyDEd5UKDcsy0QC1B1x_75L1VaTgasTzGTE',
