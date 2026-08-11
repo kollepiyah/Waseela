@@ -14,12 +14,24 @@ import { handlePreflight, json } from '../_shared/cors.ts'
 
 type Row = { id: string; judul: string | null; pesan: string | null; data: Record<string, unknown> }
 
-// G1 (audit 29 Jul): --no-verify-jwt (dipanggil pg_cron/menit) → PUBLIK. Secret
-// OPSIONAL: bila CRON_SECRET di-set, WAJIB cocok; bila belum → izinkan (jangan
-// patahkan cron lama). Aktifkan dgn set secret + header di job pg_cron.
+// G1 (audit 29 Jul): --no-verify-jwt (dipanggil pg_cron/menit) → PUBLIK.
+//
+// A4 (audit 11 Agu 2026) — GAGAL-TERTUTUP. Dulu: `if (!CRON_SECRET) return true`,
+// yakni lupa memasang secret = endpoint TERBUKA untuk siapa pun di internet.
+// Fungsi ini menguras notif_queue dan mengirim FCM, jadi terbukanya berarti orang
+// luar bisa memicu pengiriman kapan saja (biaya + waktu kirim kacau). Sekarang
+// tanpa CRON_SECRET fungsi MENOLAK semua: lupa memasang secret = fungsi mati,
+// bukan fungsi terbuka. Matinya kelihatan dan langsung diperbaiki; terbukanya tidak.
+//
+// ⚠️ Konsekuensi pemasangan: job pg_cron WAJIB membawa secret (query ?k= /
+//    Authorization Bearer / header x-cron-secret), dan CRON_SECRET wajib ada di
+//    Supabase → Edge Functions → Secrets. Tanpa itu notifikasi tidak akan terkirim.
 const CRON_SECRET = Deno.env.get('CRON_SECRET') || ''
 function cronAuthorized(req: Request): boolean {
-  if (!CRON_SECRET) return true
+  if (!CRON_SECRET) {
+    console.error('[dispatch-push] CRON_SECRET belum di-set — permintaan DITOLAK (gagal-tertutup)')
+    return false
+  }
   try {
     if (new URL(req.url).searchParams.get('k') === CRON_SECRET) return true
   } catch { /* ignore */ }

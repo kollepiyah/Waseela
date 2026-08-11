@@ -21,12 +21,25 @@ const BULAN = [
 ]
 
 // G1 (audit 29 Jul): fungsi ini --no-verify-jwt (dipanggil pg_cron), jadi PUBLIK.
-// Secret OPSIONAL: bila CRON_SECRET di-set, WAJIB cocok (query ?k= / Authorization
-// Bearer / x-cron-secret). Bila BELUM di-set → izinkan (jangan patahkan cron lama saat
-// deploy). Set secret + tambahkan header di job pg_cron untuk mengaktifkan gerbang.
+// Cocokkan lewat query ?k= / Authorization Bearer / header x-cron-secret.
+//
+// A4 (audit 11 Agu 2026) — GAGAL-TERTUTUP. Dulu: `if (!CRON_SECRET) return true`,
+// yakni lupa memasang secret = endpoint TERBUKA. Fungsi ini MENERBITKAN TAGIHAN,
+// jadi orang luar bisa memaksa tagihan periode berjalan terbit lebih awal. (Id
+// tagihan deterministik — lihat utils/tagihanId.js — sehingga tak lahir duplikat;
+// yang bisa dirusak adalah WAKTU terbitnya, bukan jumlahnya.) Sekarang tanpa
+// CRON_SECRET fungsi MENOLAK semua: lupa memasang secret = fungsi mati, bukan
+// fungsi terbuka. Matinya kelihatan dan langsung diperbaiki; terbukanya tidak.
+//
+// ⚠️ Konsekuensi pemasangan: job pg_cron WAJIB membawa secret, dan CRON_SECRET
+//    wajib ada di Supabase → Edge Functions → Secrets. Tanpa itu tagihan otomatis
+//    tidak akan terbit.
 const CRON_SECRET = Deno.env.get('CRON_SECRET') || ''
 function cronAuthorized(req: Request): boolean {
-  if (!CRON_SECRET) return true
+  if (!CRON_SECRET) {
+    console.error('[auto-generate-tagihan] CRON_SECRET belum di-set — permintaan DITOLAK (gagal-tertutup)')
+    return false
+  }
   try {
     if (new URL(req.url).searchParams.get('k') === CRON_SECRET) return true
   } catch { /* ignore */ }
