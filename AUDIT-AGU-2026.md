@@ -42,6 +42,7 @@ berarti nol migrasi data dan nol pemberitahuan kebocoran.
 | 14 | Electron: installer tak bertanda tangan | 🟡 Sedang | Terdokumentasi |
 | 15 | 5 fungsi `search_path` bebas | 🟢 Rendah | Kebersihan |
 | 16 | Electron `node_modules` belum dipasang | 🟢 Rendah | Sebelum rilis |
+| 17 | **Tak ada penangan galat global** — galat tak terduga = layar kosong senyap | 🟠 Tinggi | Terbuka |
 
 ---
 
@@ -416,17 +417,58 @@ tiap memasang, dan auto-update tetap tak bisa diandalkan. Ini **keputusan bisnis
 
 ---
 
-# E · Ketahanan runtime
+# E · Ketahanan runtime — **sehat, satu lubang**
 
-Belum sempat ditelusuri dalam sesi ini. Yang sudah terlihat sambil lalu:
+Ditelusuri 11 Agu 2026. Hasilnya jauh lebih baik dari dugaan awal.
 
-- `get-link-preview` memakai `AbortController` dengan batas 12 detik dan memotong HTML
-  di 1 MB — penanganan sumber daya yang baik.
-- `dispatch-push` menandai token mati (`UNREGISTERED`/`INVALID_ARGUMENT`/`NOT_FOUND`)
-  dan menulis status `failed` dengan alasannya — bukan gagal diam-diam.
+## Yang sudah benar
 
-Belum diperiksa: penanganan galat di lapisan Vue (apakah kegagalan jaringan tampil ke
-pengguna atau tertelan), keadaan muat, perilaku saat sesi kedaluwarsa, kebocoran listener.
+**Langganan realtime bersih 100%.** Dari 103 pemakaian `subscribeColl`/`subscribeDoc` di
+`views/` + `components/`, **setiap** berkas yang benar-benar berlangganan punya
+`onUnmounted`. Satu-satunya yang tampak menyimpang (`MasterDataView.vue`) ternyata positif
+palsu — namanya hanya muncul di komentar sejarah; langganannya sudah diganti pengambilan
+sekali-jalan. Tak ada kebocoran listener.
+
+**Kegagalan sampai ke mata pengguna.** 436 pemakaian `toast.error`/`warning` di 69 view.
+View yang tak memakai toast pun bukan berarti diam: `ImporSupabaseView` misalnya menampilkan
+galat lewat state merah di template ([baris 121](app/src/views/ImporSupabaseView.vue:121)),
+bukan toast. Menghitung toast saja akan menyesatkan.
+
+**Sesi kedaluwarsa ditangani matang.** [`stores/auth.js`](app/src/stores/auth.js) membedakan
+tiga keadaan yang mudah tertukar: belum login, **sesi zombie** (localStorage terisi tapi
+token Supabase sudah mati), dan logout sengaja — lengkap dengan `_recoverZombieSession()`.
+`TOKEN_REFRESHED` di-dedupe per-uid supaya refresh berkala tak memicu refetch koleksi
+berulang. Ini menutup gejala "data kosong sampai hard refresh" di Android/Electron.
+
+**Luring terdeteksi dengan benar.** `AppHeader.vue` memakai `@capacitor/network` di native
+— sebab `navigator.onLine` tak andal di WebView — dengan fallback ke event window, dan
+listener-nya **dilepas** saat unmount. Statusnya tampil di tiga tempat.
+
+**`catch` kosong yang ada, wajar.** Yang di `auth.js` membungkus `localStorage` dan atribusi
+audit — keduanya memang boleh gagal (mode privat, kuota penuh) tanpa mematahkan login.
+
+## 🟠 17. Tak ada penangan galat global
+
+Tidak ada `app.config.errorHandler`, tidak ada `onErrorCaptured` sebagai batas galat, dan
+tidak ada pendengar `unhandledrejection`. Akibatnya: galat tak terduga saat render, atau
+promise yang ditolak tanpa `await`, menghasilkan **layar kosong atau beku** — tanpa pesan
+apa pun di UI, dan tanpa jejak yang bisa ditanyakan kemudian.
+
+Ini bukan soal galat yang sudah diantisipasi (itu sudah rapi, lihat di atas), melainkan
+soal yang **tidak** diantisipasi. Bagi staf lembaga yang bukan orang teknis, hasilnya
+"aplikasinya rusak" tanpa jalan keluar dan tanpa bahan diagnosis buat Kyai.
+
+**Usulan:** satu `app.config.errorHandler` di `main.js` yang menampilkan toast ramah +
+mencatat ke `console.error`, ditambah `window.addEventListener('unhandledrejection', …)`.
+Murah, dan mengubah "layar putih misterius" jadi keluhan yang bisa ditindaklanjuti.
+
+## 🟡 Luring: terindikasi, belum tertahankan
+
+Statusnya ditampilkan, tapi aplikasinya tak bisa hidup tanpa jaringan — tak ada service
+worker (temuan #13), jadi tanpa koneksi layarnya kosong sejak awal. Tak ada pula antrean
+tulis: simpanan yang dicoba saat jaringan putus gagal per-view, tak ditahan untuk dikirim
+ulang. Untuk lembaga dengan koneksi tak menentu, keduanya berpasangan — service worker
+tanpa antrean tulis hanya menyelesaikan separuh.
 
 ---
 
