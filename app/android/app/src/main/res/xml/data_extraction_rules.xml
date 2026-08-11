@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AUDIT AGU 2026 (#18) — larang Auto Backup & transfer antar-perangkat.
+
+  LATAR: manifest dulu `android:allowBackup="true"` TANPA aturan apa pun, sehingga
+  Android Auto Backup menyalin seluruh data aplikasi ke Google Drive pengguna —
+  termasuk localStorage WebView yang menyimpan sesi login (`waseela_sesiAktif`)
+  dan cache data lembaga (nama santri, NIK, NIS, nomor wali, foto).
+
+  KENAPA DILARANG, BUKAN DISARING:
+  Waseela adalah klien tipis di atas Supabase — SEMUA data sesungguhnya ada di
+  server. Yang tersimpan di perangkat cuma sesi + cache, dan keduanya lahir
+  kembali sendiri begitu pengguna login. Jadi backup lokal menambah NOL manfaat
+  saat ganti HP, sambil membawa PII santri dan sesi login ke Google Drive.
+  Ganti HP cukup login ulang — dan itu justru lebih aman.
+
+  `allowBackup="false"` di manifest menutup backup awan di semua versi Android.
+  Berkas ini menutup jalur KEDUA yang tak tersentuh flag itu: transfer langsung
+  antar-perangkat (device-to-device) di Android 12+, yang hanya patuh pada
+  `dataExtractionRules`. Menyetel salah satunya saja meninggalkan separuh terbuka.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>

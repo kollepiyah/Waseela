@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- AUDIT AGU 2026 (#18): allowBackup DIMATIKAN. Dulu "true" tanpa aturan apa pun,
+         sehingga Auto Backup menyalin localStorage WebView (sesi login `waseela_sesiAktif`
+         + cache nama/NIK/NIS/WA/foto santri) ke Google Drive pengguna. Waseela klien tipis
+         di atas Supabase — data sesungguhnya semua di server; yang di perangkat cuma sesi
+         + cache yang lahir kembali sendiri saat login. Jadi backup menambah NOL manfaat
+         saat ganti HP sambil membawa PII santri keluar. dataExtractionRules menutup jalur
+         kedua (transfer antar-perangkat Android 12+) yang tak patuh pada flag ini. -->
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"

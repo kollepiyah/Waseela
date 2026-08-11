@@ -37,7 +37,8 @@ berarti nol migrasi data dan nol pemberitahuan kebocoran.
 | 9 | `cleanup_audit_log` — anon hapus jejak audit | 🟡 Sedang | ✅ **Sudah ditambal** |
 | 10 | Bucket tanpa batas ukuran/jenis berkas | 🟡 Sedang | Terbuka |
 | 11 | Perlindungan sandi bocor (HaveIBeenPwned) mati | 🟡 Sedang | Terbuka |
-| 12 | Android: izin storage lawas tanpa `maxSdkVersion` | 🟡 Sedang | Sebelum rilis |
+| 12 | ~~Android: izin storage lawas tanpa `maxSdkVersion`~~ | — | ❌ **KELIRU** — sudah ada, salah baca |
+| 18 | Android `allowBackup="true"` — sesi & PII santri tersalin ke Google Drive | 🟠 Tinggi | ✅ **Sudah ditambal 11 Agu** |
 | 13 | PWA tanpa service worker — nol kemampuan luring | 🟡 Sedang | Sebelum rilis |
 | 14 | Electron: installer tak bertanda tangan | 🟡 Sedang | Terdokumentasi |
 | 15 | 5 fungsi `search_path` bebas | 🟢 Rendah | Kebersihan |
@@ -364,27 +365,50 @@ Pemecahan chunk sudah baik — excel dan pdf tidak ikut terunduh di muat pertama
 | `google-services.json` | ❌ sengaja tak ada — build gagal tanpa itu (disengaja) |
 | Keystore | ❌ belum dibuat |
 
-**Temuan #12 — izin storage lawas:**
+**❌ Temuan #12 DICABUT — itu kekeliruan saya, bukan cacat manifest.**
 
-```
-READ_EXTERNAL_STORAGE
-WRITE_EXTERNAL_STORAGE
-```
-
-Pada `targetSdk 36`, `WRITE_EXTERNAL_STORAGE` **tak berpengaruh sama sekali**, dan
-`READ_EXTERNAL_STORAGE` sudah digantikan izin media granular sejak API 33. Membiarkannya
-terdeklarasi mengundang sorotan kebijakan Play (Storage permission declaration) tanpa
-manfaat apa pun. Perbaikannya baku:
+Saya melaporkan izin storage "tanpa `maxSdkVersion`". Salah: keduanya sudah punya sejak
+v.85 —
 
 ```xml
-<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-    android:maxSdkVersion="32" />
-<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-    android:maxSdkVersion="29" />
+<uses-permission android:name="...WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+<uses-permission android:name="...READ_EXTERNAL_STORAGE"  android:maxSdkVersion="32" />
 ```
 
-Izin lain (`INTERNET`, `ACCESS_NETWORK_STATE`, `POST_NOTIFICATIONS`, `VIBRATE`,
+Perintah pindai saya hanya mengekstrak atribut `android:name`, sehingga `maxSdkVersion`
+tak pernah ikut terlihat. Pelajarannya: **jangan menyimpulkan cacat dari grep yang
+memotong atribut** — baca berkasnya.
+
+**Manifest ini justru teladan**, dan layak dipertahankan apa adanya. Setiap izin
+terdokumentasi alasannya, dan tiga kelas izin sudah sengaja DIBUANG dengan rujukan
+kebijakan Play yang tepat:
+
+| Dibuang | Alasan tertulis di manifest |
+|---|---|
+| `USE_EXACT_ALARM` / `SCHEDULE_EXACT_ALARM` | Izin TERBATAS Play — hanya untuk app yang intinya alarm/timer/kalender. Widget Jam Hijri bukan alasan sah; `setExact()` sudah dibungkus try/catch → jatuh ke `set()` inexact |
+| `READ_MEDIA_IMAGES` / `_VIDEO` | Kebijakan "Penggunaan izin foto & video tidak valid" — app hanya pakai `<input type="file">` = photo picker sistem, tak butuh izin |
+| `CAMERA` + `uses-feature` | Izin MENGANGGUR — `@capacitor/camera` tak terpasang, nol pemakaian kamera di `src/` |
+
+Izin yang tersisa (`INTERNET`, `ACCESS_NETWORK_STATE`, `POST_NOTIFICATIONS`, `VIBRATE`,
 `RECEIVE_BOOT_COMPLETED`) wajar dan sepadan dengan fiturnya.
+
+## 🟠 18. `allowBackup="true"` — sesi & PII santri tersalin ke Google Drive ✅ DITAMBAL
+
+Manifest memakai `android:allowBackup="true"` **tanpa** `fullBackupContent` maupun
+`dataExtractionRules`. Android Auto Backup karena itu menyalin seluruh data aplikasi ke
+Google Drive pengguna — termasuk `localStorage` WebView yang menyimpan **sesi login**
+(`waseela_sesiAktif`) dan cache data lembaga (nama, NIK, NIS, nomor wali, foto santri).
+
+**Dilarang, bukan disaring.** Waseela klien tipis di atas Supabase: semua data sungguhan
+ada di server, yang tersimpan di perangkat cuma sesi + cache yang lahir kembali sendiri
+begitu pengguna login. Backup lokal menambah **nol manfaat** saat ganti HP, sambil membawa
+PII santri dan sesi keluar. Ganti HP cukup login ulang — dan itu justru lebih aman.
+
+Ditambal dengan `allowBackup="false"` **plus**
+[`res/xml/data_extraction_rules.xml`](app/android/app/src/main/res/xml/data_extraction_rules.xml):
+flag itu menutup backup awan di semua versi, sedangkan berkas aturan menutup jalur kedua
+yang tak tersentuh flag — **transfer langsung antar-perangkat di Android 12+**, yang hanya
+patuh pada `dataExtractionRules`. Menyetel salah satunya saja meninggalkan separuh terbuka.
 
 **Masih dibutuhkan sebelum kirim ke Play:** `google-services.json` untuk `id.waseela.app`,
 keystore **baru** (hilang = tak bisa memperbarui selamanya), pengisian **Data Safety**
