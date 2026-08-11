@@ -120,6 +120,17 @@ export async function loginUnified(input, password, source = null) {
         e.code = 'auth/wrong-password'
         throw e
       }
+      // A2 (audit 11 Agu 2026): saat pendaftaran mandiri DIMATIKAN di dashboard,
+      // lazy-create memang sengaja tak lagi tersedia — akun dibuat lewat
+      // provision-akun (Admin API service-role, tak lewat endpoint publik ini).
+      // Dua sebab tak bisa dibedakan dari sisi klien, dan itu disengaja: Supabase
+      // tak membocorkan keberadaan akun. Jadi satu pesan menutup keduanya —
+      // sandi salah, atau akunnya memang belum dibuatkan.
+      if (up.error.code === 'signup_disabled' || /signup/i.test(up.error.message || '')) {
+        const e = new Error('Kata sandi salah, atau akun belum dibuatkan. Hubungi administrator.')
+        e.code = 'auth/wrong-password'
+        throw e
+      }
       throw up.error
     }
     // Bila "Confirm email" OFF -> signUp langsung punya session; jika tidak, signIn lagi.
