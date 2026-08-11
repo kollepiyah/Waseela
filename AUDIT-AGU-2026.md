@@ -42,7 +42,7 @@ berarti nol migrasi data dan nol pemberitahuan kebocoran.
 | 14 | Electron: installer tak bertanda tangan | 🟡 Sedang | Terdokumentasi |
 | 15 | 5 fungsi `search_path` bebas | 🟢 Rendah | Kebersihan |
 | 16 | Electron `node_modules` belum dipasang | 🟢 Rendah | Sebelum rilis |
-| 17 | **Tak ada penangan galat global** — galat tak terduga = layar kosong senyap | 🟠 Tinggi | Terbuka |
+| 17 | **Tak ada penangan galat global** — galat komponen Vue tak sampai ke Sentry | 🟠 Tinggi | ✅ **Sudah ditambal 11 Agu** |
 
 ---
 
@@ -447,20 +447,35 @@ listener-nya **dilepas** saat unmount. Statusnya tampil di tiga tempat.
 **`catch` kosong yang ada, wajar.** Yang di `auth.js` membungkus `localStorage` dan atribusi
 audit — keduanya memang boleh gagal (mode privat, kuota penuh) tanpa mematahkan login.
 
-## 🟠 17. Tak ada penangan galat global
+## ✅ 17. Jaring galat global — sudah ditambal
 
-Tidak ada `app.config.errorHandler`, tidak ada `onErrorCaptured` sebagai batas galat, dan
-tidak ada pendengar `unhandledrejection`. Akibatnya: galat tak terduga saat render, atau
-promise yang ditolak tanpa `await`, menghasilkan **layar kosong atau beku** — tanpa pesan
-apa pun di UI, dan tanpa jejak yang bisa ditanyakan kemudian.
+**Koreksi atas dugaan awal:** saya sempat mencatat "tak ada pendengar `unhandledrejection`".
+Itu **tidak tepat** — Sentry sudah terpasang ([`main.js`](app/src/main.js) + CDN di
+`index.html`) dan memasang sendiri penangkap `window.onerror` serta `unhandledrejection`,
+jadi galat JS biasa memang sudah terlapor selama ini.
 
-Ini bukan soal galat yang sudah diantisipasi (itu sudah rapi, lihat di atas), melainkan
-soal yang **tidak** diantisipasi. Bagi staf lembaga yang bukan orang teknis, hasilnya
-"aplikasinya rusak" tanpa jalan keluar dan tanpa bahan diagnosis buat Kyai.
+Yang benar-benar hilang lebih spesifik dan lebih tajam: **galat komponen Vue tak pernah
+sampai ke Sentry.** Vue menelan galat render / lifecycle / watcher / handler-event dan
+menyalurkannya ke `app.config.errorHandler` — yang tidak ada — sehingga tak pernah
+menyentuh `window.onerror`. Justru kelas galat inilah yang paling sering mematikan layar.
+Ditambah: pengguna tak diberi tahu apa pun, layar kosong tanpa sepatah kata.
 
-**Usulan:** satu `app.config.errorHandler` di `main.js` yang menampilkan toast ramah +
-mencatat ke `console.error`, ditambah `window.addEventListener('unhandledrejection', …)`.
-Murah, dan mengubah "layar putih misterius" jadi keluhan yang bisa ditindaklanjuti.
+**Tambalan:** tiga lapis di `main.js`, urut sengaja — konsol dulu (satu-satunya jejak yang
+tetap ada bila CDN Sentry diblokir / luring / `defer` belum usai), lalu Sentry, lalu toast
+pengguna. Toast dijeda 8 detik sebab galat render bisa berulang tiap frame. Penolakan
+promise yang wajar (`AbortError`, batal-navigasi, `ResizeObserver`) disaring — itu terjadi
+normal saat pengguna berpindah halaman cepat, dan memberi toast untuknya hanya melatih
+pengguna mengabaikan toast.
+
+Tak memakai `@sentry/vue` karena SDK-nya dimuat dari CDN (hemat ~250 KB tiap muat), jadi
+integrasi resminya tak tersedia sebagai modul.
+
+**Terverifikasi di dev server, bukan sekadar build hijau:**
+
+| Uji | Hasil |
+|---|---|
+| `Promise.reject(new Error(…))` | Toast tampil + `[galat:promise]` di konsol + objek bertanda `__sentry_captured__: true` |
+| `Promise.reject(DOMException 'AbortError')` | Tak ada `[galat:promise]`, tak ada toast — tersaring benar |
 
 ## 🟡 Luring: terindikasi, belum tertahankan
 
