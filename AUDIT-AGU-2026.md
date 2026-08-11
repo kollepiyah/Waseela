@@ -36,7 +36,8 @@ berarti nol migrasi data dan nol pemberitahuan kebocoran.
 | 8 | SSRF: redirect tak divalidasi ulang di `get-link-preview` | 🟡 Sedang | Terbuka |
 | 9 | `cleanup_audit_log` — anon hapus jejak audit | 🟡 Sedang | ✅ **Sudah ditambal** |
 | 10 | Bucket tanpa batas ukuran/jenis berkas | 🟡 Sedang | Terbuka |
-| 11 | Perlindungan sandi bocor (HaveIBeenPwned) mati | 🟡 Sedang | Terbuka |
+| 11 | ~~Perlindungan sandi bocor (HaveIBeenPwned) mati~~ | 🟢 Rendah | ⛔ **Ditutup** — mustahil berguna (padding) + butuh Pro |
+| 19 | Sandi awal `1234` tak pernah dipaksa diganti | 🟠 Tinggi | 📌 **Diterima Kyai 11 Agu** — sama seperti Ammu |
 | 12 | ~~Android: izin storage lawas tanpa `maxSdkVersion`~~ | — | ❌ **KELIRU** — sudah ada, salah baca |
 | 18 | Android `allowBackup="true"` — sesi & PII santri tersalin ke Google Drive | 🟠 Tinggi | ✅ **Sudah ditambal 11 Agu** |
 | 13 | PWA tanpa service worker — nol kemampuan luring | 🟡 Sedang | Sebelum rilis |
@@ -270,8 +271,48 @@ juga tak tertangkap, karena yang diperiksa hanya IP literal.
   Siapa pun yang bisa mengunggah boleh mengunggah berkas sebesar dan sejenis apa pun →
   penyalahgunaan kuota storage, dan bucket publik jadi tempat menitipkan berkas asing.
   Usulan: batasi ukuran (mis. 5 MB) dan MIME (`image/*`, `application/pdf`).
-- **Perlindungan sandi bocor mati** — Supabase Auth bisa menolak sandi yang sudah bocor
-  (HaveIBeenPwned). Sekarang nonaktif. Satu saklar di dashboard.
+- **⛔ Perlindungan sandi bocor (#11) — DITUTUP, bukan ditambal. Jangan diangkat lagi.**
+
+  Saya menilainya terlalu tinggi. Dua sebab ia mustahil berguna di sini:
+
+  1. Dashboard sendiri menuliskannya: *"Only available on Pro plan and above."*
+  2. **Lebih menentukan: padding sandi membutakannya.** `toAuthPassword()`
+     ([`authSupabase.js:22`](app/src/services/authSupabase.js:22)) menambahkan awalan
+     sebelum mengirim — yang diketik `1234` sampai ke Supabase sebagai **`wsl_auth_1234`**.
+     Jadi yang ditanyakan ke HaveIBeenPwned adalah string berpadding itu, yang praktis
+     tak pernah ada di kumpulan sandi bocor mana pun. Pemeriksaannya **selalu lolos**,
+     bahkan seandainya paketnya Pro.
+
+  **Sebab yang sama membatalkan "Minimum password length".** Awalan `wsl_auth_` saja
+  sudah 9 karakter, jadi setiap sandi otomatis melewati ambang 6 — bahkan yang diketik
+  kosong. Menaikkannya ke 8 atau 12 tak mengubah apa pun.
+
+  **Pelajarannya lebih luas dari satu saklar:** seluruh panel kebijakan sandi Supabase
+  **buta terhadap sandi sungguhan aplikasi ini**. Jangan pernah menilai keamanan sandi
+  Waseela dari setelan dashboard — ukurlah dari nilai yang DIKETIK pengguna.
+
+- **⚠️ "Require current password when updating" — JANGAN dinyalakan tanpa uji.**
+  Dua alur ganti sandi ada, dan **keduanya tak mengirimkan sandi lama** ke `updateUser()`:
+  [`ProfilPengaturanSaya.vue:432`](app/src/views/profil/ProfilPengaturanSaya.vue:432)
+  memverifikasinya sendiri lewat re-sign-in lalu memanggil `updateUser` tanpa menyertakannya;
+  [`PengaturanView.vue:2075`](app/src/views/PengaturanView.vue:2075) (ganti sandi admin)
+  tak memeriksa sandi lama sama sekali. Menyalakan saklar itu kemungkinan besar
+  mematahkan keduanya.
+
+## 📌 19. Sandi awal `1234` tak pernah dipaksa diganti — DITERIMA KYAI
+
+**Keputusan Kyai 11 Agu 2026: dibiarkan default `1234`, sama seperti Ammu.**
+Dicatat sebagai keputusan sadar, bukan cacat yang terlewat — **jangan diangkat ulang.**
+
+Keadaan apa adanya, untuk kejelasan: setiap akun lahir dengan `1234`
+(`SANDI_AWAL = 'wsl_auth_1234'` di `provision-akun`), tombol "Reset sandi" mengembalikannya
+ke `1234`, dan penggantian hanya **dianjurkan** lewat teks di menu Bantuan — tak ada
+paksaan di router maupun penanda "masih sandi awal". Karena padding, tak satu pun setelan
+Supabase dapat mendeteksi atau mencegahnya.
+
+Kalau kelak Kyai berubah pikiran, penutup yang paling efektif adalah **paksa ganti sandi
+saat login pertama** bila sandinya masih `1234` — perubahan sedang: penanda status,
+gerbang di router, dan satu layar ganti sandi.
 - **`akun_provisi_izin` RLS tanpa policy** — ini **disengaja dan benar** (tolak semua;
   hanya service-role yang menyentuhnya). Advisor menandainya sebagai INFO, bukan masalah.
 
