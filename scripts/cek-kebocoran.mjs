@@ -82,7 +82,21 @@ const AREA_TEKS = [
 const BERKAS_ROOT = [
   'firebase.json', '.firebaserc', 'package.json', 'app/package.json',
   'app/index.html', 'app/vite.config.js', 'app/capacitor.config.json',
-  'app/tailwind.config.js', 'app/android/app/build.gradle', 'app/electron/package.json'
+  'app/tailwind.config.js', 'app/android/app/build.gradle', 'app/electron/package.json',
+  // PLAYSTORE-LISTING.md ikut dipindai karena isinya DITAKDIRKAN TERBIT: teksnya
+  // ditempel apa adanya ke halaman Play Store. Kebocoran di sana bukan sekadar ada di
+  // repo — ia tayang ke publik.
+  //
+  // ⚠️ Dokumen root LAIN sengaja TIDAK didaftarkan. HANDOVER.md (17 kemunculan),
+  // README.md (3), dan AUDIT-AGU-2026.md (1) memang HARUS menyebut nilai hulu — itu
+  // dokumen rekayasa yang justru menjelaskan cara kebocoran terjadi dan cara sync
+  // bekerja. Memindainya = positif palsu abadi, dan gerbang yang selalu merah akan
+  // diabaikan orang. Alasan yang sama dengan `scripts/` di komentar atas.
+  //
+  // Aturan pembeda: berkas yang ISINYA DISALIN KELUAR (listing, halaman publik,
+  // teks yang dilihat pembeli) WAJIB dipindai. Berkas yang hanya dibaca pengembang
+  // di dalam repo, tidak.
+  'PLAYSTORE-LISTING.md'
 ]
 const EXT_TEKS = /\.(js|mjs|cjs|ts|vue|css|json|html|md|sql|toml|xml|txt|webmanifest|gradle|properties|java)$/
 const LEWATI = /[\\/](node_modules|\.git|fonts)[\\/]/
