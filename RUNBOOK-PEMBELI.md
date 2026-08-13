@@ -190,6 +190,39 @@ tercetak kosong — bukan nama lembaga lain. Itu memang perilaku yang diinginkan
 
 ---
 
+## 4b. Mesin absensi (pembeli: **Solution X609**)
+
+Pengaturan → **Mesin Absensi** → pilih merek. Tiga jalur, aplikasi yang menentukan
+mana yang dipakai:
+
+| Merek | Jalur |
+|---|---|
+| HiView / Hikvision | mesin **mendorong** tiap scan ke Edge Function (`hiview-absen`) |
+| Fingerspot | ditarik **aplikasi Desktop** dari folder Personnel |
+| **Solution (X609 dll)**, ZKTeco, lainnya | **impor berkas ekspor mesin** |
+
+**Alur Solution X609** (jalur impor):
+
+1. Isi **ID Fingerprint** tiap guru. Cara cepat: Absensi Guru → tab **Impor** →
+   *Set PIN Massal*, unggah berkas "Karyawan" dari aplikasi mesin (Nama + ID Karyawan).
+2. Ekspor riwayat scan dari aplikasi bawaan mesin (Excel/CSV; flashdisk juga bisa).
+3. Absensi Guru → tab **Impor** → unggah berkasnya **apa adanya**.
+
+Berkas ekspor mesin tak punya kolom shift, dan memang tak perlu: jam masuk, jam pulang,
+dan shift diturunkan aplikasi dari jam scan memakai master shift di Pengaturan
+(`utils/scanMesin.js`, aturan yang sama dengan sinkron Fingerspot). Scan dobel < 30 menit
+diabaikan. Sesudah impor, layar itu menampilkan ringkasan: berapa tercatat, PIN yang tak
+dikenal, dan scan yang tak jadi absen beserta sebabnya (shift guru kosong vs jam di luar
+window) — itu daftar kerja yang perlu dibereskan, bukan sekadar hiasan.
+
+> X609 sebenarnya mendukung ADMS (push otomatis), tapi mesin keluarga ZKTeco menembak
+> alamat berpola `/iclock/...` lewat HTTP polos — tak cocok dengan Edge Function Supabase
+> yang HTTPS dan berpath `/functions/v1/…`. Kalau kelak ingin otomatis penuh, jalannya
+> lewat penampung kecil di aplikasi Desktop (satu jaringan dengan mesin), bukan menambal
+> `hiview-absen`.
+
+---
+
 ## 5. Rilis
 
 ### Web
@@ -214,16 +247,39 @@ npm run deploy          # build + firebase deploy --only hosting:main
 npm run electron:release
 ```
 
-### Selaraskan versi di 4 tempat
+### Urutan rilis (kalau tombol unduh di halaman login harus hidup)
+
+Halaman login menyusun tautannya dari `/releases/latest/download/…`, jadi **APK dan kedua
+installer wajib berada di SATU rilis — yang terbaru**:
+
+1. `npm run electron:release` → menerbitkan rilis GitHub `v<versi>` berisi
+   `Waseela-Setup-<versi>.exe` + `Waseela-Setup-Win7-<versi>.exe`.
+2. `npm run build:apk` → hasilnya sudah disalin ke `dist-release/Waseela.apk`.
+   Unggah berkas itu ke rilis **`v<versi>` yang sama** (jangan membuat rilis sendiri —
+   rilis APK yang lebih baru justru membuat tautan Desktop menunjuk rilis yang tak
+   memuat installer).
+3. Buka halaman login → tombol **Android** dan **Desktop** harus langsung mengunduh.
+
+> Selama aplikasi **belum terbit di Play**, APK di GitHub itulah yang dipakai pembeli —
+> ditandatangani kunci upload kita. Sesudah terbit di Play, `apkUrl` harus diganti dengan
+> APK "Signed, universal APK" dari Play Console; APK build lokal tak bisa menimpa
+> pemasangan dari Play (beda tanda tangan).
+
+### Selaraskan versi di 5 tempat
 `app/src/config/brand.js` (`BRAND.version`) · `app/package.json` ·
-`app/android/app/build.gradle` (`versionCode`/`versionName`) · `app/public/app-version.json`.
+**`app/electron/package.json`** · `app/android/app/build.gradle`
+(`versionCode`/`versionName`) · `app/public/app-version.json`.
+
+> `app/electron/package.json` bukan hiasan: nama installer memuat versinya, sedangkan
+> tautan di halaman login disusun dari versi app web. Kalau keduanya berbeda, tombol
+> Desktop 404 sekalipun rilisnya ada. `tests/unit/unduhanRilis.test.js` menjaga ini.
 
 ---
 
 ## 6. Cek terakhir sebelum kirim
 
 ```bash
-npm test                              # 67 berkas, ~870 tes
+npm test                              # 73 berkas, ~930 tes
 npm run build
 node scripts/whitelabel.mjs --audit   # sumber + hasil build
 node scripts/apply-brand.mjs          # aset gambar

@@ -21,7 +21,7 @@ export const BRAND = {
   appTitle: 'Waseela',
   txtHeaderBar: 'Waseela',
   copyrightName: 'BAKAFRAWI PROJECT', // tahun dirender dinamis di komponen
-  version: 'v.1.0.0', // versi rilis Waseela (selaras app/package.json & android versionName)
+  version: 'v.1.0.1', // versi rilis Waseela (selaras app/package.json & android versionName)
   sentryRelease: 'waseela',
 
   // ── Identitas lembaga pembeli (diisi lewat UI Pengaturan) ─────────────────

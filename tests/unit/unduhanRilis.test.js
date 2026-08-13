@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import elektronPkg from '../../app/electron/package.json'
+import appPkg from '../../app/package.json'
 import {
   HALAMAN_RILIS,
   urlApk,
@@ -61,6 +62,17 @@ describe('URL berkas rilis', () => {
   it('APK TIDAK memuat versi — Kyai mengunggahnya manual dari Play Console', () => {
     expect(namaBerkas(urlApk())).toBe('Waseela.apk')
     expect(urlApk()).not.toMatch(/\d+\.\d+\.\d+/)
+  })
+
+  // Kyai (13 Agu 2026): "aktifkan link download electron di page login."
+  //
+  // Sebabnya bukan tautannya mati, tapi DUA VERSI yang berpisah: halaman login menyusun
+  // nama installer dari versi APLIKASI WEB (__APP_VERSION__ = app/package.json), sedangkan
+  // electron-builder menamai berkasnya dari versi app/electron/package.json (waktu itu
+  // masih 1.3.4 warisan hulu). Selama keduanya beda, tautan Desktop SELALU 404 — sekalipun
+  // rilisnya sudah ada. Tes ini yang menjerit lebih dulu.
+  it('versi electron = versi app web — kalau tidak, tautan Desktop di login 404', () => {
+    expect(elektronPkg.version).toBe(appPkg.version)
   })
 
   it('semua URL menunjuk rilis GitHub yang sama dan memakai https', () => {

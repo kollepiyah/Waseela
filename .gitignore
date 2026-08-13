@@ -3,6 +3,8 @@ node_modules/
 app/node_modules/
 app/dist/
 dist/
+# APK siap unggah (scripts/build-apk.cjs) — artefak, bukan sumber
+dist-release/
 
 # === Secrets / env ===
 .env

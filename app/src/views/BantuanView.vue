@@ -834,6 +834,16 @@ async function resetFaq() {
 //   pernah mereka alami.
 const rilis = [
   {
+    versi: 'v.1.0.1',
+    tgl: 'Agustus 2026',
+    items: [
+      'Impor absensi mesin sidik jari: berkas ekspor mesin kini dipakai apa adanya — jam masuk, jam pulang, dan shift ditentukan aplikasi sendiri. Berkas CSV juga sudah bisa diunggah.',
+      'Layar impor menampilkan ringkasan hasil: berapa yang tercatat, PIN yang belum dikenali, dan scan yang tak jadi absen beserta sebabnya.',
+      'Pilihan merek mesin absensi di Pengaturan ditambah Solution beserta petunjuk pemakaiannya.',
+      'Pembayaran Virtual Account dihilangkan — pembayaran wali lewat transfer bank dan unggah bukti, seperti yang selama ini dipakai.'
+    ]
+  },
+  {
     versi: 'v.1.0.0',
     tgl: 'Agustus 2026',
     items: [

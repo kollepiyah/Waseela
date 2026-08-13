@@ -60,7 +60,7 @@ const isDev = !APP_HTML_EXISTS || process.env.ELECTRON_IS_DEV === '1';
 let mainWindow = null;
 let splashWindow = null;
 // v.80.0526: brand color (teal) untuk title bar overlay
-const BRAND_HIJAU = '#065F46'; // primary (teal-700)
+const BRAND_HIJAU = '#065F46'; // primary (emerald-800, warna logo Waseela)
 const BRAND_HIJAU_DARK = '#064E3B'; // dark mode (teal-900)
 // v.83.0526: Title bar theme palette — match Vue app light/dark mode
 //   Light: cream bg + slate symbol (mirip Claude desktop light mode)

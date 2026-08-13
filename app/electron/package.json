@@ -1,10 +1,11 @@
 {
   "name": "waseela-desktop",
-  "version": "1.3.4",
+  "version": "1.0.1",
   "description": "Waseela — Portal Manajemen Lembaga (Desktop)",
   "author": "Bakafrawi Project",
   "main": "build/index.js",
   "license": "UNLICENSED",
+  "_catatan_ikon": "installerIcon & uninstallerIcon SENGAJA tidak diisi (13 Agu 2026). Keduanya dulu menunjuk 'assets/appIcon.ico' — berkas milik repo hulu yang TIDAK pernah ikut ke Waseela: apply-brand.mjs menyebar PNG, bukan ICO. Akibatnya build NSIS gagal: 'cannot find specified resource assets/appIcon.ico'. Dikosongkan = electron-builder memakai ikon aplikasi (assets/appIcon.png) dan mengubahnya sendiri jadi ICO multi-ukuran — hasil layarnya sama. JANGAN mengisinya lagi dengan berkas .ico yang di-commit manual: berkas itu tak ikut berganti saat merek diganti, jadi installer akan memakai ikon lama tanpa ada yang menjerit. Kalau suatu saat memang perlu ICO khusus, buat dari apply-brand.mjs supaya ikut alur merek.",
   "_catatan_publisherName": "JANGAN kembalikan `publisherName` ke build.win selama installer belum ditandatangani (belum ada certificateFile/cscLink). electron-builder menuliskannya ke app-update.yml, dan NsisUpdater lalu MEMVERIFIKASI tanda tangan Authenticode installer yang baru diunduh lewat PowerShell Get-AuthenticodeSignature. Installer kita tidak bersertifikat -> Status NotSigned -> update DITOLAK ('is not signed by the application owner'). Itulah sebab 'auto-update tidak bisa di beberapa PC' (Kyai, 5 Agu 2026): di PC yang PowerShell-nya diblok/bermasalah, verifikasi DILEWATI dan update justru jalan — jadi gagalnya tampak acak. Kalau nanti sertifikat code-signing dibeli, publisherName boleh (dan sebaiknya) dipasang kembali. Catatan ini sengaja di ROOT package.json, BUKAN di dalam `build` — electron-builder 24 menolak properti tak dikenal di dalam `build` (ValidationError).",
   "scripts": {
     "build": "tsc",
@@ -59,9 +60,7 @@
       "deleteAppDataOnUninstall": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Waseela",
-      "installerIcon": "assets/appIcon.ico",
-      "uninstallerIcon": "assets/appIcon.ico"
+      "shortcutName": "Waseela"
     }
   },
   "dependencies": {

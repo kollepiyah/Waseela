@@ -3,7 +3,12 @@
 > **Untuk:** Kyai isi di Play Console. Berkas ini sumber tunggalnya — kalau listing
 > diubah di Console, ubah juga di sini supaya rilis berikutnya tak menebak-nebak.
 > **Bahasa:** Indonesia, **KECUALI bagian 9 "App access"** yang WAJIB Inggris.
-> **Terakhir diperbarui:** 11 Agu 2026 · target rilis perdana `versionCode 1` / `v.1.0.0`
+> **Terakhir diperbarui:** 13 Agu 2026 · target rilis perdana `versionCode 2` / `v.1.0.1`
+>
+> `versionCode 1` / `v.1.0.0` **tak pernah sampai ke Play** — versinya sudah naik lebih
+> dulu (impor mesin absensi + Virtual Account dibuang). Yang diunggah pertama kali ke
+> Play adalah `versionCode 2`; memulai dari 2 tak masalah, Play hanya menuntut angkanya
+> selalu NAIK.
 
 ---
 

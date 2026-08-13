@@ -1,7 +1,7 @@
 # 🤝 HANDOVER — Waseela
 
 > Untuk sesi/dev berikutnya: baca ini dulu, lalu [`RUNBOOK-PEMBELI.md`](RUNBOOK-PEMBELI.md).
-> Terakhir diperbarui: **8 Agu 2026** — re-fork ke single-tenant + white-label penuh.
+> Terakhir diperbarui: **13 Agu 2026** — v.1.0.1: impor mesin absensi + Virtual Account dibuang.
 
 ---
 
@@ -24,9 +24,9 @@ diturunkan dari repo hulu **Ammu Online** (`D:\Aplikasi Project\Portal MU`).
 - **Single-tenant**: 1 pemasangan = 1 lembaga = 1 project Supabase sendiri.
 - **Backend**: Supabase (data/auth/storage). Firebase tinggal FCM + App Check + Hosting.
 - **Klien**: Vue 3 SPA + Android (Capacitor) + Desktop (Electron).
-- **Status (9 Agu 2026)**: **sudah LIVE** di Firebase Hosting, pembeli sudah bisa login
-  dan memakai. Tes 890 hijau, build hijau, empat gerbang white-label lulus.
-  Branch kerja: `refork/ammu-single-tenant`.
+- **Status (13 Agu 2026)**: **sudah LIVE** di Firebase Hosting, pembeli sudah bisa login
+  dan memakai. Versi **v.1.0.1** (`versionCode 2`). Tes 928 hijau, build hijau, empat
+  gerbang white-label lulus. Branch kerja: `refork/ammu-single-tenant`.
 
 ---
 
@@ -63,6 +63,8 @@ Basis re-fork = hulu commit **`e255c5d`** (8 Agu 2026).
 | Merek aplikasi | **Tetap Waseela**, hak cipta Bakafrawi Project | Pembeli tak mengganti merek app — hanya mengisi identitas lembaganya di kop |
 | Identitas lembaga | **Runtime**, lewat UI Pengaturan | Pembeli mengisi sendiri, tanpa rebuild |
 | Repo hulu | **BACA-SAJA, selamanya** | Tak ada tulis/hapus/git di `Portal MU`; `sync-from-ammu.mjs` satu arah |
+| Virtual Account (BMT) | **DIBUANG** v.1.0.1 (kode + tabel + RPC) | Terikat satu BMT milik lembaga hulu; pembeli tak memakai, integrasinya tak pernah hidup |
+| Mesin absensi pembeli | **Solution X609**, jalur **impor berkas** | Ekspor mesin dipakai apa adanya; shift & jam pulang diturunkan aplikasi (`utils/scanMesin.js`) |
 
 ---
 
@@ -105,7 +107,7 @@ sengaja tak pernah menarik `kopMuassis.js` maupun `muassis.png`.
 `scripts/whitelabel-rules.mjs` — **jangan menambal berkasnya langsung**, tambalan itu
 hilang di sync berikutnya. Gerbang akan menolak sampai aturannya ada.
 
-### Dua cara kebocoran lolos (keduanya sudah kejadian)
+### Tiga cara kebocoran lolos (ketiganya sudah kejadian)
 
 **1. Bentuknya bukan kata.** Gerbang teks mencari "ammu"/"mambaul". Yang lolos:
 ref project Supabase (`rzwefjilxzsqlokkwiyt`), VAPID key, foto latar login yang tersandi
@@ -124,6 +126,29 @@ literal identitas jenis baru, **tambahkan `panen()`-nya**, bukan cuma menambal b
 
 **Kalau menambah folder/berkas yang membawa teks atau gambar user-facing, daftarkan
 sekalian ke `AREA`/`BERKAS_ROOT`.** Gerbang yang tak memindai = gerbang yang bohong.
+
+**3. Letaknya di RIWAYAT, bukan di kode sekarang.** Keempat gerbang kita — `whitelabel
+--audit`, `cek-kebocoran`, `apply-brand`, dan pindaian `app/dist` — semuanya hanya melihat
+**working tree**. Riwayat git tak pernah dilihat siapa pun. Padahal era multi-tenant
+(sebelum re-fork 8 Agu 2026) sempat membawa berkas konfigurasi per-lembaga yang memuat
+identitas lembaga hulu; berkasnya sudah lama tak ada di HEAD, tapi commit-nya tetap ada —
+dan repo ini **publik**. Ketahuan 13 Agu 2026 lewat *secret scanning* GitHub, bukan lewat
+gerbang kita.
+
+Yang perlu dipahami penerus:
+
+- **"Bersih di `git status`" ≠ "bersih di repo."** Untuk identitas yang pernah ada lalu
+  dihapus, satu-satunya pembersih adalah menulis ulang riwayat (mahal: semua SHA berubah,
+  termasuk tag arsip) **atau** menjadikan repo privat.
+- Menulis ulang riwayat sering **tak menyelesaikan apa pun**: nilai yang sama biasanya
+  sudah publik di repo lain milik pemilik yang sama. Periksa dulu sebarannya sebelum
+  menempuh jalan mahal itu.
+- Untuk kunci yang **memang dirancang publik** (Firebase Web API key ikut di tiap bundel
+  web & APK), obatnya bukan menyembunyikan, melainkan **membatasi**: HTTP referrer untuk
+  kunci Web, paket + SHA-1 untuk kunci Android, plus App Check. Menghapusnya dari kode
+  malah membuatnya tampak rahasia padahal tidak.
+- Pelajaran untuk white-label: **jangan pernah menaruh konfigurasi milik lembaga lain di
+  repo produk, sekalipun "sementara"** — sekali ter-commit, ia permanen.
 
 ### Istilah: "pondok" DIBUANG dari teks user-facing
 
@@ -150,7 +175,14 @@ diputuskan: `santri` menyentuh nama tabel DB, jadi jangan disapu tanpa arahan Ky
 
 ## Sisa pekerjaan
 
-Web sudah live. Yang tersisa (per 9 Agu 2026):
+Web sudah live. Yang tersisa (per 13 Agu 2026):
+
+**Rilis v.1.0.1 — dikerjakan Kyai, urutannya mengikat**
+0. `npm run electron:release` (rilis GitHub `v1.0.1`) → lalu `npm run build:apk` dan
+   unggah `dist-release/Waseela.apk` **ke rilis v1.0.1 itu juga**. Tombol unduh di
+   halaman login memakai `/releases/latest/download/`, jadi APK & installer harus berada
+   di satu rilis yang sama — rinciannya di RUNBOOK §5. Migrasi
+   `20260813090000_buang_va_bmt.sql` juga perlu di-`db push` ke Supabase pembeli.
 
 **Wajib sebelum dianggap selesai**
 1. **Uji cetak kop kosong** — satu-satunya gerbang yang tak bisa diotomatiskan: cetak
@@ -161,9 +193,17 @@ Web sudah live. Yang tersisa (per 9 Agu 2026):
 
 **Menunggu keputusan Kyai**
 3. Istilah **"pesantren"** (mudah) dan **"santri"** (dalam — menyentuh nama tabel DB).
+3b. **Absensi otomatis dari X609 (ADMS)** — mesinnya mendukung, tapi jalurnya bukan Edge
+   Function (lihat RUNBOOK §4b). Perlu diputuskan apakah dibangun penampung di aplikasi
+   Desktop, atau cukup impor manual seperti sekarang.
 4. Bucket `psb` (bukti transfer) **publik terbaca lewat URL**. Tak ada tautan yang
    membocorkannya, tapi URL yang tertebak = berkas terbuka. Perlu diputuskan mau
    diprivatkan (butuh signed URL di sisi baca) atau dibiarkan.
+5. **Status repo: publik atau privat?** (13 Agu 2026) Riwayat git era multi-tenant masih
+   membawa identitas lembaga hulu — lihat "cara kebocoran ke-3" di atas. Privat = penutup
+   termurah. Terpisah dari itu: **batasi kunci API Firebase** di Google Cloud Console
+   (HTTP referrer untuk Web, paket + SHA-1 untuk Android) — itu perlindungan yang nyata,
+   terlepas dari repo publik atau tidak.
 
 **Butuh akun/aset — detail di RUNBOOK-PEMBELI.md**
 5. **Android**: `google-services.json` untuk paket `app.waseela.id`, **keystore BARU**
