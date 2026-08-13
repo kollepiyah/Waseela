@@ -10,7 +10,8 @@
 export const METODE_OPTS = ['Tunai', 'Transfer']
 
 // sumber yang PASTI non-tunai walau field `metode` kosong (baris lama)
-const SUMBER_TRANSFER = ['transfer_verified', 'bmt', 'va_bmt', 'va']
+// v.1.0.1: sumber Virtual Account ('va', 'va_bmt', 'bmt') dibuang bersama fitur VA.
+const SUMBER_TRANSFER = ['transfer_verified']
 
 /** 'Tunai' | 'Transfer' untuk satu baris keuangan_buku_induk.
  *
@@ -24,7 +25,10 @@ export function metodeTransaksi(row) {
     .trim()
     .toLowerCase()
   if (m) {
-    if (m.startsWith('transfer') || m === 'tf' || m === 'bank' || m === 'va') return 'Transfer'
+    // 'bmt' & 'va' = nilai LAMA yang pernah ditulis pencairan bisyaroh/VA. Tetap dikenali
+    // supaya baris lama tak salah dihitung sebagai uang laci di laporan harian kas.
+    if (m.startsWith('transfer') || m === 'tf' || m === 'bank' || m === 'va' || m === 'bmt')
+      return 'Transfer'
     if (m.startsWith('tunai') || m === 'cash') return 'Tunai'
   }
   const sumber = String(row?.sumber || '')

@@ -2,7 +2,7 @@
 //
 // LATAR: kolom riil `terbayar` (DDL keuangan.sql:12, terdaftar di db.js COLS) dulu TAK PERNAH
 // diisi siapa pun — app menulis `bayar`/`dibayar` yang tak terdaftar sehingga jatuh ke ekor
-// jsonb `data`, dan RPC apply_bmt_payment pun menulis ke data->>'bayar'. Akibatnya kolomnya
+// jsonb `data` (RPC pembayaran VA yang lama pun begitu). Akibatnya kolomnya
 // selamanya 0: query SQL/laporan yang percaya `terbayar` diam-diam salah (semua tampak nunggak
 // penuh). Sekarang `terbayar` dijadikan sumber kebenaran supaya bisa difilter/di-index di SQL.
 //

@@ -17,7 +17,12 @@ describe('metodeTransaksi — tunai vs transfer', () => {
 
   it('baris lama tanpa field metode: transfer terverifikasi = Transfer', () => {
     expect(metodeTransaksi({ sumber: 'transfer_verified' })).toBe('Transfer')
-    expect(metodeTransaksi({ sumber: 'va_bmt' })).toBe('Transfer')
+  })
+
+  it("nilai metode LAMA 'bmt' (pencairan bisyaroh sebelum v.1.0.1) tetap Transfer", () => {
+    // Fitur VA sudah dibuang, tapi baris yang terlanjur ditulis tak boleh berpindah
+    // ke kolom Tunai — uangnya memang keluar lewat rekening, bukan laci.
+    expect(metodeTransaksi({ sumber: 'gaji', metode: 'bmt' })).toBe('Transfer')
   })
 
   it('kas manual / sumber lain tanpa metode = Tunai (uang laci)', () => {

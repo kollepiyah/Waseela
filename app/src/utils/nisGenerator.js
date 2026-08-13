@@ -11,8 +11,7 @@
 //                sengaja dipanggil — opt-in dgn preview+konfirmasi, bukan otomatis.
 //   Santri tanpa tgl lahir valid → DILEWATI (NIS lama dibiarkan apa adanya).
 //   CATATAN: NIS = field, BUKAN doc id. Referensi lintas-koleksi (pembayaran/tabungan/POS/notif)
-//   pakai santri_id (doc id) → regenerate NIS aman, tak merusak riwayat. (VA BMT turunan NIS bila
-//   va_bmt belum diterbitkan — kyai aktifkan VA setelah data lengkap & NIS stabil.)
+//   pakai santri_id (doc id) → regenerate NIS aman, tak merusak riwayat.
 import { updateOne, setOne } from '@/services/db'
 
 // Normalisasi tgl_lahir ke 'YYYY-MM-DD'. Toleran 'DD/MM/YYYY' / 'YYYY-M-D' / Date. '' bila tak valid.

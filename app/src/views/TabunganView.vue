@@ -98,12 +98,6 @@
                   >
                     {{ m.jenis || m.tipe || '-' }}
                   </span>
-                  <span
-                    v-if="m.sumber === 'bmt_va'"
-                    class="ml-1 inline-block text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700"
-                    title="Top-up via Virtual Account BMT"
-                    ><i class="fas fa-credit-card"></i> VA</span
-                  >
                 </td>
                 <td
                   :class="[
@@ -682,12 +676,6 @@
                       : 'bg-rose-100 text-rose-700'
                   ]"
                   >{{ m.jenis }}</span
-                >
-                <span
-                  v-if="m.sumber === 'bmt_va'"
-                  class="ml-1 inline-block text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700"
-                  title="Top-up via Virtual Account BMT"
-                  ><i class="fas fa-credit-card"></i> VA</span
                 >
               </td>
               <td

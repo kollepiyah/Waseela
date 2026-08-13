@@ -173,7 +173,7 @@
         </div>
       </div>
 
-      <!-- daftar metode (transfer aktif, VA segera hadir) -->
+      <!-- daftar metode pembayaran wali -->
       <div
         class="bg-[var(--bg-card)] rounded-2xl p-3 border border-[var(--border-subtle)] shadow-sm space-y-2"
       >
@@ -230,7 +230,7 @@
     <!-- ============================================================
          v.87.0526 STEP: BAYAR (Transfer Bank) — info rekening + upload bukti
          ============================================================ -->
-    <template v-if="isSantriOnly && mode === 'flow' && step === 'bayar' && selectedMethod !== 'va'">
+    <template v-if="isSantriOnly && mode === 'flow' && step === 'bayar'">
       <!-- Info Rekening -->
       <div
         class="bg-gradient-to-br from-cyan-600 to-teal-700 dark:from-cyan-800 dark:to-teal-900 rounded-2xl p-5 text-white shadow-lg"
@@ -452,206 +452,6 @@
       </div>
     </template>
 
-    <!-- ============================================================
-         v.97.0626 STEP: BAYAR (Virtual Account BMT PETA) — tampil nomor VA tetap santri + instruksi.
-         Auto-konfirmasi via BMT (integrasi menyusul). Upload bukti tetap tersedia via metode Transfer.
-         ============================================================ -->
-    <template v-if="isSantriOnly && mode === 'flow' && step === 'bayar' && selectedMethod === 'va'">
-      <!-- Pilih anak dulu (multi-anak, belum terpilih) -->
-      <div
-        v-if="!vaSantri && waliChildren.length > 1"
-        class="bg-gradient-to-br from-indigo-600 to-violet-700 dark:from-indigo-800 dark:to-violet-900 rounded-2xl p-5 text-white shadow-lg"
-      >
-        <p class="text-sm font-bold mb-2">
-          <i class="fas fa-hand-pointer mr-1"></i>Pilih anak dulu
-        </p>
-        <select
-          v-model="transferForm.santri_id"
-          class="w-full px-3 py-2 text-sm rounded-xl border-0 text-slate-800 outline-none cursor-pointer"
-        >
-          <option value="">— Pilih Anak —</option>
-          <option v-for="c in waliChildren" :key="c.id" :value="String(c.id)">{{ c.nama }}</option>
-        </select>
-      </div>
-
-      <template v-else-if="vaNumber">
-        <!-- A. Keranjang: susun pembayaran (tagihan + top-up uang saku) dalam 1 transfer -->
-        <div
-          class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
-        >
-          <h3 class="text-sm font-black text-[var(--text-primary)] uppercase mb-1">
-            <i class="fas fa-cart-plus text-indigo-600 mr-1"></i>Susun Pembayaran
-            <span v-if="vaSantri" class="normal-case text-[var(--text-secondary)] font-bold"
-              >— {{ vaSantri.nama }}</span
-            >
-          </h3>
-          <p class="text-[11px] text-[var(--text-secondary)] mb-3">
-            Centang tagihan yang ingin dibayar dan/atau isi top-up uang saku. Semuanya dibayar dalam
-            <b>satu transfer VA</b>.
-          </p>
-
-          <!-- Tagihan belum lunas -->
-          <div v-if="vaTagihanList.length" class="space-y-1.5">
-            <label
-              v-for="t in vaTagihanList"
-              :key="t.id"
-              class="flex items-center gap-2.5 bg-[var(--bg-card-elevated)] rounded-xl px-3 py-2 cursor-pointer"
-            >
-              <input
-                type="checkbox"
-                :checked="isCarted(t)"
-                class="w-4 h-4 accent-indigo-600 flex-shrink-0"
-                @change="toggleCart(t)"
-              />
-              <div class="flex-1 min-w-0">
-                <p class="text-xs font-bold text-[var(--text-primary)] truncate">
-                  {{ t.kategori || 'Tagihan' }}
-                </p>
-                <p class="text-[10px] text-[var(--text-secondary)]">
-                  {{ t.periode || '-' }} · sisa {{ fmtRp(getSisaVa(t)) }}
-                </p>
-              </div>
-              <input
-                v-if="isCarted(t)"
-                :value="cartSel[t.id]"
-                type="number"
-                min="0"
-                :max="getSisaVa(t)"
-                class="w-28 px-2 py-1 text-xs text-right font-bold rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-primary)] flex-shrink-0"
-                @input="setCartNominal(t, $event.target.value)"
-                @click.prevent.stop
-              />
-            </label>
-          </div>
-          <p v-else class="text-[11px] text-[var(--text-tertiary)] italic">
-            Tidak ada tagihan tertunggak. Bisa langsung top-up uang saku di bawah.
-          </p>
-
-          <!-- Top-up uang saku -->
-          <div class="mt-3 pt-3 border-t border-[var(--border-subtle)]">
-            <label class="block text-[11px] font-bold text-[var(--text-secondary)] uppercase mb-1">
-              <i class="fas fa-wallet text-emerald-600 mr-1"></i>Top-up Uang Saku (opsional)
-            </label>
-            <input
-              v-model.number="cartUangSaku"
-              type="number"
-              min="0"
-              step="1000"
-              placeholder="0"
-              class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)] text-right font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
-            />
-          </div>
-
-          <!-- Total + buat -->
-          <div class="mt-4 flex items-center justify-between gap-3">
-            <div>
-              <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase">Total</p>
-              <p class="text-xl font-black text-[var(--text-primary)]">{{ fmtRp(cartTotal) }}</p>
-            </div>
-            <button
-              :disabled="cartTotal <= 0 || creatingIntent"
-              class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-black transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              @click="buatTagihanVa"
-            >
-              <i class="fas fa-plus-circle mr-1"></i
-              >{{ creatingIntent ? 'Membuat...' : 'Buat Tagihan VA' }}
-            </button>
-          </div>
-        </div>
-
-        <!-- B. Kartu Nomor VA -->
-        <div
-          class="bg-gradient-to-br from-indigo-600 to-violet-700 dark:from-indigo-800 dark:to-violet-900 rounded-2xl p-5 text-white shadow-lg"
-        >
-          <p class="text-[10px] font-bold uppercase opacity-80 tracking-wider mb-3">
-            <i class="fas fa-credit-card mr-1"></i>Virtual Account {{ bmtNama || 'BMT PETA' }}
-          </p>
-          <p class="text-2xl md:text-3xl font-black mt-1 tracking-wider drop-shadow break-all">
-            {{ formatVa(vaNumber) }}
-            <button
-              class="ml-2 px-2 py-1 text-xs bg-white/20 hover:bg-white/30 rounded-lg backdrop-blur transition cursor-pointer align-middle"
-              :title="'Salin nomor VA'"
-              @click="copyToClipboard(vaNumber)"
-            >
-              <i class="fas fa-copy"></i>
-            </button>
-          </p>
-          <p class="text-[11px] opacity-90 mt-3 leading-relaxed">
-            Setelah membuat Tagihan VA, transfer <b>sejumlah total</b> ke nomor VA di atas lewat
-            m-banking / ATM / teller / kantor {{ bmtNama || 'BMT PETA' }}. Saat dana masuk, tagihan
-            &amp; uang saku terisi otomatis sesuai rincian.
-          </p>
-        </div>
-
-        <!-- C. Daftar Tagihan VA (niat-bayar) -->
-        <div
-          v-if="myVaIntents.length"
-          class="bg-[var(--bg-card)] rounded-2xl p-4 md:p-5 border border-[var(--border-subtle)] shadow-sm"
-        >
-          <h3 class="text-sm font-black text-[var(--text-primary)] uppercase mb-3">
-            <i class="fas fa-receipt text-indigo-600 mr-1"></i>Tagihan VA
-          </h3>
-          <div class="space-y-2">
-            <div
-              v-for="i in myVaIntents"
-              :key="i.id"
-              class="bg-[var(--bg-card-elevated)] rounded-xl px-3 py-2.5 flex items-start justify-between gap-2"
-            >
-              <div class="min-w-0 flex-1">
-                <p class="text-sm font-black text-[var(--text-primary)]">{{ fmtRp(i.total) }}</p>
-                <p class="text-[10px] text-[var(--text-secondary)] truncate">
-                  {{ intentRincian(i) }}
-                </p>
-              </div>
-              <div class="flex flex-col items-end gap-1 flex-shrink-0">
-                <span
-                  :class="[
-                    'text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full',
-                    i.status === 'terbayar'
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : i.status === 'dibatalkan'
-                        ? 'bg-slate-200 text-slate-600'
-                        : 'bg-amber-100 text-amber-700'
-                  ]"
-                  >{{ vaIntentStatusLabel(i.status) }}</span
-                >
-                <button
-                  v-if="i.status === 'pending'"
-                  class="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer"
-                  @click="batalIntent(i)"
-                >
-                  Batalkan
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Catatan integrasi BMT (belum live) -->
-        <div
-          class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 text-[12px] text-amber-800 dark:text-amber-200 leading-relaxed"
-        >
-          <i class="fas fa-info-circle mr-1"></i>
-          <strong>Konfirmasi otomatis ({{ bmtNama || 'BMT PETA' }})</strong> — integrasi konfirmasi
-          BMT sedang disiapkan. Jika butuh segera, sementara bisa pakai metode
-          <button class="font-black underline cursor-pointer" @click="step = 'metode'">
-            Transfer Bank</button
-          >.
-        </div>
-      </template>
-
-      <!-- VA belum tersedia (santri tunggal tanpa VA / prefix belum di-set) -->
-      <div
-        v-else
-        class="bg-[var(--bg-card)] rounded-2xl p-6 border border-dashed border-[var(--border-subtle)] text-center"
-      >
-        <i class="fas fa-exclamation-circle text-amber-400 text-3xl mb-2"></i>
-        <p class="text-sm font-bold text-[var(--text-primary)]">Nomor VA belum tersedia</p>
-        <p class="text-[11px] text-[var(--text-secondary)] italic mt-1">
-          Hubungi admin untuk info Virtual Account santri.
-        </p>
-      </div>
-    </template>
 
     <ReceiptModal
       :open="receiptOpen"
@@ -667,20 +467,18 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { subscribeColl, setOne, updateOne } from '@/services/db'
+import { subscribeColl, setOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useWaliChildren } from '@/composables/useWaliChildren'
 import { uploadBase64 } from '@/services/storage'
 import { fmtRp, fmtTgl, todayJakarta } from '@/utils/format'
-import { sisaTagihan } from '@/utils/tagihan'
 import ReceiptModal from '@/components/ReceiptModal.vue'
 import { buildReceiptStrukHtml } from '@/utils/receiptHtml'
 import { cetakStrukPdf } from '@/utils/strukBuilder'
 // v.1.2.6: kelompokkan struk per TRANSAKSI (nomor struk lama bisa kembar antar santri)
 import { kunciTransaksi } from '@/utils/trxStruk'
-import { computeVaSantri, formatVa, isBmtAktif } from '@/utils/bmtVa'
 
 // v.82.0526: support deep-link dari TagihanView — auto-fill form transfer
 const route = useRoute()
@@ -727,9 +525,10 @@ const isSantriOnly = computed(() => auth.sesiAktif?.role === 'santri')
 const { children: waliChildren } = useWaliChildren(santriList)
 
 // v.87.0526: tabsSantri (3-tab) DIHAPUS — diganti alur berlangkah (pilih metode -> bayar) + riwayat via ikon.
-// v.97.0626: VA aktif mengikuti settings BMT (bmt_aktif). Default OFF → tetap "Coming soon" (disabled).
-const bmtAktif = computed(() => isBmtAktif(settings.settings))
-const bmtNama = computed(() => (settings.settings || {}).bmt_nama || '')
+// v.87.0526: tabsSantri (3-tab) DIHAPUS — diganti alur berlangkah + riwayat via ikon.
+// v.1.0.1: metode Virtual Account (BMT) DIBUANG atas permintaan Kyai — lembaga pembeli
+//   tak memakainya. Daftar ini sengaja tetap berbentuk daftar: menambah metode baru
+//   nanti (mis. QRIS) cukup menambah satu entri, tanpa mengubah alur langkahnya.
 const methodsSantri = computed(() => [
   {
     id: 'transfer',
@@ -737,13 +536,6 @@ const methodsSantri = computed(() => [
     icon: 'fa-university',
     desc: 'Upload bukti, verifikasi admin',
     active: true
-  },
-  {
-    id: 'va',
-    label: 'Virtual Account',
-    icon: 'fa-credit-card',
-    desc: bmtAktif.value ? 'Bayar via VA ' + (bmtNama.value || 'BMT PETA') : 'Segera hadir',
-    active: bmtAktif.value
   }
 ])
 
@@ -756,139 +548,6 @@ const rekInfo = computed(() => {
     bank_atasnama: s.bank_atasnama || ''
   }
 })
-
-// v.97.0626: VA BMT — santri terpilih (dari transferForm / anak tunggal) + nomor VA tetap
-const vaSantri = computed(() => {
-  const list = waliChildren.value || []
-  if (!list.length) return null
-  const sid = transferForm.value?.santri_id
-  if (sid) {
-    const found = list.find((c) => String(c.id) === String(sid))
-    if (found) return found
-  }
-  return list.length === 1 ? list[0] : null
-})
-const vaNumber = computed(() => computeVaSantri(vaSantri.value, settings.settings))
-
-// ─── Keranjang VA (niat-bayar campur tagihan + top-up uang saku, 1 transfer) ───
-const vaIntentRaw = ref([])
-const cartSel = ref({}) // { [tagihan_id]: nominal yang dibayar }
-const cartUangSaku = ref(0)
-const creatingIntent = ref(false)
-let unsubIntent = null
-
-// sisa tagihan = nominal - sudah terbayar (satu sumber logika: utils/tagihan)
-function getSisaVa(t) {
-  return sisaTagihan(t)
-}
-// tagihan belum-lunas santri terpilih (tertua dulu)
-const vaTagihanList = computed(() => {
-  const s = vaSantri.value
-  if (!s) return []
-  return tagihanRaw.value
-    .filter((t) => String(t.santri_id) === String(s.id))
-    .filter((t) => String(t.status || 'belum') !== 'lunas' && getSisaVa(t) > 0)
-    .sort((a, b) =>
-      String(a.jatuh_tempo || a.tanggal || '').localeCompare(
-        String(b.jatuh_tempo || b.tanggal || '')
-      )
-    )
-})
-function isCarted(t) {
-  return cartSel.value[t.id] !== undefined
-}
-function toggleCart(t) {
-  const c = { ...cartSel.value }
-  if (c[t.id] !== undefined) delete c[t.id]
-  else c[t.id] = getSisaVa(t)
-  cartSel.value = c
-}
-function setCartNominal(t, val) {
-  const n = Math.max(0, Math.min(Number(val) || 0, getSisaVa(t)))
-  cartSel.value = { ...cartSel.value, [t.id]: n }
-}
-const cartItems = computed(() => {
-  const items = []
-  for (const t of vaTagihanList.value) {
-    const n = cartSel.value[t.id]
-    if (n !== undefined && Number(n) > 0) {
-      items.push({
-        tipe: 'tagihan',
-        tagihan_id: String(t.id),
-        kategori: t.kategori || 'Tagihan',
-        periode: t.periode || '',
-        nominal: Number(n)
-      })
-    }
-  }
-  const us = Number(cartUangSaku.value) || 0
-  if (us > 0) items.push({ tipe: 'uang_saku', nominal: us })
-  return items
-})
-const cartTotal = computed(() => cartItems.value.reduce((s, i) => s + (Number(i.nominal) || 0), 0))
-
-// niat-bayar milik anak-anak wali (pending + terbayar terbaru; sembunyikan yg dibatalkan)
-const myVaIntents = computed(() =>
-  vaIntentRaw.value
-    .filter((i) => allOwnedIds.value.has(String(i.santri_id)) && i.status !== 'dibatalkan')
-    .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
-    .slice(0, 10)
-)
-function vaIntentStatusLabel(s) {
-  return s === 'terbayar' ? 'Terbayar' : s === 'dibatalkan' ? 'Dibatalkan' : 'Menunggu Bayar'
-}
-function intentRincian(i) {
-  const items = Array.isArray(i.items) ? i.items : []
-  return items
-    .map((it) =>
-      it.tipe === 'uang_saku'
-        ? `Uang Saku ${fmtRp(it.nominal)}`
-        : `${it.kategori || 'Tagihan'} ${fmtRp(it.nominal)}`
-    )
-    .join(' · ')
-}
-async function buatTagihanVa() {
-  const s = vaSantri.value
-  if (!s) {
-    toast.info('Pilih anak dulu.')
-    return
-  }
-  const items = cartItems.value
-  const total = cartTotal.value
-  if (total <= 0) {
-    toast.info('Centang tagihan atau isi top-up uang saku.')
-    return
-  }
-  creatingIntent.value = true
-  try {
-    const id = `vaintent_${Date.now()}_${s.id}`
-    await setOne('keuangan_va_intent', id, {
-      id,
-      santri_id: String(s.id),
-      va: vaNumber.value,
-      total,
-      status: 'pending',
-      santri_nama: s.nama || '',
-      items,
-      created_at: new Date().toISOString()
-    })
-    toast.success('Tagihan VA dibuat — transfer ' + fmtRp(total) + ' ke nomor VA.')
-    cartSel.value = {}
-    cartUangSaku.value = 0
-  } catch (e) {
-    toast.error('Gagal buat tagihan VA: ' + (e?.message || e))
-  } finally {
-    creatingIntent.value = false
-  }
-}
-async function batalIntent(i) {
-  try {
-    await updateOne('keuangan_va_intent', i.id, { status: 'dibatalkan' })
-    toast.success('Tagihan VA dibatalkan.')
-  } catch (e) {
-    toast.error('Gagal batalkan: ' + (e?.message || e))
-  }
-}
 
 // WIB, bukan UTC: dipakai sebagai tanggal simpan pembayaran sekaligus batas `:max`
 // input tanggal — toISOString() memundurkannya sehari untuk transaksi 00:00–06:59 WIB.
@@ -1208,10 +867,6 @@ onMounted(() => {
   unsubPending = subscribeColl('pembayaran_transfer_pending', (docs) => {
     pendingRaw.value = docs || []
   })
-  // Niat-bayar VA (keranjang) — status flip 'terbayar' tampil realtime
-  unsubIntent = subscribeColl('keuangan_va_intent', (docs) => {
-    vaIntentRaw.value = docs || []
-  })
   // Initialize default selected anak kalau cuma 1
   setTimeout(() => {
     if (waliChildren.value.length === 1 && !transferForm.value.santri_id) {
@@ -1240,7 +895,7 @@ onMounted(() => {
   }, 500)
 })
 onUnmounted(() => {
-  for (const u of [unsubBayar, unsubSantri, unsubTagihan, unsubPending, unsubIntent]) {
+  for (const u of [unsubBayar, unsubSantri, unsubTagihan, unsubPending]) {
     if (u) {
       try {
         u()

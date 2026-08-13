@@ -84,14 +84,15 @@ describe('updateOne — jalur cepat (partial = kolom riil semua)', () => {
     await expect(updateOne('guru', 'g1', { status: 'Aktif' })).rejects.toThrow('boom-postgrest')
   })
 
-  it('kasus nyata: batalIntent va_intent ditolak RLS (created_by beda) harus THROW', async () => {
-    // PembayaranView.batalIntent -> { status } = kolom riil keuangan_va_intent => jalur cepat.
-    // va_intent_upd = created_by = auth.uid() OR auth_can_keuangan(): intent milik orang lain
-    // => 0 baris tanpa error => dulu toast.success('Tagihan VA dibatalkan') padahal tidak.
-    current = makeSupabase({ updateData: [], existingRow: { id: 'i1', status: 'pending' } })
-    await expect(updateOne('keuangan_va_intent', 'i1', { status: 'dibatalkan' })).rejects.toThrow(
-      /ditolak RLS|hak akses/i
-    )
+  it('kasus nyata: pembayaran transfer milik orang lain ditolak RLS harus THROW', async () => {
+    // { status } = kolom riil pembayaran_transfer_pending => jalur cepat. Baris milik wali
+    // lain: RLS menolak => 0 baris TANPA error => dulu lolos sebagai "tersimpan".
+    // (Dulu kasus ini ditulis memakai keuangan_va_intent — koleksi itu ikut dibuang
+    //  bersama fitur Virtual Account di v.1.0.1; jalur kodenya yang diuji sama saja.)
+    current = makeSupabase({ updateData: [], existingRow: { id: 'p1', status: 'pending' } })
+    await expect(
+      updateOne('pembayaran_transfer_pending', 'p1', { status: 'verified' })
+    ).rejects.toThrow(/ditolak RLS|hak akses/i)
   })
 })
 
