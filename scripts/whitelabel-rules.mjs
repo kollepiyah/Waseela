@@ -101,6 +101,68 @@ export const RULES_SRC = [
   ['silhouette putih Ammu', 'silhouette putih logo app'],
   ['(auto-download) → Ammu.', '(auto-download) → aplikasi.'],
 
+  // ── Istilah "BMT" di teks yang DILIHAT PEMBELI (Kyai, 13 Agu 2026) ──────────
+  // Dua hal berbeda, dua perlakuan berbeda:
+  //   1. Virtual Account BMT — DIBUANG seluruhnya di v.1.0.1 (kode + tabel + RPC).
+  //      Blok VA di PembayaranView & PengaturanKeuanganView sudah tak ada, dan kedua
+  //      berkas itu masuk MILIK_WASEELA di sync-from-ammu supaya tak ditarik balik.
+  //   2. Pencairan bisyaroh — TETAP ADA, cuma namanya digenerikkan: lembaga pembeli
+  //      mentransfer lewat bank, bukan BMT. Berkas-berkasnya (BisyarohView, GuruView,
+  //      GuruFormView, importMap, useGuruForm) MASIH ditarik dari hulu, jadi aturannya
+  //      wajib di sini — menambal berkasnya langsung akan hilang di sync berikutnya.
+  // Nama kolom DB (`rek_bmt`) & nilai lama (`metode_cair: 'bmt'`) sengaja TIDAK diubah:
+  // tak terlihat pembeli, dan mengubahnya menyentuh data yang sudah tersimpan.
+  [
+    'Ekspor daftar pencairan via BMT (Excel) — slip non-cash di filter periode ini',
+    'Ekspor daftar pencairan via transfer (Excel) — slip non-tunai di filter periode ini'
+  ],
+  ['Kirim daftar pencairan via BMT ke Google Sheet', 'Kirim daftar pencairan ke Google Sheet'],
+  [
+    'Catat pencairan ke Buku Induk (setelah transfer ke rekening BMT guru)',
+    'Catat pencairan ke Buku Induk (setelah transfer ke rekening guru)'
+  ],
+  [
+    'Tandai slip terpilih dibayar Cash (tidak masuk laporan BMT)',
+    'Tandai slip terpilih dibayar tunai (tidak masuk laporan pencairan)'
+  ],
+  ['Kembalikan slip terpilih ke metode BMT', 'Kembalikan slip terpilih ke metode transfer'],
+  [/>Laporan BMT\b/g, '>Laporan Pencairan'],
+  [/>Sheet\s*\n(\s*)BMT\b/g, '>Sheet Pencairan'],
+  [/>Sheet BMT\b/g, '>Sheet Pencairan'],
+  [/<i class="fas fa-university mr-1"><\/i>Tandai BMT/g, '<i class="fas fa-university mr-1"></i>Tandai Transfer'],
+  ["'Tidak ada slip via BMT yang perlu dicairkan di filter ini'", "'Tidak ada slip transfer yang perlu dicairkan di filter ini'"],
+  ['`Laporan_Pencairan_BMT_${per}.xlsx`', '`Laporan_Pencairan_${per}.xlsx`'],
+  ["sheetName: 'Pencairan BMT'", "sheetName: 'Pencairan'"],
+  ['`Laporan Pencairan Bisyaroh via BMT — ${per}`', '`Laporan Pencairan Bisyaroh — ${per}`'],
+  ['`Laporan Pencairan BMT ${per}`', '`Laporan Pencairan ${per}`'],
+  ["'Laporan Pencairan Bisyaroh via BMT — ' + per", "'Laporan Pencairan Bisyaroh — ' + per"],
+  [/`Laporan BMT \(\$\{([^}]+)\} guru\) diekspor`/g, '`Laporan pencairan (${$1} guru) diekspor`'],
+  [
+    /`Laporan BMT \(\$\{([^}]+)\} guru\) terkirim ke Google Sheet\.`/g,
+    '`Laporan pencairan (${$1} guru) terkirim ke Google Sheet.`'
+  ],
+  [/\$\{val === 'cash' \? 'Cash' : 'BMT'\}/g, "${val === 'cash' ? 'Tunai' : 'Transfer'}"],
+  [/\(\$\{metode === 'tunai' \? 'Tunai' : 'BMT'\}\)/g, "(${metode === 'tunai' ? 'Tunai' : 'Transfer'})"],
+  // Judul kolom Excel & label formulir — impor tetap menerima judul LAMA (lihat alias
+  // di GuruView.mapGuruRow / services/importMap), jadi berkas template lama tak rusak.
+  ["header: 'No. Rekening BMT'", "header: 'No. Rekening'"],
+  ["header: 'No Rek BMT'", "header: 'No Rek'"],
+  ['Pastikan transfer ke rekening BMT guru sudah dilakukan.', 'Pastikan transfer ke rekening guru sudah dilakukan.'],
+  // Nilai BARU yang ditulis pencairan bisyaroh: 'bmt' → 'transfer'. Aman karena semua
+  // pembacaan hanya membandingkan dengan 'cash' (lihat BisyarohView), jadi baris lama
+  // ber-nilai 'bmt' tetap terbaca sebagai non-tunai.
+  ["const metode = String(s.metode_cair || '') === 'cash' ? 'tunai' : 'bmt'", "const metode = String(s.metode_cair || '') === 'cash' ? 'tunai' : 'transfer'"],
+  ["dicairkan_via: metode === 'tunai' ? 'cash' : 'bmt_manual',", "dicairkan_via: metode === 'tunai' ? 'cash' : 'transfer_manual',"],
+  ["detail: { ok, fail, total: totalRp, via: 'bmt_manual' }", "detail: { ok, fail, total: totalRp, via: 'transfer_manual' }"],
+  ['@click="tandaiMetode(\'bmt\')"', '@click="tandaiMetode(\'transfer\')"'],
+  ["const val = metode === 'cash' ? 'cash' : 'bmt'", "const val = metode === 'cash' ? 'cash' : 'transfer'"],
+  [/'No Rek BMT',(\s*\n\s*)'Pendidikan Terakhir'/g, "'No Rek',$1'Pendidikan Terakhir'"],
+  ['>No. Rekening BMT</label', '>No. Rekening</label'],
+  [/'No Rek BMT',\n(\s*)'Pendidikan'/g, "'No Rek',\n$1'Pendidikan'"],
+  ["_pick(r, 'No Rek BMT', 'Rek BMT', 'rek_bmt')", "_pick(r, 'No Rek', 'No Rek BMT', 'Rek BMT', 'rek_bmt')"],
+  ["put('rek_bmt', _pick(r, 'No Rek BMT', 'Rek BMT', 'rek_bmt'))", "put('rek_bmt', _pick(r, 'No Rek', 'No Rek BMT', 'Rek BMT', 'rek_bmt'))"],
+  ["rek_bmt: pick(r, 'No Rek BMT')", "rek_bmt: pick(r, 'No Rek') || pick(r, 'No Rek BMT')"],
+
   // Istilah dalam teks & komentar
   ['Mulai Tagih di AMMU', 'Mulai Tagih di Aplikasi'],
   ['Ammu Desktop', 'aplikasi Desktop'],

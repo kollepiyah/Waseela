@@ -235,7 +235,7 @@ export function mapGuruRow(r) {
       ),
       nig: pick(r, 'NIG'),
       // v.1.1.9: samakan ke `rek_bmt` (dulu `no_rek_bmt` → tak terbaca ekspor BMT & form guru)
-      rek_bmt: pick(r, 'No Rek BMT'),
+      rek_bmt: pick(r, 'No Rek') || pick(r, 'No Rek BMT'),
       pendidikan: pick(r, 'Pendidikan Terakhir'),
       alamat: cellText(pick(r, 'Alamat')),
       akses: {}

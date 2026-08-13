@@ -342,7 +342,7 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1 uppercase"
-              >No. Rekening BMT</label
+              >No. Rekening</label
             >
             <input
               v-model="form.rek_bmt"

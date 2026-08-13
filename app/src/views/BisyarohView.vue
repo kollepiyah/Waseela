@@ -780,22 +780,21 @@
             <!-- v.97.0626: ekspor daftar pencairan via BMT (Excel) untuk disetor ke BMT -->
             <button
               v-if="isAdminKeu && filteredSlips.length > 0"
-              title="Ekspor daftar pencairan via BMT (Excel) — slip non-cash di filter periode ini"
+              title="Ekspor daftar pencairan via transfer (Excel) — slip non-tunai di filter periode ini"
               class="text-[10px] font-black bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1 rounded-lg flex items-center gap-1"
               @click="exportLaporanBmt"
             >
-              <i class="fas fa-file-excel"></i>Laporan BMT
+              <i class="fas fa-file-excel"></i>Laporan Pencairan
             </button>
             <!-- v.100 Batch12: kirim Laporan BMT ke Google Sheet (mirip PDF) -->
             <button
               v-if="isAdminKeu && filteredSlips.length > 0 && gsheetConfigured()"
               :disabled="sendingGsheetBmt"
-              title="Kirim daftar pencairan via BMT ke Google Sheet"
+              title="Kirim daftar pencairan ke Google Sheet"
               class="text-[10px] font-black bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white px-2.5 py-1 rounded-lg flex items-center gap-1"
               @click="kirimBmtGsheet"
             >
-              <i :class="['fas', sendingGsheetBmt ? 'fa-spinner fa-spin' : 'fa-table']"></i>Sheet
-              BMT
+              <i :class="['fas', sendingGsheetBmt ? 'fa-spinner fa-spin' : 'fa-table']"></i>Sheet Pencairan
             </button>
             <!-- v.21.100.0527: bulk select hapus -->
             <label
@@ -811,7 +810,7 @@
             </label>
             <button
               v-if="isAdminKeu && selectedSlip.size > 0"
-              title="Catat pencairan ke Buku Induk (setelah transfer ke rekening BMT guru)"
+              title="Catat pencairan ke Buku Induk (setelah transfer ke rekening guru)"
               class="text-[10px] font-black bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg"
               @click="cairkanTerpilih"
             >
@@ -821,7 +820,7 @@
             </button>
             <button
               v-if="isAdminKeu && selectedSlip.size > 0"
-              title="Tandai slip terpilih dibayar Cash (tidak masuk laporan BMT)"
+              title="Tandai slip terpilih dibayar tunai (tidak masuk laporan pencairan)"
               class="text-[10px] font-black bg-amber-500 hover:bg-amber-600 text-white px-2.5 py-1 rounded-lg"
               @click="tandaiMetode('cash')"
             >
@@ -829,11 +828,11 @@
             </button>
             <button
               v-if="isAdminKeu && selectedSlip.size > 0"
-              title="Kembalikan slip terpilih ke metode BMT"
+              title="Kembalikan slip terpilih ke metode transfer"
               class="text-[10px] font-black bg-slate-500 hover:bg-slate-600 text-white px-2.5 py-1 rounded-lg"
-              @click="tandaiMetode('bmt')"
+              @click="tandaiMetode('transfer')"
             >
-              <i class="fas fa-university mr-1"></i>Tandai BMT
+              <i class="fas fa-university mr-1"></i>Tandai Transfer
             </button>
             <button
               v-if="isAdmin && selectedSlip.size > 0"
@@ -1321,7 +1320,7 @@ async function cairkanTerpilih() {
   const totalRp = belum.reduce((a, s) => a + _slipTakeHome(s), 0)
   if (
     !confirm(
-      `Cairkan ${belum.length} slip (total ${fmtRp(totalRp)})?\n\nPastikan transfer ke rekening BMT guru sudah dilakukan.\nIni mencatat kas KELUAR ke Buku Induk & menandai slip lunas.${sudah ? `\n\n(${sudah} slip dilewati: sudah cair / nominal 0)` : ''}`
+      `Cairkan ${belum.length} slip (total ${fmtRp(totalRp)})?\n\nPastikan transfer ke rekening guru sudah dilakukan.\nIni mencatat kas KELUAR ke Buku Induk & menandai slip lunas.${sudah ? `\n\n(${sudah} slip dilewati: sudah cair / nominal 0)` : ''}`
     )
   )
     return
@@ -1332,7 +1331,7 @@ async function cairkanTerpilih() {
   for (const s of belum) {
     try {
       const th = _slipTakeHome(s)
-      const metode = String(s.metode_cair || '') === 'cash' ? 'tunai' : 'bmt'
+      const metode = String(s.metode_cair || '') === 'cash' ? 'tunai' : 'transfer'
       const biId = `gaji_${s.id}`
       await setOne('keuangan_buku_induk', biId, {
         id: biId,
@@ -1340,7 +1339,7 @@ async function cairkanTerpilih() {
         nominal: th,
         tanggal: tgl,
         keterangan:
-          `Bisyaroh ${s.periode || ''} — ${s.guru_nama || ''} (${metode === 'tunai' ? 'Tunai' : 'BMT'})`.trim(),
+          `Bisyaroh ${s.periode || ''} — ${s.guru_nama || ''} (${metode === 'tunai' ? 'Tunai' : 'Transfer'})`.trim(),
         sumber: 'gaji',
         kategori: 'Bisyaroh',
         guru_id: s.guru_id != null ? s.guru_id : '',
@@ -1353,7 +1352,7 @@ async function cairkanTerpilih() {
         status_cair: 'cair',
         dicairkan_at: serverTimestamp(),
         dicairkan_by: operator,
-        dicairkan_via: metode === 'tunai' ? 'cash' : 'bmt_manual',
+        dicairkan_via: metode === 'tunai' ? 'cash' : 'transfer_manual',
         buku_induk_id: biId
       })
       ok++
@@ -1368,7 +1367,7 @@ async function cairkanTerpilih() {
     action: 'cairkan_bisyaroh',
     target: 'keuangan_gaji',
     ids: belum.map((s) => String(s.id)),
-    detail: { ok, fail, total: totalRp, via: 'bmt_manual' }
+    detail: { ok, fail, total: totalRp, via: 'transfer_manual' }
   })
   if (fail > 0) toast.warning(`${ok} dicairkan & dicatat, ${fail} gagal — cek console`)
   else toast.success(`${ok} slip dicairkan & tercatat di Buku Induk`)
@@ -1379,7 +1378,7 @@ async function tandaiMetode(metode) {
   if (!isAdminKeu.value) return
   const ids = Array.from(selectedSlip.value)
   if (ids.length === 0) return
-  const val = metode === 'cash' ? 'cash' : 'bmt'
+  const val = metode === 'cash' ? 'cash' : 'transfer'
   let ok = 0
   for (const id of ids) {
     try {
@@ -1390,7 +1389,7 @@ async function tandaiMetode(metode) {
     }
   }
   selectedSlip.value = new Set()
-  toast.success(`${ok} slip ditandai ${val === 'cash' ? 'Cash' : 'BMT'}`)
+  toast.success(`${ok} slip ditandai ${val === 'cash' ? 'Tunai' : 'Transfer'}`)
 }
 
 // v.97.0626: ekspor daftar pencairan via BMT (Excel) — slip non-cash & belum cair di filter periode aktif.
@@ -1403,7 +1402,7 @@ async function exportLaporanBmt() {
       _slipTakeHome(s) > 0
   )
   if (target.length === 0) {
-    toast.info('Tidak ada slip via BMT yang perlu dicairkan di filter ini')
+    toast.info('Tidak ada slip transfer yang perlu dicairkan di filter ini')
     return
   }
   const guruById = (id) => (guruRaw.value || []).find((g) => String(g.id) === String(id)) || {}
@@ -1423,18 +1422,18 @@ async function exportLaporanBmt() {
   try {
     const { exportSimple } = useExcel()
     await exportSimple(rows, {
-      filename: `Laporan_Pencairan_BMT_${per}.xlsx`,
-      sheetName: 'Pencairan BMT',
-      title: `Laporan Pencairan Bisyaroh via BMT — ${per}`,
+      filename: `Laporan_Pencairan_${per}.xlsx`,
+      sheetName: 'Pencairan',
+      title: `Laporan Pencairan Bisyaroh — ${per}`,
       columns: [
         { key: 'no', header: 'No', width: 6 },
         { key: 'nama', header: 'Nama Guru/Pegawai', width: 30 },
-        { key: 'rek_bmt', header: 'No. Rekening BMT', width: 22 },
+        { key: 'rek_bmt', header: 'No. Rekening', width: 22 },
         { key: 'nominal', header: 'Nominal (Rp)', width: 16 },
         { key: 'periode', header: 'Periode', width: 14 }
       ]
     })
-    toast.success(`Laporan BMT (${target.length} guru) diekspor`)
+    toast.success(`Laporan pencairan (${target.length} guru) diekspor`)
   } catch (e) {
     toast.error('Gagal ekspor: ' + (e.message || e))
   }
@@ -1457,7 +1456,7 @@ async function kirimBmtGsheet() {
       _slipTakeHome(s) > 0
   )
   if (target.length === 0) {
-    toast.info('Tidak ada slip via BMT yang perlu dicairkan di filter ini')
+    toast.info('Tidak ada slip transfer yang perlu dicairkan di filter ini')
     return
   }
   sendingGsheetBmt.value = true
@@ -1479,22 +1478,22 @@ async function kirimBmtGsheet() {
     const ss = settingsStore.settings || {}
     const { url } = await _sendBmtSheet({
       rows,
-      title: `Laporan Pencairan BMT ${per}`,
-      sheetName: 'Pencairan BMT',
+      title: `Laporan Pencairan ${per}`,
+      sheetName: 'Pencairan',
       kop: [
         ss.kopLine1 || BRAND.kopLine1,
-        `Laporan Pencairan Bisyaroh via BMT — ${per}`
+        `Laporan Pencairan Bisyaroh — ${per}`
       ].filter(Boolean),
       subtitle: `${target.length} guru/pegawai`,
       columns: [
         { key: 'no', header: 'No', width: 6 },
         { key: 'nama', header: 'Nama Guru/Pegawai', width: 30 },
-        { key: 'rek_bmt', header: 'No. Rekening BMT', width: 22 },
+        { key: 'rek_bmt', header: 'No. Rekening', width: 22 },
         { key: 'nominal', header: 'Nominal (Rp)', width: 16 },
         { key: 'periode', header: 'Periode', width: 14 }
       ]
     })
-    toast.success(`Laporan BMT (${target.length} guru) terkirim ke Google Sheet.`)
+    toast.success(`Laporan pencairan (${target.length} guru) terkirim ke Google Sheet.`)
     try {
       window.open(url, '_blank')
     } catch (e) {
@@ -2404,7 +2403,7 @@ async function exportRekapSlipExcel() {
       columns: [
         { key: 'no', header: 'No', width: 6 },
         { key: 'nama', header: 'Nama', width: 28 },
-        { key: 'rek_bmt', header: 'No. Rekening BMT', width: 22 },
+        { key: 'rek_bmt', header: 'No. Rekening', width: 22 },
         { key: 'lembaga', header: 'Lembaga', width: 18 },
         { key: 'jabatan', header: 'Jabatan', width: 18 },
         { key: 'periode', header: 'Periode', width: 12 },

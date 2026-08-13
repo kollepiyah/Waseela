@@ -60,6 +60,7 @@ const ABAIKAN = [
   /services[\\/]firebase\.js$/, // config Firebase Waseela
   /config[\\/]brand\.js$/,
   /functions[\\/]bmt-webhook[\\/]/, // integrasi BMT tak dipakai
+  /utils[\\/]bmtVa\.js$/, // fitur Virtual Account DIBUANG v.1.0.1 (Kyai, 13 Agu 2026)
   /tests[\\/]unit[\\/]escapeHtml\.test\.js$/, // menguji helper legacy pra-Vue
   /tests[\\/]unit[\\/]extractFirstLink\.test\.js$/
 ]
@@ -87,7 +88,17 @@ const MILIK_WASEELA = [
   'app/src/components/layout/AppSidebar.vue', // hak cipta + versi
   'app/src/components/ribbon/RibbonBackstage.vue',
   'app/src/components/ribbon/RibbonStatusBar.vue',
-  'app/src/composables/useExcel.js', // hulu tanpa blok import
+  // Fitur Virtual Account (BMT) DIBUANG v.1.0.1 — bukan sekadar ganti kata: satu langkah
+  // alur bayar, satu seksi pengaturan, dan satu koleksi ikut hilang. Kalau berkas-berkas
+  // ini ditarik ulang dari hulu, VA-nya HIDUP LAGI diam-diam (tabelnya sudah di-DROP,
+  // jadi wali akan melihat galat, bukan sekadar fitur tak terpakai).
+  'app/src/views/PembayaranView.vue', // langkah VA + keranjang niat-bayar
+  'app/src/views/TabunganView.vue', // badge sumber 'bmt_va'
+  'app/src/utils/metodeBayar.js', // sumber transfer: VA dibuang, nilai lama tetap dikenali
+  'app/src/services/db.js', // koleksi keuangan_va_intent dibuang dari COLS + realtime
+  // Impor absensi kini menerima LOG MENTAH mesin (Solution X609 dkk) lewat utils/scanMesin.
+  'app/src/views/AbsensiGuruView.vue',
+  'app/src/composables/useExcel.js', // hulu tanpa blok import + parser CSV/TSV Waseela
   'app/src/composables/useLocalNotif.js',
   'app/src/composables/useFingerprintSync.js',
   'app/src/composables/useMenus.js',

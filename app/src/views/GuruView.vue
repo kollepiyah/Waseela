@@ -905,7 +905,7 @@ const _excelColumns = [
   { key: 'tanggal_tugas', header: 'Tgl Syahadah (DD/MM/YYYY)', width: 16 },
   { key: 'tanggal_mengabdi', header: 'Tgl Tugas/Mengabdi (DD/MM/YYYY)', width: 18 },
   { key: 'nig', header: 'NIG', width: 12 },
-  { key: 'rek_bmt', header: 'No Rek BMT', width: 18 },
+  { key: 'rek_bmt', header: 'No Rek', width: 18 },
   { key: 'pendidikan', header: 'Pendidikan Terakhir', width: 16 },
   { key: 'wa', header: 'WA', width: 14 },
   { key: 'alamat', header: 'Alamat', width: 28 },
@@ -1215,7 +1215,7 @@ async function downloadTemplateGuru() {
       'Lembaga Sekolah',
       'Tanggal Tugas (DD/MM/YYYY)',
       'NIG',
-      'No Rek BMT',
+      'No Rek',
       'Pendidikan Terakhir',
       'WA',
       'Status',
@@ -1395,7 +1395,7 @@ async function onImportGuru(e) {
       )
       put('nig', _pick(r, 'NIG', 'No Syahadah', 'EKGQ', 'ekgq', 'nig'))
       // v.99: No Rekening BMT (tujuan pencairan bisyaroh) + pendidikan + fingerprint
-      put('rek_bmt', _pick(r, 'No Rek BMT', 'Rek BMT', 'rek_bmt'))
+      put('rek_bmt', _pick(r, 'No Rek', 'No Rek BMT', 'Rek BMT', 'rek_bmt'))
       put(
         'pendidikan_terakhir',
         _pick(r, 'Pendidikan Terakhir', 'Pendidikan', 'pendidikan_terakhir')
