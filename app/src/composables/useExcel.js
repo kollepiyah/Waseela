@@ -30,6 +30,85 @@ function unwrapCellValue(v, depth = 0) {
   return '' // formula array/spill anchor / objek tak dikenal → jangan bocor
 }
 
+/** Pecah satu baris CSV/TSV, menghormati tanda kutip ganda ("" = kutip literal). */
+function pecahBaris(baris, pemisah) {
+  const sel = []
+  let buf = ''
+  let dalamKutip = false
+  for (let i = 0; i < baris.length; i++) {
+    const c = baris[i]
+    if (dalamKutip) {
+      if (c === '"') {
+        if (baris[i + 1] === '"') {
+          buf += '"'
+          i++
+        } else dalamKutip = false
+      } else buf += c
+      continue
+    }
+    if (c === '"') dalamKutip = true
+    else if (c === pemisah) {
+      sel.push(buf.trim())
+      buf = ''
+    } else buf += c
+  }
+  sel.push(buf.trim())
+  return sel
+}
+
+/**
+ * Teks CSV/TSV → array objek, sebangun dengan hasil importFile untuk xlsx:
+ * baris header dideteksi otomatis (baris ber-sel-berbeda terbanyak di 10 baris awal),
+ * baris di bawahnya jadi data. Pemisah ditebak dari isi berkas (`,` `;` tab `|`).
+ *
+ * MURNI — diekspor terpisah supaya bisa diuji tanpa DOM/berkas.
+ */
+export function parseDelimitedText(text) {
+  const baris = String(text ?? '')
+    .split(/\r\n|\r|\n/)
+    .filter((b) => b.trim() !== '')
+  if (!baris.length) return []
+
+  // Pemisah: yang menghasilkan kolom terbanyak & KONSISTEN di baris-baris awal.
+  const cuplik = baris.slice(0, 10)
+  let pemisah = ','
+  let terbanyak = 0
+  for (const kandidat of [',', ';', '\t', '|']) {
+    const jml = Math.max(...cuplik.map((b) => pecahBaris(b, kandidat).length))
+    if (jml > terbanyak) {
+      terbanyak = jml
+      pemisah = kandidat
+    }
+  }
+  if (terbanyak < 2) return [] // bukan berkas berkolom
+
+  const sel = baris.map((b) => pecahBaris(b, pemisah))
+  // Kandidat header tak pernah baris TERAKHIR: header tanpa data di bawahnya tak ada
+  // gunanya, dan pada berkas pendek (kop + header + 1 baris data) baris data justru
+  // sering menang karena selnya lebih beragam.
+  let barisHeader = 0
+  let terbaik = 0
+  const batasHeader = Math.min(10, Math.max(1, sel.length - 1))
+  for (let i = 0; i < batasHeader; i++) {
+    const unik = new Set(sel[i].filter((v) => v && v.length < 60).map((v) => v.toLowerCase()))
+    if (unik.size > terbaik) {
+      terbaik = unik.size
+      barisHeader = i
+    }
+  }
+
+  const headers = sel[barisHeader].map((h, i) => (h || `col${i + 1}`).trim())
+  const rows = []
+  for (let i = barisHeader + 1; i < sel.length; i++) {
+    const obj = {}
+    sel[i].forEach((v, k) => {
+      obj[headers[k] || `col${k + 1}`] = v
+    })
+    if (Object.values(obj).some((v) => String(v ?? '').trim() !== '')) rows.push(obj)
+  }
+  return rows
+}
+
 /**
  * v.21.25.0526: CDN-first. Local /vue/exceljs.min.js sebagai fallback (kalau offline/blocked).
  * Sebelumnya local-first → MIME 'text/html' karena rewrite rule.
@@ -211,6 +290,13 @@ export function useExcel() {
    * Scan row 1-10, ambil row dengan paling banyak cell text non-kosong sebagai header.
    */
   async function importFile(file) {
+    // v.1.0.1: berkas teks (CSV/TSV/TXT) ditangani parser sendiri. Kotak unggah sejak
+    // dulu menulis `accept=".xlsx,.csv"`, padahal ExcelJS hanya membaca xlsx — CSV
+    // selalu berakhir "Parse gagal". Ini muncul saat mesin absensi pembeli (Solution
+    // X609) ternyata mengekspor CSV dari aplikasi bawaannya.
+    if (/\.(csv|tsv|txt)$/i.test(String(file?.name || ''))) {
+      return parseDelimitedText(await file.text())
+    }
     const ExcelJS = await loadExcelJS()
     const wb = new ExcelJS.Workbook()
     const buf = await file.arrayBuffer()

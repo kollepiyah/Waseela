@@ -1307,8 +1307,10 @@
           class="text-[11px] text-[var(--text-secondary)] bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 leading-relaxed"
         >
           <i class="fas fa-file-arrow-up mr-1 text-amber-600"></i>
-          Belum ada sambungan langsung untuk merek ini. Ekspor data scan dari aplikasi bawaan
-          mesin (Excel/CSV), lalu unggah lewat menu <b>Impor</b>.
+          Mesin ini tak mendorong sendiri. Ekspor data scan dari aplikasi bawaan mesin
+          (Excel/CSV), lalu unggah di <b>Absensi Guru &rarr; Impor Fingerprint</b>. Berkas ekspor
+          dipakai apa adanya — tak perlu menambah kolom shift. Pastikan <b>ID Fingerprint</b> tiap
+          guru sudah terisi (bisa sekaligus lewat <b>Set PIN Massal</b> di layar impor itu).
         </div>
 
         <div>
@@ -2631,11 +2633,18 @@ const MEREK_MESIN = [
       'Mesin tak mengirim sendiri; data ditarik aplikasi Desktop dari folder Personnel. Perlu PC yang menyala saat sinkron.'
   },
   {
-    id: 'lainnya',
-    nama: 'Merek lain (Solution, ZKTeco, dll)',
+    id: 'solution',
+    nama: 'Solution (X609 dll)',
     metode: 'impor',
     penjelasan:
-      'Belum ada sambungan langsung. Ekspor berkas scan dari aplikasi bawaan mesin, lalu unggah lewat menu Impor.'
+      'Ekspor riwayat scan dari aplikasi bawaan mesin (atau tarik lewat flashdisk), lalu unggah di Absensi Guru → Impor Fingerprint. Berkasnya dipakai APA ADANYA — shift, jam masuk, dan jam pulang ditentukan aplikasi dari jam scan.'
+  },
+  {
+    id: 'lainnya',
+    nama: 'Merek lain (ZKTeco, dll)',
+    metode: 'impor',
+    penjelasan:
+      'Belum ada sambungan langsung. Ekspor berkas scan dari aplikasi bawaan mesin, lalu unggah di Absensi Guru → Impor Fingerprint (berkas mentah pun diterima).'
   }
 ]
 

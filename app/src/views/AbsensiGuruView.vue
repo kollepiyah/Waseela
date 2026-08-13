@@ -340,8 +340,8 @@
           <i class="fas fa-file-import text-cyan-600 mr-2"></i>Impor Data Fingerprint Guru
         </h3>
         <p class="text-xs text-[var(--text-secondary)] mb-4">
-          Upload file rekap fingerprint device (.xlsx atau .csv) untuk mengimpor data kehadiran guru
-          per shift Pagi/Sore.
+          Unggah berkas ekspor mesin absensi (.xlsx atau .csv) — <b>apa adanya</b>, tak perlu
+          dirapikan dulu. Shift, jam masuk, dan jam pulang ditentukan aplikasi dari jam scan.
         </p>
         <div
           class="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4 border-2 border-dashed border-[var(--border-default)] text-center"
@@ -371,15 +371,57 @@
             <i class="fas fa-check-circle mr-1"></i>{{ lastImportFileName }}
           </p>
         </div>
+        <!-- v.1.0.1: ringkasan hasil impor log mentah — dulu hasilnya cuma lewat toast,
+             padahal justru di sinilah ketahuan PIN yang belum dipasang & scan yang
+             jatuh di luar jam shift. -->
+        <div
+          v-if="ringkasScan"
+          class="mt-4 bg-slate-50 dark:bg-slate-800/40 border border-[var(--border-default)] rounded-xl p-3 space-y-2"
+        >
+          <p class="text-[11px] font-bold text-[var(--text-primary)]">
+            <i class="fas fa-clipboard-check text-emerald-600 mr-1"></i>
+            {{ ringkasScan.terbaca }} scan terbaca &middot;
+            <span class="text-emerald-700">{{ ringkasScan.ditulis }} absen masuk</span> &middot;
+            <span class="text-cyan-700">{{ ringkasScan.pulangDitulis }} jam pulang</span>
+            <span v-if="ringkasScan.dilewati"> &middot; {{ ringkasScan.dilewati }} dilewati</span>
+            <span v-if="ringkasScan.ditolak"> &middot; {{ ringkasScan.ditolak }} baris tak terbaca</span>
+          </p>
+          <p v-if="ringkasScan.takKenal?.length" class="text-[11px] text-amber-700 dark:text-amber-400">
+            <i class="fas fa-user-slash mr-1"></i>
+            <b>PIN/nama tak dikenal:</b> {{ ringkasScan.takKenal.slice(0, 12).join(', ')
+            }}<span v-if="ringkasScan.takKenal.length > 12">
+              &hellip; (+{{ ringkasScan.takKenal.length - 12 }})</span
+            >. Isi <b>Set PIN Massal</b> di bawah atau perbaiki ID Fingerprint gurunya.
+          </p>
+          <div v-if="ringkasScan.tanpaWindow?.length" class="text-[11px] text-rose-700 dark:text-rose-400">
+            <i class="fas fa-triangle-exclamation mr-1"></i>
+            <b>Ada scan tapi tak jadi absen</b> ({{ ringkasScan.tanpaWindow.length }}):
+            <ul class="list-disc ml-5 mt-1 space-y-0.5">
+              <li v-for="(d, i) in ringkasScan.tanpaWindow.slice(0, 5)" :key="i">
+                {{ d.nama }} &middot; {{ d.tanggal }} &middot; {{ d.jam.join(', ') }} —
+                {{ d.sebab }}
+              </li>
+            </ul>
+          </div>
+          <p v-if="ringkasScan.galat?.length" class="text-[11px] text-rose-700 dark:text-rose-400">
+            <i class="fas fa-circle-xmark mr-1"></i>{{ ringkasScan.galat.join(' · ') }}
+          </p>
+        </div>
+
         <div
           class="mt-4 bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-700 rounded-xl p-3"
         >
           <p class="text-[11px] text-cyan-800 dark:text-cyan-200">
-            <i class="fas fa-exclamation-triangle mr-1"></i>
-            <strong>Format kolom:</strong>
-            <code>tanggal</code> (YYYY-MM-DD atau DD-MM-YYYY), <code>jam</code> (HH:MM),
-            <code>fingerprint_id</code> atau <code>nama</code> guru, <code>shift</code> (pagi/sore).
-            Excel XLSX atau CSV diterima.
+            <i class="fas fa-circle-info mr-1"></i>
+            <strong>Kolom yang dicari:</strong> identitas (<code>PIN</code>, <code>No. ID</code>,
+            <code>ID Karyawan</code>, atau <code>Nama</code>) + waktu (<code>Tanggal</code> &amp;
+            <code>Jam</code> terpisah, atau satu kolom <code>Date/Time</code>). Baris kop di atas
+            judul kolom otomatis dilewati.
+          </p>
+          <p class="text-[11px] text-cyan-800 dark:text-cyan-200 mt-1.5">
+            Scan <b>terawal</b> yang jatuh di jam shift jadi <b>jam masuk</b>; scan berikutnya jadi
+            <b>jam pulang</b> (scan dobel &lt; 30 menit diabaikan). Berkas lama yang sudah punya
+            kolom <code>shift</code> tetap diterima seperti dulu.
           </p>
         </div>
 
@@ -1252,6 +1294,8 @@ import { useSettingsStore } from '@/stores/settings'
 // v.1.1.9: aturan shift = shiftDerive.js (sumber tunggal, dipakai sync mesin juga).
 //   Dulu view ini punya SALINAN sendiri yang harus disamakan manual — sudah dihapus.
 import { shiftsForGuru, shiftBatas as shiftBatasOf, deriveShift } from '@/utils/shiftDerive'
+// v.1.0.1: log scan MENTAH dari mesin (tanpa kolom shift) — lihat utils/scanMesin.
+import { adaKolomShift, rangkumScanMentah } from '@/utils/scanMesin'
 import { shiftList, shiftLabelOf, shiftById } from '@/utils/shiftMaster'
 import { materialisasiHadirIkut } from '@/utils/absensiMaterialize'
 import { guruAktifSaja } from '@/utils/guruScope' // v.1.2.0: sumber tunggal penyaring status guru
@@ -1537,10 +1581,20 @@ async function handleImportFingerprint(ev) {
   lastImportFileName.value = file.name
   importing.value = true
   importResult.value = { ok: 0, error: 0, errors: [] }
+  ringkasScan.value = null
   try {
     const rows = await importFile(file)
     if (rows.length === 0) {
       toast.warning('File kosong / tidak ada data')
+      return
+    }
+    // v.1.0.1: dua bentuk berkas, dipilah otomatis.
+    //   (a) sudah dirapikan manual → punya kolom `shift`, ditangani jalur lama di bawah;
+    //   (b) LOG MENTAH dari mesin (Solution X609 dkk) → tak ada kolom shift. Shift, jam
+    //       masuk, dan jam pulang diturunkan aplikasi lewat utils/scanMesin (aturan sama
+    //       dengan sinkron Fingerspot). Ini yang dipakai pembeli sehari-hari.
+    if (!adaKolomShift(rows)) {
+      await imporScanMentah(rows)
       return
     }
     let ok = 0
@@ -1617,6 +1671,90 @@ async function handleImportFingerprint(ev) {
   } finally {
     importing.value = false
     ev.target.value = ''
+  }
+}
+
+// =====================================================
+// IMPOR LOG SCAN MENTAH (mesin apa pun — Solution X609, ZKTeco, dll)
+//
+// Berkas ekspor mesin tak punya kolom shift; isinya deretan scan. Pemetaan scan →
+// baris absensi ada di utils/scanMesin (murni & teruji), fungsi ini tinggal menulis.
+//
+// PENJAGA (sama dengan sinkron Fingerspot, useFingerprintSync):
+//   - baris berstatus izin/sakit TIDAK ditimpa — keterangan manual selalu menang;
+//   - jam pulang hanya maju, tak pernah mundur;
+//   - PIN tak dikenal & guru yang scannya di luar window DILAPORKAN, bukan dibuang diam-diam.
+// =====================================================
+const ringkasScan = ref(null)
+
+async function imporScanMentah(rows) {
+  const settings = settingsStore.settings || {}
+  const hasil = rangkumScanMentah(rows, guruRaw.value, settings)
+  if (!hasil.terbaca) {
+    toast.error('Tak ada baris yang terbaca. Pastikan berkas memuat kolom identitas (PIN/Nama) + tanggal + jam.')
+    ringkasScan.value = { ...hasil, ditulis: 0, pulangDitulis: 0, dilewati: 0 }
+    return
+  }
+
+  const nowIso = new Date().toISOString()
+  let ditulis = 0
+  let dilewati = 0
+  const galat = []
+
+  for (const r of hasil.masuk) {
+    try {
+      const ada = await getOne('absensi_shift_guru', r.docId)
+      if (ada) {
+        const st = String(ada.status || '').toLowerCase()
+        if (st === 'izin' || st === 'sakit') {
+          dilewati++
+          continue
+        }
+        if (st === r.status && String(ada.jam || '') === r.jam) {
+          dilewati++
+          continue
+        }
+      }
+      await setOne('absensi_shift_guru', r.docId, {
+        id: r.docId,
+        guru_id: r.guru_id,
+        guru_nama: r.guru_nama,
+        periode: r.tanggal.slice(0, 7),
+        tanggal: r.tanggal,
+        jam: r.jam,
+        shift: r.shift,
+        status: r.status,
+        source: 'fingerprint_import',
+        imported_at: nowIso
+      })
+      ditulis++
+    } catch (e) {
+      galat.push(`${r.guru_nama} ${r.tanggal}: ${e.message || e}`)
+    }
+  }
+
+  // Pulang ditulis SESUDAH masuk supaya baris sasarannya sudah ada.
+  let pulangDitulis = 0
+  for (const p of hasil.pulang) {
+    try {
+      const ada = await getOne('absensi_shift_guru', p.docId)
+      if (!ada) continue // masuknya dilewati (izin/sakit) → tak ada tempat menempel
+      const st = String(ada.status || '').toLowerCase()
+      if (st === 'izin' || st === 'sakit') continue
+      if (String(ada.jam_pulang || '') >= p.jam_pulang) continue
+      await mergeOne('absensi_shift_guru', p.docId, { jam_pulang: p.jam_pulang })
+      pulangDitulis++
+    } catch (e) {
+      galat.push(`pulang ${p.tanggal}: ${e.message || e}`)
+    }
+  }
+
+  ringkasScan.value = { ...hasil, ditulis, pulangDitulis, dilewati, galat: galat.slice(0, 5) }
+  importResult.value = { ok: ditulis, error: galat.length, errors: galat.slice(0, 5) }
+  if (ditulis || pulangDitulis) {
+    toast.success(`Impor selesai: ${ditulis} absen masuk, ${pulangDitulis} jam pulang.`)
+  } else {
+    toast.warning('Tak ada baris baru — semua scan sudah tercatat atau tak cocok shift.')
   }
 }
 
