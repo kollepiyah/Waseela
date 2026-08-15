@@ -187,6 +187,18 @@
           >
             <i class="fab fa-whatsapp"></i>
           </a>
+          <!-- Sunting nominal: hanya selama tagihan BELUM disentuh pembayaran. Sesudah ada
+               cicilan, mengubah nominal diam-diam menggeser status & sisa dari angka yang
+               sudah tercetak di struk wali — itu urusan hapus lalu terbitkan ulang. -->
+          <button
+            v-if="bolehSuntingNominal(t)"
+            aria-label="Sunting nominal tagihan"
+            title="Sunting nominal (selama belum ada pembayaran)"
+            class="text-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 p-2 rounded transition"
+            @click="openEdit(t)"
+          >
+            <i class="fas fa-pen"></i>
+          </button>
           <!-- v.21.115.0528: bayar=isFullAccess (admin keuangan boleh), delete=isAdmin saja (super_admin) — konsisten dengan bulk delete -->
           <button
             v-if="isFullAccess"
@@ -229,7 +241,13 @@
       <div class="bg-[var(--bg-card)] rounded-2xl shadow-2xl max-w-md w-full p-5">
         <h3 class="text-base font-black mb-3">
           <i class="fas fa-file-invoice text-cyan-500 mr-1"></i
-          >{{ modalMode === 'bayar' ? 'Bayar Tagihan' : 'Tambah Tagihan' }}
+          >{{
+            modalMode === 'bayar'
+              ? 'Bayar Tagihan'
+              : modalMode === 'edit'
+                ? 'Sunting Nominal Tagihan'
+                : 'Tambah Tagihan'
+          }}
         </h3>
         <div v-if="modalMode === 'new'" class="space-y-2">
           <select
@@ -260,6 +278,38 @@
             type="date"
             class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
           />
+        </div>
+        <!-- Kyai 15 Agu 2026: pembeli menemukan tagihan Agustus tertulis Rp 40.000 (salah
+             ketik di Generate Khusus, kurang satu nol) lalu membetulkan tarif di Pengaturan
+             dan heran selnya tak ikut berubah. Memang tak akan: sel POS memakai nominal
+             tagihan yang SUDAH terbit, sementara tak satu pun jalur generate menimpa baris
+             yang sudah ada (cron ignoreDuplicates, dua tombol Generate meng-skip id yang
+             sudah ada). Dulu satu-satunya perbaikan adalah hapus lalu generate ulang —
+             tidak terbaca sebagai jalan keluar oleh siapa pun yang tidak membaca kode.
+             SASARAN tetap tak bisa disunting (santri/kategori/periode ikut membentuk `id`
+             dan kunci dedup); yang boleh diperbaiki hanya ANGKAnya. -->
+        <div v-else-if="modalMode === 'edit'" class="space-y-2">
+          <p class="text-xs">
+            Tagihan: <b>{{ modalTagihan?.santri_nama }}</b> ({{ modalTagihan?.kategori }} ·
+            {{ modalTagihan?.periode || '-' }})
+          </p>
+          <label class="block text-[10px] font-bold text-[var(--text-secondary)]">Nominal (Rp)</label>
+          <input
+            v-model.number="modalNominal"
+            type="number"
+            min="0"
+            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] text-right font-bold"
+          />
+          <label class="block text-[10px] font-bold text-[var(--text-secondary)]">Jatuh tempo</label>
+          <input
+            v-model="modalJatuhTempo"
+            type="date"
+            class="w-full px-3 py-2 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)]"
+          />
+          <p class="text-[10px] text-[var(--text-secondary)] italic">
+            Santri, kategori, dan periode tak bisa diubah di sini — perbaikannya lewat hapus lalu
+            generate ulang.
+          </p>
         </div>
         <div v-else class="space-y-2">
           <p class="text-xs">
@@ -565,6 +615,17 @@ function openBayar(t) {
   modalCatatan.value = ''
   modalOpen.value = true
 }
+/** Nominal boleh dibetulkan hanya selama tagihan belum tersentuh pembayaran sama sekali. */
+function bolehSuntingNominal(t) {
+  return isFullAccess.value && terbayarDari(t) === 0
+}
+function openEdit(t) {
+  modalMode.value = 'edit'
+  modalTagihan.value = t
+  modalNominal.value = Number(t?.nominal || 0)
+  modalJatuhTempo.value = String(t?.jatuh_tempo || '')
+  modalOpen.value = true
+}
 
 async function simpanModal() {
   saving.value = true
@@ -598,6 +659,41 @@ async function simpanModal() {
         createdAt: serverTimestamp()
       })
       toast.success('Tagihan tersimpan')
+    } else if (modalMode.value === 'edit') {
+      const nominalBaru = Number(modalNominal.value)
+      if (!modalTagihan.value || !(nominalBaru > 0)) {
+        toast.warning('Nominal harus lebih dari 0')
+        return
+      }
+      // Diperiksa ULANG di sini, bukan cukup saat tombolnya digambar: daftar tagihan ini
+      //   live (subscribeColl), jadi kasir lain bisa menerima pembayaran justru sementara
+      //   modal ini terbuka. Tanpa periksa ulang, angka yang sudah dicicil bisa tergeser.
+      //   Barisnya diambil ULANG dari daftar: subscribeColl mengganti isinya dengan objek
+      //   BARU, jadi `modalTagihan` memegang salinan sesaat modal dibuka — memeriksa
+      //   salinan itu berarti memeriksa keadaan yang sudah lewat.
+      const t = tagihanRaw.value.find((x) => String(x.id) === String(modalTagihan.value.id))
+      if (!t) {
+        toast.warning('Tagihan sudah tidak ada — mungkin baru dihapus.')
+        return
+      }
+      if (terbayarDari(t) !== 0) {
+        toast.warning('Tagihan sudah ada pembayarannya — nominal tak bisa disunting.')
+        return
+      }
+      const nominalLama = Number(t.nominal || 0)
+      await mergeOne('keuangan_tagihan', String(t.id), {
+        nominal: nominalBaru,
+        jatuh_tempo: modalJatuhTempo.value || t.jatuh_tempo || '',
+        status: statusTagihan(nominalBaru, 0)
+      })
+      await writeAuditLog({
+        operator: auth.sesiAktif?.nama || auth.sesiAktif?.guru || 'Admin',
+        action: 'edit_nominal',
+        target: 'keuangan_tagihan',
+        ids: [String(t.id)],
+        detail: { kategori: t.kategori, periode: t.periode, dari: nominalLama, jadi: nominalBaru }
+      })
+      toast.success('Nominal tagihan diperbarui')
     } else {
       const t = modalTagihan.value
       const newBayar = terbayarDari(t) + Number(modalBayarNominal.value || 0)

@@ -14,6 +14,7 @@ import { useSettingsStore } from '@/stores/settings'
 //   utils/syahriyah.js — POS memakai sumber yang SAMA dengan generate.
 import { hitungTagihan, jenisBerlakuUntuk, jenisTergabung } from '@/utils/syahriyah'
 import { terbayarDari } from '@/utils/tagihan'
+import { perluBarisOrphanNonbulanan } from '@/utils/posBarisTagihan'
 import { todayJakarta } from '@/utils/format'
 import { potonganAktif, terapkanPotongan } from '@/utils/potonganPos'
 
@@ -210,6 +211,28 @@ function komponenOf(label, tg) {
   return h && Array.isArray(h.komponen) ? h.komponen : []
 }
 
+/**
+ * Teks tooltip sel matriks bulanan.
+ *
+ * Kyai 15 Agu 2026: bila angkanya datang dari tagihan yang sudah terbit dan berbeda dari
+ * tarif berjalan, selisih itu DISEBUT beserta cara memperbaikinya. Tanpa ini kasir cuma
+ * melihat satu bulan yang keras kepala menolak ikut tarif baru, dan tak ada apa pun di
+ * layar yang memberitahu bahwa yang dilihatnya adalah tagihan terbit, bukan tarif.
+ */
+function judulSel(c) {
+  const dasar = c.ket + ' · ' + (c.status === 'part' ? 'sisa ' + fmtRp(c.sisa) : c.status)
+  if (!(c.tarifKini > 0)) return dasar
+  return (
+    dasar +
+    '\n\nAngka ini dari tagihan yang SUDAH terbit (' +
+    fmtRp(c.tariff) +
+    '), bukan dari tarif berjalan (' +
+    fmtRp(c.tarifKini) +
+    '). Mengubah tarif di Pengaturan tidak menyentuh tagihan yang sudah terbit — ' +
+    'betulkan lewat menu Tagihan → ikon pensil.'
+  )
+}
+
 function cellStatus(tariff, paid) {
   if (paid <= 0) return 'belum'
   if (paid < tariff - 0.5) return 'part'
@@ -245,6 +268,21 @@ const jenisSet = computed(
       )
     )
 )
+/**
+ * Jenis yang PASTI sudah punya sel/baris sendiri di layar: bulanan (sel matriks) dan
+ * tahunan (baris Nonbulanan). Dipakai daftar orphan untuk memutuskan "sudah tertangani".
+ *
+ * Kyai 15 Agu 2026: dulu keputusan itu memakai `jenisSet` — yakni TERDAFTAR atau tidak.
+ * Untuk jenis MANUAL proksi itu keliru: ia terdaftar (jadi dibuang dari daftar orphan)
+ * tetapi tak pernah mendapat baris sendiri, sebab baris hanya dibuat untuk bulanan dan
+ * tahunan. Akibatnya tagihan jenis manual yang sudah terbit — mis. KBM SD Agustus 2026
+ * Rp 800.000 — TIDAK muncul di POS sama sekali. Yang tampak cuma cip "+ KBM SD" di Item
+ * lain, yang membuat item BARU: membayarnya tidak melunasi tagihan itu, dan tagihannya
+ * tetap menggantung sebagai tunggakan.
+ */
+const jenisSudahTampil = computed(
+  () => new Set([...jenisBulanan.value, ...jenisTahunan.value].map((j) => jenisKeyStr(j.label)))
+)
 
 // ---- Matriks Bulanan ----
 const matrix = computed(() => {
@@ -268,10 +306,18 @@ const matrix = computed(() => {
       if (tariff <= 0 && !tg) return { key: 'mx_' + jk + '_' + mo.kode, na: true }
       // v.1.2.x: bulan sebelum "mulai tagih" & belum ada tagihan/bayar → netral (bukan tunggakan)
       const pre = !tg && paid <= 0 && mo.kode < mulaiKode.value
+      // Kyai 15 Agu 2026: sel yang bersandar pada tagihan TERBIT bisa berbeda angka dari
+      //   sel tetangganya yang disintesis dari tarif berjalan — dan memang tak akan ikut
+      //   berubah ketika tarif dibetulkan, sebab tak satu pun jalur generate menimpa baris
+      //   yang sudah ada. Pembeli membaca itu sebagai "bulan Agustus tidak mau berubah".
+      //   Selisihnya kini DIKATAKAN di selnya sendiri, bukan dibiarkan jadi teka-teki.
+      //   0 = tak ada yang perlu diberitakan (angkanya sama, atau tarif berjalan tak ada).
+      const tarifKini = tg && baseTariff > 0 && tariff !== baseTariff ? baseTariff : 0
       return {
         key: 'mx_' + jk + '_' + mo.kode,
         na: false,
         pre,
+        tarifKini,
         jenis: j.label,
         ket: mo.full,
         kode: mo.kode,
@@ -392,18 +438,27 @@ const nonbulananRows = computed(() => {
       komponen: komponenOf(j.label, tg)
     })
   }
-  // orphan: tagihan belum/partial T.A. berjalan yg jenisnya tak terdaftar (jangan sampai tersembunyi)
+  // orphan: tagihan belum/partial T.A. berjalan yg belum tergambar di mana pun — termasuk
+  //   tagihan jenis MANUAL, yang tak pernah punya baris sendiri (jangan sampai tersembunyi)
   const startK = ta.value.startKode
   const bulananKodes = new Set(ta.value.months.map((m) => m.kode))
   for (const t of props.allTagihan || []) {
-    const st = String(t.status || 'belum').toLowerCase()
-    if (st !== 'belum' && st !== 'partial') continue
     const pk = periodeKodeOf(t)
-    if (pk && pk < startK) continue // itu tunggakan lama
-    // Periodenya satu BULAN T.A. berjalan → sudah jadi baris matriks (orphanBulananRows).
-    //   Tanpa penjagaan ini ia tampil dua kali dan bisa masuk keranjang dua kali pula.
-    if (pk && bulananKodes.has(pk)) continue
-    if (jenisSet.value.has(tagJenis(t))) continue
+    // Penggolongannya di utils/posBarisTagihan.js — murni & berpagar tes. Alasannya panjang
+    //   dan ditulis di sana; ringkasnya: pertanyaannya "sudah tergambar di tempat lain?",
+    //   BUKAN "jenisnya terdaftar?" — untuk jenis manual dua pertanyaan itu beda jawabannya.
+    if (
+      !perluBarisOrphanNonbulanan({
+        status: t.status,
+        periodeKode: pk,
+        jenisKey: tagJenis(t),
+        startKode: startK,
+        bulanTA: bulananKodes,
+        jenisSudahTampil: jenisSudahTampil.value,
+        jenisTerdaftar: jenisSet.value
+      })
+    )
+      continue
     const tariff = Number(t.nominal || 0)
     const paid = terbayarDari(t)
     rows.push({
@@ -755,12 +810,8 @@ function onBackdrop(e) {
                             <div
                               v-else
                               class="cell"
-                              :class="[c.status, { pick: inCart(c.key) }]"
-                              :title="
-                                c.ket +
-                                ' · ' +
-                                (c.status === 'part' ? 'sisa ' + fmtRp(c.sisa) : c.status)
-                              "
+                              :class="[c.status, { pick: inCart(c.key), beda: c.tarifKini > 0 }]"
+                              :title="judulSel(c)"
                               @click="toggleCell(c)"
                             >
                               {{ fmtRp(c.tariff) }}
@@ -1371,6 +1422,28 @@ td.jns {
 .cell.pick {
   outline: 3px solid #065f46;
   outline-offset: 1px;
+}
+/* Nominalnya dari tagihan terbit dan BEDA dari tarif berjalan. Sengaja hanya titik kecil:
+   warna status (merah/pink/hijau) menjawab "sudah lunas belum" dan itu yang pertama dicari
+   mata kasir — pertanyaan tarif tak boleh menumpanginya. Uraiannya di tooltip. */
+.cell.beda {
+  position: relative;
+}
+.cell.beda::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #d97706;
+  box-shadow: 0 0 0 1.5px #fff;
+}
+:global(.dark) .cell.beda::after,
+.dark-mode .cell.beda::after {
+  background: #fbbf24;
+  box-shadow: 0 0 0 1.5px #18181b;
 }
 :global(.dark) .cell.belum,
 .dark-mode .cell.belum {
