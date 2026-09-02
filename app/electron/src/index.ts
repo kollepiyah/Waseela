@@ -13,6 +13,8 @@ import { execFile } from 'child_process'
 import { autoUpdater } from 'electron-updater'
 import unhandled from 'electron-unhandled'
 import { readAttLog } from './fingerprint-sync'
+import { readZkAttLog } from './solution-sync'
+import { readAttMdbLog } from './att-mdb-sync'
 
 unhandled()
 
@@ -753,5 +755,30 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
+  }
+})
+
+// Tarik log LANGSUNG dari mesin ZKTeco/Solution lewat TCP 4370 — tanpa software vendor.
+// Renderer: window.electronAPI.readZkAttLog({ host, port }) → { ok, rows, count } | { ok:false, error }
+// Keluarannya sebangun dengan read-attlog di atas, jadi renderer memakai engine yang sama.
+ipcMain.handle('fingerprint:read-zk', async (_event, config: { host?: string; port?: number } = {}) => {
+  try {
+    const rows = await readZkAttLog({ host: config?.host || (undefined as any), port: config?.port })
+    return { ok: true, rows, count: rows.length }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || String(e) }
+  }
+})
+
+// Baca att2000.mdb milik software "Attendance Management" (ZKTeco) lewat Jet 4.0.
+// CADANGAN untuk read-zk di atas: dipakai saat PC ini TAK sejaringan dengan mesin.
+// Renderer: window.electronAPI.readAttMdbLog({ mdbPath }) → { ok, rows, count } | { ok:false, error }
+// Keluarannya sebangun dengan dua handler di atas, jadi renderer memakai engine yang sama.
+ipcMain.handle('fingerprint:read-att-mdb', async (_event, config: { mdbPath?: string } = {}) => {
+  try {
+    const rows = await readAttMdbLog(config || {})
+    return { ok: true, rows, count: rows.length }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || String(e) }
   }
 })

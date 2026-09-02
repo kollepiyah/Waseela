@@ -6,7 +6,7 @@
       <div class="rb-section-title">
         <span class="ic"><RibbonIcon name="clock" :size="22" /></span>
         <span class="st">Mesin Absensi</span>
-        <span class="note">Sinkron scan sidik jari (Fingerspot) → absensi guru</span>
+        <span class="note">Sinkron scan sidik jari → absensi guru</span>
       </div>
 
       <!-- Kartu pengaturan -->
@@ -14,6 +14,20 @@
         <div class="rb-card-h"><h3>Pengaturan</h3></div>
 
         <label class="fp-field">
+          <span class="fp-lab"><RibbonIcon name="clock" :size="15" /> Merek mesin</span>
+          <select v-model="merek" class="fp-input">
+            <option value="fingerspot">Fingerspot — baca software Personnel di PC ini</option>
+            <option value="solution">Solution / ZKTeco — tarik langsung dari mesin</option>
+            <option value="attmdb">Attendance Management — baca database software di PC ini</option>
+          </select>
+          <span class="fp-hint">
+            Merek menentukan dari mana scan diambil. Sesudah itu perlakuannya sama: shift,
+            jam masuk, dan jam pulang tetap ditentukan aplikasi dari jam scan.
+          </span>
+        </label>
+
+        <!-- Fingerspot: menempel pada software vendor di PC ini. -->
+        <label v-if="merek === 'fingerspot'" class="fp-field">
           <span class="fp-lab">
             <RibbonIcon name="folder" :size="15" /> Folder Fingerspot Personnel
           </span>
@@ -32,6 +46,69 @@
             Kosongkan untuk pakai lokasi default: <code>{{ DEFAULT_PATH }}</code>
           </span>
         </label>
+
+        <!-- Solution/ZKTeco: mesin ditarik langsung lewat jaringan, tanpa software vendor. -->
+        <template v-else-if="merek === 'solution'">
+          <label class="fp-field">
+            <span class="fp-lab"><RibbonIcon name="refresh" :size="15" /> Alamat IP mesin</span>
+            <input
+              v-model="hostInput"
+              type="text"
+              class="fp-input"
+              placeholder="192.168.1.201"
+              spellcheck="false"
+              autocapitalize="none"
+              autocorrect="off"
+              @change="saveHost"
+              @keyup.enter="saveHost"
+            />
+            <span class="fp-hint">
+              Lihat di mesin: Menu → Komunikasi → Ethernet. PC ini harus SEJARINGAN dengan
+              mesin — kalau beda jaringan, sinkron tak akan pernah menemukannya.
+            </span>
+          </label>
+
+          <label class="fp-field">
+            <span class="fp-lab"><RibbonIcon name="clock" :size="15" /> Port</span>
+            <input v-model.number="portInput" type="number" class="fp-input fp-num" @change="savePort" />
+            <span class="fp-hint">Bawaan pabrik <code>4370</code> — jangan diubah kecuali diminta teknisi.</span>
+          </label>
+        </template>
+
+        <!-- Attendance Management: menempel pada software bawaan mesin di PC ini.
+             Peringatan basi ditaruh DI SINI, bukan di dokumentasi: ini satu-satunya jalur
+             yang bisa melapor "berhasil" sambil membawa data pekan lalu. -->
+        <template v-else-if="merek === 'attmdb'">
+          <label class="fp-field">
+            <span class="fp-lab">
+              <RibbonIcon name="folder" :size="15" /> Berkas database (att2000.mdb)
+            </span>
+            <input
+              v-model="mdbInput"
+              type="text"
+              class="fp-input"
+              :placeholder="DEFAULT_MDB"
+              spellcheck="false"
+              autocapitalize="none"
+              autocorrect="off"
+              @change="saveMdb"
+              @keyup.enter="saveMdb"
+            />
+            <span class="fp-hint">
+              Kosongkan untuk pakai lokasi default: <code>{{ DEFAULT_MDB }}</code>
+            </span>
+          </label>
+
+          <p class="fp-catatan">
+            <RibbonIcon name="info" :size="14" />
+            <span>
+              Jalur ini membaca hasil tarikan software bawaan, <b>bukan mesin langsung</b>.
+              Selama operator belum menarik data dari mesin ke PC ini, sinkron tetap berhasil
+              tapi isinya data lama. Kalau PC ini sejaringan dengan mesin, pilih
+              <b>Solution / ZKTeco</b> — jalur itu tak punya langkah yang bisa terlupa.
+            </span>
+          </p>
+        </template>
 
         <div class="fp-field fp-row">
           <div class="fp-row-l">
@@ -249,6 +326,29 @@ const isSuper = computed(() => auth.sesiAktif?.role_sistem === 'super_admin')
 const pathInput = ref(store.personnelDir)
 function savePath() {
   store.setPersonnelDir(pathInput.value)
+}
+
+// Berkas att2000.mdb: pola sama dengan folder Personnel — commit saat blur/enter.
+const mdbInput = ref(store.mdbPath)
+function saveMdb() {
+  store.setMdbPath(mdbInput.value)
+}
+
+// Merek: ganti langsung (bukan tunggu blur) — ia mengubah medan yang tampil di bawahnya.
+const merek = computed({
+  get: () => store.merek,
+  set: (v) => store.setMerek(v)
+})
+
+// IP & port: edit lokal, commit saat blur/enter — sama pola dengan folder Personnel.
+const hostInput = ref(store.host)
+const portInput = ref(store.port)
+function saveHost() {
+  store.setHost(hostInput.value)
+}
+function savePort() {
+  store.setPort(portInput.value)
+  portInput.value = store.port // pantulkan nilai yang sudah dinormalkan store
 }
 
 // Toggle & interval: efek langsung ke scheduler lewat setter store.
@@ -509,6 +609,26 @@ function fmtWaktu(iso) {
   color: #15803d;
 }
 .fp-stat.fp-warn b {
+  color: #b45309;
+}
+/* Catatan "jalur ini bisa basi" di kartu Pengaturan. Amber, sebangun dengan blok
+   diagnosa di bawah: sesuatu yang perlu disadari, bukan sekadar keterangan. */
+.fp-catatan {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, #b45309 34%, transparent);
+  background: color-mix(in srgb, #b45309 8%, transparent);
+  border-radius: 9px;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--rb-text);
+}
+.fp-catatan svg {
+  flex: none;
+  margin-top: 1px;
   color: #b45309;
 }
 .fp-takkenal {

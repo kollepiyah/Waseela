@@ -35,6 +35,11 @@ electron_1.contextBridge.exposeInMainWorld('electronAPI', {
     onUpdateProgress: (cb) => electron_1.ipcRenderer.on('update:progress', (_e, p) => cb(p)),
     // Fingerprint sync (Fase 1): baca att_log dari Fingerspot Personnel (MySQL throwaway read-only)
     readAttLog: (config) => electron_1.ipcRenderer.invoke('fingerprint:read-attlog', config || {}),
+    // Solution/ZKTeco: tarik log LANGSUNG dari mesin lewat TCP 4370 (tanpa software vendor).
+    readZkAttLog: (config) => electron_1.ipcRenderer.invoke('fingerprint:read-zk', config || {}),
+    // Attendance Management (ZKTeco): baca att2000.mdb software bawaan di PC ini.
+    // Cadangan untuk readZkAttLog saat PC tak sejaringan dengan mesin.
+    readAttMdbLog: (config) => electron_1.ipcRenderer.invoke('fingerprint:read-att-mdb', config || {}),
     // Platform info
     platform: process.platform,
     isElectron: true,

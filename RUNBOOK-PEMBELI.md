@@ -123,6 +123,12 @@ Cari `200 {"ok":true,"processed":0}`.
 - Auth → **Hooks: pastikan KOSONG.** Hook `custom_access_token_hook` yatim membuat
   **login gagal 500** tanpa pesan jelas.
 - Settings → API → **Exposed schemas**: jangan me-list schema yang tak ada.
+- Auth → **URL Configuration → Redirect URLs**: tambahkan `app.waseela.id://auth-callback`.
+  Ini jalan pulang login Google di Android. Google menolak alur consent di WebView tertanam,
+  jadi halaman izinnya dibuka di browser sistem; tanpa URL ini terdaftar, Supabase
+  mengabaikan deep link-nya dan memulangkan ke Site URL — pengguna mentok di halaman galat.
+  Intent-filter di `app/android/app/src/main/AndroidManifest.xml` sudah ada, tapi ia tak
+  berarti apa-apa kalau sisi Supabase belum diisi. Web/PWA tak terpengaruh.
 
 Isi `app/.env.local`:
 
@@ -198,30 +204,85 @@ mana yang dipakai:
 | Merek | Jalur |
 |---|---|
 | HiView / Hikvision | mesin **mendorong** tiap scan ke Edge Function (`hiview-absen`) |
-| Fingerspot | ditarik **aplikasi Desktop** dari folder Personnel |
-| **Solution (X609 dll)**, ZKTeco, lainnya | **impor berkas ekspor mesin** |
+| Fingerspot | aplikasi Desktop **membaca folder Personnel** di PC |
+| **Solution (X609 dll)** | aplikasi Desktop **menarik langsung dari mesin** lewat jaringan |
+| Attendance Management | aplikasi Desktop **membaca `att2000.mdb`** software bawaan di PC |
+| ZKTeco & merek lain | impor berkas ekspor mesin |
 
-**Alur Solution X609** (jalur impor):
+### Alur Solution X609 — tarik langsung (1 Sep 2026)
 
-1. Isi **ID Fingerprint** tiap guru. Cara cepat: Absensi Guru → tab **Impor** →
+Sebelumnya X609 memakai jalur impor berkas. Sekarang aplikasi Desktop bicara sendiri ke
+mesin lewat protokol ZKTeco di port **4370**, jadi **tak perlu software bawaan mesin dan
+tak perlu operator menarik data lebih dulu**.
+
+1. **Beri mesin alamat IP tetap.** Di mesin: Menu → Komunikasi → Ethernet. Catat IP-nya,
+   dan pastikan alamat itu tak berpindah (pesan DHCP di router, atau setel statis).
+   Kalau IP-nya berubah sewaktu-waktu, sinkron berhenti tanpa sebab yang kelihatan.
+2. **Kosongkan comm key** di mesin (Menu → Komunikasi → Keamanan). Kalau terisi, mesin
+   menolak sesi dan aplikasi memberitahu persis begitu.
+3. **Isi ID Fingerprint tiap guru.** Cara cepat: Absensi Guru → tab **Impor** →
    *Set PIN Massal*, unggah berkas "Karyawan" dari aplikasi mesin (Nama + ID Karyawan).
-2. Ekspor riwayat scan dari aplikasi bawaan mesin (Excel/CSV; flashdisk juga bisa).
-3. Absensi Guru → tab **Impor** → unggah berkasnya **apa adanya**.
+   Tanpa ini semua scan masuk sebagai "PIN tak dikenal".
+4. Aplikasi **Desktop** → menu **Mesin Absensi** → merek **Solution**, isi IP-nya
+   (port biarkan 4370) → **Sinkron sekarang**. Nyalakan **Sinkron otomatis** kalau PC-nya
+   memang menyala terus.
 
-Berkas ekspor mesin tak punya kolom shift, dan memang tak perlu: jam masuk, jam pulang,
-dan shift diturunkan aplikasi dari jam scan memakai master shift di Pengaturan
-(`utils/scanMesin.js`, aturan yang sama dengan sinkron Fingerspot). Scan dobel < 30 menit
-diabaikan. Sesudah impor, layar itu menampilkan ringkasan: berapa tercatat, PIN yang tak
-dikenal, dan scan yang tak jadi absen beserta sebabnya (shift guru kosong vs jam di luar
-window) — itu daftar kerja yang perlu dibereskan, bukan sekadar hiasan.
+**Syaratnya satu: PC itu harus sejaringan dengan mesin.** Ini konsekuensi memilih jalur
+tarik — mesin tak menembak keluar, kitalah yang menghubunginya.
 
-> X609 sebenarnya mendukung ADMS (push otomatis), tapi mesin keluarga ZKTeco menembak
+> **Uji dulu tanpa membuka aplikasi.** Dari `app/electron`:
+> ```bash
+> node build/solution-sync.js 192.168.1.201
+> ```
+> Ia mencetak jumlah scan terbaca + 10 baris terakhir. Ini memisahkan soal jaringan dari
+> soal aplikasi: kalau perintah ini jalan tapi sinkron di aplikasi tidak, masalahnya bukan
+> di mesin. Mesinnya ada di tempat pembeli, jadi jalur TCP ini BELUM pernah diuji ke
+> perangkat sungguhan — perintah inilah uji pertamanya.
+
+Shift, jam masuk, dan jam pulang tetap **diturunkan aplikasi** dari jam scan memakai master
+shift di Pengaturan — aturan yang sama persis dengan Fingerspot (`utils/shiftDerive.js`),
+bukan aturan kembar. Scan dobel < 30 menit diabaikan. Sesudah sinkron, layar menampilkan
+ringkasan: berapa tercatat, PIN yang tak dikenal, dan scan yang tak jadi absen beserta
+sebabnya (shift guru kosong vs jam di luar window) — itu daftar kerja, bukan hiasan.
+
+**Jalur impor berkas tetap ada** sebagai cadangan: Absensi Guru → tab **Impor**, unggah
+ekspor mesin apa adanya (`utils/scanMesin.js`). Berguna saat PC tak sejaringan dengan mesin,
+atau saat data ditarik lewat flashdisk.
+
+### Cadangan — Attendance Management, software bawaan mesin (2 Sep 2026)
+
+Kalau PC **tak sejaringan** dengan mesin, jalur TCP di atas mati total. Sebelumnya sisa
+satu-satunya adalah impor berkas manual. Sekarang, selama software bawaan mesin
+(**Attendance Management**, keluarga ZKTeco) terpasang di PC itu, aplikasi bisa membaca
+hasil tarikannya sendiri.
+
+1. Aplikasi **Desktop** → menu **Mesin Absensi** → merek **Attendance Management**.
+2. Kosongkan kolom berkas untuk memakai lokasi bawaan
+   `C:\Program Files (x86)\Attendance Management\att2000.mdb`. Isi hanya kalau
+   pemasangannya dipindah, atau databasenya ditaruh di folder lain.
+3. **Sinkron sekarang.**
+
+Tak ada yang perlu dipasang lebih dulu: penyedia Jet 4.0 yang dipakai membaca `.mdb` sudah
+bawaan Windows. Databasenya **disalin** ke folder sementara sebelum dibaca, jadi berkas
+milik software vendor tak tersentuh dan aplikasi bawaan boleh tetap terbuka.
+
+> **⚠ Jalur ini bisa melapor "berhasil" sambil membawa data pekan lalu.** Ia membaca hasil
+> tarikan operator, bukan mesin. Selama operator belum menekan *Download data* di software
+> bawaan, tak ada scan baru yang masuk — dan tak ada yang memberi tahu. **Kalau PC-nya
+> sejaringan dengan mesin, pakai jalur Solution**, yang tak punya langkah manusia sama sekali.
+
+> **Uji dulu tanpa membuka aplikasi.** Dari `app/electron`:
+> ```bash
+> node build/att-mdb-sync.js
+> ```
+> Ia mencetak jumlah scan terbaca + 10 baris terakhir. Beri argumen path `.mdb` kalau
+> lokasinya bukan bawaan. Sama gunanya dengan uji Solution: memisahkan soal database dari
+> soal aplikasi.
+
+> ADMS (mesin mendorong sendiri) sengaja TIDAK dipakai: mesin keluarga ZKTeco menembak
 > alamat berpola `/iclock/...` lewat HTTP polos — tak cocok dengan Edge Function Supabase
-> yang HTTPS dan berpath `/functions/v1/…`. Kalau kelak ingin otomatis penuh, jalannya
-> lewat penampung kecil di aplikasi Desktop (satu jaringan dengan mesin), bukan menambal
-> `hiview-absen`.
-
----
+> yang HTTPS dan berpath `/functions/v1/…`, dan menambalnya berarti membuka penampung HTTP
+> di jaringan pembeli. Jalur tarik mencapai hasil yang sama tanpa membuka apa pun.
 
 ## 5. Rilis
 
@@ -279,7 +340,7 @@ installer wajib berada di SATU rilis — yang terbaru**:
 ## 6. Cek terakhir sebelum kirim
 
 ```bash
-npm test                              # 73 berkas, ~930 tes
+npm test                              # 85 berkas, 1089 tes (diperiksa 2 Sep 2026)
 npm run build
 node scripts/whitelabel.mjs --audit   # sumber + hasil build
 node scripts/apply-brand.mjs          # aset gambar

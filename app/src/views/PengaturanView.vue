@@ -1297,8 +1297,9 @@
         >
           <i class="fas fa-desktop mr-1 text-emerald-600"></i>
           Mesin ini ditarik oleh <b>aplikasi Desktop</b>, bukan mendorong sendiri. Buka menu
-          <b>Mesin Absensi</b> di aplikasi Desktop untuk menunjuk folder Personnel dan mengatur
-          jadwal sinkron. Tak ada kunci yang perlu diisi di sini.
+          <b>Mesin Absensi</b> di aplikasi Desktop, pilih mereknya, lalu isi <b>folder Personnel</b>
+          (Fingerspot) atau <b>alamat IP mesin</b> (Solution/ZKTeco), dan atur jadwal sinkronnya.
+          Tak ada kunci yang perlu diisi di sini.
         </div>
 
         <!-- METODE: impor berkas ekspor mesin -->
@@ -2635,9 +2636,16 @@ const MEREK_MESIN = [
   {
     id: 'solution',
     nama: 'Solution (X609 dll)',
-    metode: 'impor',
+    metode: 'desktop',
     penjelasan:
-      'Ekspor riwayat scan dari aplikasi bawaan mesin (atau tarik lewat flashdisk), lalu unggah di Absensi Guru → Impor Fingerprint. Berkasnya dipakai APA ADANYA — shift, jam masuk, dan jam pulang ditentukan aplikasi dari jam scan.'
+      'Aplikasi Desktop menarik log LANGSUNG dari mesin lewat jaringan (port 4370) — tanpa software bawaan mesin, tanpa langkah operator. Perlu PC yang sejaringan dengan mesin dan menyala saat sinkron. Impor berkas tetap bisa dipakai sebagai cadangan (mis. lewat flashdisk).'
+  },
+  {
+    id: 'attmdb',
+    nama: 'Attendance Management (software bawaan)',
+    metode: 'desktop',
+    penjelasan:
+      'Aplikasi Desktop membaca database att2000.mdb milik software bawaan mesin di PC ini. CADANGAN untuk jalur Solution: dipakai kalau PC tak sejaringan dengan mesin. Datanya hanya sesegar tarikan terakhir operator dari mesin ke PC — kalau operator lupa, sinkron tetap berhasil tapi isinya data lama.'
   },
   {
     id: 'lainnya',

@@ -1,13 +1,24 @@
-// useFingerprintSync — sinkron scan mesin Fingerspot → absensi_shift_guru (Supabase).
+// useFingerprintSync — sinkron scan mesin absensi → absensi_shift_guru (Supabase).
 //
-// HANYA di aplikasi Desktop (Electron). Alur:
-//   1) Main process baca att_log Personnel (IPC electronAPI.readAttLog) → [{device_pin, timestamp}]
-//   2) match device_pin → guru.id_fingerprint, derivasi shift (utils/shiftDerive, setelan aplikasi)
-//   3) scan TERAWAL in-window = jam masuk → tulis absensi_shift_guru via db.js (sesi login → RLS)
+// HANYA di aplikasi Desktop (Electron). TIGA sumber scan, SATU logika sesudahnya:
+//
+//   fingerspot → main process membaca att_log Fingerspot Personnel (IPC readAttLog).
+//                Menempel pada software vendor, jadi butuh operator menarik data dari
+//                mesin ke PC lebih dulu.
+//   solution   → main process menarik LANGSUNG dari mesin lewat TCP 4370, protokol
+//                ZKTeco (IPC readZkAttLog). Tanpa software vendor, tanpa langkah
+//                operator; syaratnya PC ini sejaringan dengan mesin.
+//   attmdb     → main process membaca att2000.mdb milik software "Attendance Management"
+//                (IPC readAttMdbLog). Sama menempelnya dengan fingerspot — CADANGAN untuk
+//                solution saat PC tak sejaringan dengan mesin.
+//
+// Keduanya mengembalikan bentuk yang SAMA — [{ device_pin, timestamp }] — dan itulah
+// sebabnya seluruh sisa berkas ini tak peduli mereknya: match PIN → id_fingerprint,
+// derivasi shift (utils/shiftDerive, setelan aplikasi), scan TERAWAL in-window = jam
+// masuk, sisanya kandidat pulang. Satu aturan, bukan aturan kembar per merek.
 //
 // GUARD: tak menimpa baris existing berstatus izin/sakit; skip baris identik (status+jam sama).
 // Tulis pakai source 'fingerprint' (auto) — beda dari 'fingerprint_import' (impor xlsx manual).
-// Logika = CERMIN AbsensiGuruView.importFingerprint + fp_sync.py (jembatan sementara).
 
 import { getAll, getOne, setOne, mergeOne } from '@/services/db'
 import { useSettingsStore } from '@/stores/settings'
@@ -70,25 +81,85 @@ export function hitungScanTanpaAbsen(luarPer, aggKeys, shiftsOf, batas = 100) {
 export function useFingerprintSync() {
   const settingsStore = useSettingsStore()
 
-  // sync tersedia? (Electron desktop dgn bridge readAttLog)
-  function available() {
-    return !!(typeof window !== 'undefined' && window.electronAPI && window.electronAPI.readAttLog)
+  // Peta jalur: merek → bridge Electron + bentuk argumennya.
+  //
+  // TABEL, bukan rantai ternary. Dengan dua merek sebuah ternary masih terbaca; dengan
+  // tiga, pemilihan bridge dan penyusunan argumen jadi dua rantai TERPISAH yang harus
+  // tetap sejalan — dan kalau meleset, gejalanya bukan galat melainkan sinkron yang
+  // memanggil jalur benar dengan argumen kosong lalu melapor "0 scan". Satu baris per
+  // merek menutup celah itu.
+  const JALUR = {
+    fingerspot: {
+      api: (a) => a.readAttLog,
+      arg: ({ personnelDir }) => (personnelDir ? { personnelDir } : {})
+    },
+    solution: {
+      api: (a) => a.readZkAttLog,
+      arg: ({ host, port }) => ({ host, port: port || undefined })
+    },
+    attmdb: {
+      api: (a) => a.readAttMdbLog,
+      arg: ({ mdbPath }) => (mdbPath ? { mdbPath } : {})
+    }
+  }
+
+  const jalurDari = (merek) => JALUR[merek] || JALUR.fingerspot
+
+  // Bridge mana yang tersedia — beda per merek, jadi jangan tanya "desktop?" saja.
+  // Desktop versi lama tak punya bridge merek baru: di sana ini bernilai null dan
+  // aplikasi bilang "hanya tersedia di Desktop", bukan gagal dengan galat gelap.
+  function bridge(merek) {
+    if (typeof window === 'undefined' || !window.electronAPI) return null
+    return jalurDari(merek).api(window.electronAPI) || null
+  }
+
+  function available(merek = 'fingerspot') {
+    return !!bridge(merek)
+  }
+
+  /**
+   * Ambil log scan mentah dari sumber sesuai merek.
+   * @returns [{ device_pin, timestamp }] — bentuk seragam, apa pun mereknya.
+   */
+  async function ambilScan({
+    merek = 'fingerspot',
+    personnelDir = '',
+    host = '',
+    port = 0,
+    mdbPath = ''
+  }) {
+    const fn = bridge(merek)
+    if (!fn) {
+      throw new Error(`Sinkron mesin hanya tersedia di ${BRAND.appName} Desktop (Electron).`)
+    }
+    const res = await fn(jalurDari(merek).arg({ personnelDir, host, port, mdbPath }))
+    if (!res || !res.ok) {
+      throw new Error((res && res.error) || 'Gagal membaca log scan dari mesin')
+    }
+    return res.rows || []
   }
 
   /**
    * Jalankan sinkron.
    * @param {object} opts
+   * @param {string} [opts.merek='fingerspot'] 'fingerspot' (baca Personnel) | 'solution' (TCP ke
+   *   mesin) | 'attmdb' (baca att2000.mdb software Attendance Management)
    * @param {string} [opts.personnelDir] folder install Fingerspot Personnel (kosong = default)
+   * @param {string} [opts.host] alamat IP mesin — WAJIB untuk merek solution
+   * @param {number} [opts.port] port mesin (kosong = 4370)
+   * @param {string} [opts.mdbPath] lokasi att2000.mdb (kosong = default) — merek attmdb
    * @param {boolean} [opts.commit=true] false = dry-run (hitung saja, tak menulis)
    * @returns ringkasan { scan, kandidat, written, skipIzin, skipSame, takKenal[], luar, rows[] }
    */
-  async function sync({ personnelDir = '', commit = true } = {}) {
-    if (!available()) {
-      throw new Error(`Sinkron mesin hanya tersedia di ${BRAND.appName} Desktop (Electron).`)
-    }
-    const res = await window.electronAPI.readAttLog(personnelDir ? { personnelDir } : {})
-    if (!res || !res.ok) throw new Error((res && res.error) || 'Gagal baca att_log mesin')
-    const scans = res.rows || []
+  async function sync({
+    merek = 'fingerspot',
+    personnelDir = '',
+    host = '',
+    port = 0,
+    mdbPath = '',
+    commit = true
+  } = {}) {
+    const scans = await ambilScan({ merek, personnelDir, host, port, mdbPath })
 
     const settings = settingsStore.settings || {}
     const guru = await getAll('guru')

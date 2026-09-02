@@ -59,6 +59,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   readAttLog: (config?: { personnelDir?: string }) =>
     ipcRenderer.invoke('fingerprint:read-attlog', config || {}),
 
+  // Solution/ZKTeco: tarik log LANGSUNG dari mesin lewat TCP 4370 (tanpa software vendor).
+  readZkAttLog: (config?: { host?: string; port?: number }) =>
+    ipcRenderer.invoke('fingerprint:read-zk', config || {}),
+
+  // Attendance Management (ZKTeco): baca att2000.mdb software bawaan di PC ini.
+  // Cadangan untuk readZkAttLog saat PC tak sejaringan dengan mesin.
+  readAttMdbLog: (config?: { mdbPath?: string }) =>
+    ipcRenderer.invoke('fingerprint:read-att-mdb', config || {}),
+
   // Platform info
   platform: process.platform,
   isElectron: true,

@@ -1,7 +1,8 @@
-// Fingerprint store (Fase 3) — config + status + scheduler sinkron mesin Fingerspot.
+// Fingerprint store — config + status + scheduler sinkron mesin absensi
+// (Fingerspot, Solution/ZKTeco, Attendance Management).
 //
 // HANYA berguna di aplikasi Desktop (Electron). Memegang setelan PER-PC (localStorage):
-// path Personnel + auto-sync + interval, plus status sync terakhir. Scheduler `setInterval`
+// merek + setelan jalurnya + auto-sync + interval, plus status sync terakhir. Scheduler `setInterval`
 // hidup di STORE (singleton, hidup selama app) — bukan di view — supaya auto-sync tetap
 // jalan walau user pindah halaman. Engine sinkron tetap di composable useFingerprintSync.
 //
@@ -17,6 +18,12 @@ const LS_KEY = 'waseela_fp_sync_cfg'
 const DEFAULT_INTERVAL = 30 // menit (selaras jembatan Task Scheduler lama)
 const MIN_INTERVAL = 5
 
+// Daftar merek yang punya bridge di useFingerprintSync. Dipakai DUA arah: menyaring nilai
+// basi dari localStorage, dan menolak nilai asing di setMerek(). Sebelumnya setMerek
+// memakai `v === 'solution' ? 'solution' : 'fingerspot'` — pola yang diam-diam melempar
+// merek ketiga kembali ke fingerspot, jadi pilihan pembeli tak pernah tersimpan.
+const MEREK_SAH = ['fingerspot', 'solution', 'attmdb']
+
 function loadCfg() {
   try {
     const raw = localStorage.getItem(LS_KEY)
@@ -31,7 +38,17 @@ export const useFingerprintStore = defineStore('fingerprint', () => {
   const cfg = loadCfg()
 
   // Config (persist)
+  // Merek menentukan JALUR, dan jalurnya butuh setelan berbeda:
+  //   fingerspot → personnelDir (folder software vendor di PC ini)
+  //   solution   → host + port (mesin ditarik langsung lewat jaringan)
+  //   attmdb     → mdbPath (att2000.mdb software Attendance Management di PC ini)
+  // Disimpan berdampingan, bukan satu field serbaguna: kalau pembeli sempat mencoba
+  // ketiganya, setelan yang satu tak menghapus yang lain.
+  const merek = ref(MEREK_SAH.includes(cfg.merek) ? cfg.merek : 'fingerspot')
   const personnelDir = ref(String(cfg.personnelDir || '').trim())
+  const host = ref(String(cfg.host || '').trim())
+  const port = ref(parseInt(cfg.port, 10) || 4370)
+  const mdbPath = ref(String(cfg.mdbPath || '').trim())
   const autoSync = ref(!!cfg.autoSync)
   const intervalMin = ref(Math.max(MIN_INTERVAL, parseInt(cfg.intervalMin, 10) || DEFAULT_INTERVAL))
 
@@ -49,7 +66,7 @@ export const useFingerprintStore = defineStore('fingerprint', () => {
 
   // Tersedia hanya di Electron desktop dgn bridge readAttLog.
   function available() {
-    return fp.available()
+    return fp.available(merek.value)
   }
 
   function persist() {
@@ -57,7 +74,11 @@ export const useFingerprintStore = defineStore('fingerprint', () => {
       localStorage.setItem(
         LS_KEY,
         JSON.stringify({
+          merek: merek.value,
           personnelDir: personnelDir.value,
+          host: host.value,
+          port: port.value,
+          mdbPath: mdbPath.value,
           autoSync: autoSync.value,
           intervalMin: intervalMin.value,
           lastSyncAt: lastSyncAt.value
@@ -76,7 +97,14 @@ export const useFingerprintStore = defineStore('fingerprint', () => {
     lastError.value = null
     lastTrigger.value = trigger
     try {
-      const res = await fp.sync({ personnelDir: personnelDir.value, commit: true })
+      const res = await fp.sync({
+        merek: merek.value,
+        personnelDir: personnelDir.value,
+        host: host.value,
+        port: port.value,
+        mdbPath: mdbPath.value,
+        commit: true
+      })
       lastResult.value = res
       lastSyncAt.value = new Date().toISOString()
       persist()
@@ -134,8 +162,25 @@ export const useFingerprintStore = defineStore('fingerprint', () => {
   }
 
   // Setters (persist + sinkronkan scheduler)
+  function setMerek(v) {
+    merek.value = MEREK_SAH.includes(v) ? v : 'fingerspot'
+    persist()
+    startScheduler() // jalur berganti → bridge yang dipakai scheduler ikut berganti
+  }
+  function setHost(v) {
+    host.value = String(v || '').trim()
+    persist()
+  }
+  function setPort(v) {
+    port.value = parseInt(v, 10) || 4370
+    persist()
+  }
   function setPersonnelDir(v) {
     personnelDir.value = String(v || '').trim()
+    persist()
+  }
+  function setMdbPath(v) {
+    mdbPath.value = String(v || '').trim()
     persist()
   }
   function setAutoSync(v) {
@@ -158,7 +203,11 @@ export const useFingerprintStore = defineStore('fingerprint', () => {
   }
 
   return {
+    merek,
     personnelDir,
+    host,
+    port,
+    mdbPath,
     autoSync,
     intervalMin,
     running,
@@ -171,7 +220,11 @@ export const useFingerprintStore = defineStore('fingerprint', () => {
     hapusHasilScan,
     startScheduler,
     stopScheduler,
+    setMerek,
     setPersonnelDir,
+    setMdbPath,
+    setHost,
+    setPort,
     setAutoSync,
     setIntervalMin,
     init,

@@ -1,7 +1,7 @@
 # 🤝 HANDOVER — Waseela
 
 > Untuk sesi/dev berikutnya: baca ini dulu, lalu [`RUNBOOK-PEMBELI.md`](RUNBOOK-PEMBELI.md).
-> Terakhir diperbarui: **13 Agu 2026** — v.1.0.1: impor mesin absensi + Virtual Account dibuang.
+> Terakhir diperbarui: **1 Sep 2026** — sync hulu v.1.3.7 (tanpa Tes Sekolah) + sync jadi gagal-aman.
 
 ---
 
@@ -64,7 +64,8 @@ Basis re-fork = hulu commit **`e255c5d`** (8 Agu 2026).
 | Identitas lembaga | **Runtime**, lewat UI Pengaturan | Pembeli mengisi sendiri, tanpa rebuild |
 | Repo hulu | **BACA-SAJA, selamanya** | Tak ada tulis/hapus/git di `Portal MU`; `sync-from-ammu.mjs` satu arah |
 | Virtual Account (BMT) | **DIBUANG** v.1.0.1 (kode + tabel + RPC) | Terikat satu BMT milik lembaga hulu; pembeli tak memakai, integrasinya tak pernah hidup |
-| Mesin absensi pembeli | **Solution X609**, jalur **impor berkas** | Ekspor mesin dipakai apa adanya; shift & jam pulang diturunkan aplikasi (`utils/scanMesin.js`) |
+| Mesin absensi pembeli | **Solution X609**, jalur utama **tarik langsung TCP 4370** | Mesin bicara protokol ZKTeco; Desktop menariknya sendiri — tanpa software vendor, tanpa langkah operator |
+| Cadangan saat PC tak sejaringan | **Baca `att2000.mdb`** software Attendance Management (2 Sep 2026) | Pembeli sudah memasang software bawaannya. Menutup celah "mesin ditarik lewat flashdisk" yang dulu hanya bisa lewat impor berkas manual. Menempel pada software vendor, jadi bisa BASI — karena itu cadangan, bukan pengganti |
 
 ---
 
@@ -78,6 +79,10 @@ scripts/whitelabel-rules.mjs # aturan transformasi hulu → Waseela (SATU sumber
 scripts/whitelabel.mjs       # terapkan + GERBANG audit (sumber, hasil build, target backend)
 scripts/cek-kebocoran.mjs    # GERBANG pembanding: panen nilai identitas hulu, cari di repo kita
 scripts/apply-brand.mjs      # sebar aset gambar + audit aset
+app/electron/src/fingerprint-sync.ts # Fingerspot: baca MySQL Personnel (mysqld sekali-pakai)
+app/electron/src/solution-sync.ts    # Solution/ZKTeco: tarik langsung dari mesin, TCP 4370
+app/electron/src/att-mdb-sync.ts     # Attendance Management: baca att2000.mdb (Jet 4.0, PowerShell 32-bit)
+app/src/utils/shiftDerive.js # aturan shift — SATU sumber untuk KETIGA jalur + impor berkas
 scripts/sync-from-ammu.mjs   # tarik fitur baru, satu arah
 scripts/.sync-baseline.json  # sidik jari hulu saat sync terakhir
 brand-assets/                # logo/ikon/splash sumber
@@ -150,6 +155,61 @@ Yang perlu dipahami penerus:
 - Pelajaran untuk white-label: **jangan pernah menaruh konfigurasi milik lembaga lain di
   repo produk, sekalipun "sementara"** — sekali ter-commit, ia permanen.
 
+### Cara keempat: sync MENIMPA kerja lokal (1 Sep 2026)
+
+Tiga cara di atas semuanya soal identitas hulu yang **masuk**. Yang keempat kebalikannya:
+kerja Waseela yang **keluar**, tertimpa `sync-from-ammu` tanpa suara.
+
+Sampai 1 Sep 2026 satu-satunya pengaman adalah daftar tangan `MILIK_WASEELA`. Daftar itu
+hanya memuat divergensi yang tercatat saat re-fork 8 Agu; tiga minggu kerja lokal sesudahnya
+tak pernah didaftarkan. Sync 1 Sep menimpa **32 dari 62** berkas yang ia sentuh:
+
+| Yang hilang | Akibat |
+|---|---|
+| `dispatch-push` + `auto-generate-tagihan` | pengerasan **gagal-tertutup** direvert jadi `if (!CRON_SECRET) return true`. Keduanya deploy `--no-verify-jwt` = terbuka untuk internet |
+| `ModalPOS.vue` (118 baris) | perbaikan POS 15 Agu batal; `posBarisTagihan.js` jadi util yatim |
+| `main.css`, `App.vue`, `ribbon.css`, `receiptHtml.js` | palet merek emerald direvert ke teal hulu |
+| 13 berkas | istilah "pondok" yang sudah dibuang kembali muncul |
+| `loginBg.js` | foto bangunan & santri pesantren lain kembali (base64 — lolos semua gerbang teks) |
+| `gedung.js` | nama gedung lembaga hulu kembali + bug "gedung terakhir tak bisa dihapus" |
+
+**Kenapa tak ketahuan:** tes tetap **hijau** — yang diuji util murninya, bukan perangkaian di
+layar. Gerbang teks pun diam — yang hilang bukan kata "ammu". Hanya `cek-kebocoran` yang
+menangkap dua di antaranya; sisanya ketahuan lewat pembandingan berkas-per-berkas.
+
+**Penawarnya sudah dipasang.** `.sync-baseline.json` kini menyimpan DUA sidik jari per berkas:
+
+```json
+"app/src/App.vue": { "hulu": "71af0ecc…", "kita": "3ab06e3a…" }
+```
+
+- `hulu` — isi mentah berkas hulu saat sync terakhir (dipakai seperti dulu).
+- `kita` — **isi yang ditulis sync itu**. Kalau berkas di working tree tak lagi cocok
+  dengannya, berarti ada yang mengeditnya lokal → sync **menolak menimpa** dan melaporkannya
+  di blok `⛔ TAK DITIMPA`, lengkap dengan penanda apakah hulu juga berubah (perlu gabung
+  tiga-arah) atau tidak (tak ada yang perlu ditarik).
+
+Konsekuensinya: **`MILIK_WASEELA` bukan lagi pagar, melainkan dokumentasi ALASAN.** Berkas
+yang kamu edit lokal otomatis terlindungi walau lupa didaftarkan. Yang tetap perlu masuk
+daftar hanyalah berkas yang divergensinya permanen dan alasannya layak dicatat.
+
+> Pelajaran umumnya: **pengaman yang bergantung pada ingatan pasti gagal.** Kalau sebuah
+> gerbang menuntut seseorang mendaftarkan sesuatu lebih dulu, ia akan bocor pada hari
+> orang itu lupa — dan hari itu pasti datang.
+
+### Palet merek & istilah kini jadi ATURAN, bukan kerja tangan
+
+Dua kategori yang dulu ditambal tangan saat re-fork sekarang ada di `whitelabel-rules.mjs`,
+jadi berlaku otomatis tiap sync:
+
+- **`PALET`** — 9 pasang warna teal hulu → emerald Waseela (huruf besar & kecil sama-sama
+  didaftarkan; kelas Tailwind arbitrary dan atribut SVG memakai huruf besar).
+- **Istilah "pondok"** — 15 aturan per-frasa. Sengaja BUKAN sapuan buta `" pondok"` → `""`:
+  itu akan merusak kalimat ("nomor pondok" jadi "nomor", bukan "nomor induk lembaga").
+
+Aturan ini sekalian membetulkan sisa "pondok" yang terlewat pass manual re-fork — antara lain
+"Hubungi admin pondok" di `ProfilView`, yang selama ini dilihat pengguna.
+
 ### Istilah: "pondok" DIBUANG dari teks user-facing
 
 Lembaga pembeli **bukan pondok** (keputusan Kyai, 9 Agu 2026). Mis. "Alamat Pondok" →
@@ -170,12 +230,27 @@ diputuskan: `santri` menyentuh nama tabel DB, jadi jangan disapu tanpa arahan Ky
 | `ammu_*` / `portalMu_*` | `waseela_*` | kunci localStorage, SharedPreferences |
 | `app.ammu.id` | `app.waseela.id` | applicationId, namespace, paket Java |
 | `ic_stat_ammu` | `ic_stat_waseela` | drawable + manifest + capacitor config |
+| `app.ammu.id://auth-callback` | `app.waseela.id://auth-callback` | deep link balik login Google (manifest + Redirect URLs Supabase) |
 
 ---
 
 ## Sisa pekerjaan
 
-Web sudah live. Yang tersisa (per 13 Agu 2026):
+Web sudah live. Yang tersisa (per 1 Sep 2026):
+
+**Menyusul sync hulu v.1.3.7 (1 Sep 2026) — belum dikerjakan**
+A. **`npx supabase db push`** dua migrasi baru ke Supabase pembeli:
+   `20260812120000_auth_email_internal_ketat.sql` (pencocokan identitas hanya untuk email
+   internal) dan `20260831120000_santri_upd_kepala_lembaga.sql`.
+B. **Daftarkan `app.waseela.id://auth-callback`** di Supabase → Auth → URL Configuration →
+   Redirect URLs. Tanpa itu login Google di Android tetap mentok di halaman galat browser:
+   Supabase mengabaikan deep link-nya dan memulangkan ke Site URL. Intent-filter di
+   `AndroidManifest.xml` sudah dipasang, tapi ia tak berarti apa-apa sendirian.
+C. **Bangun ulang APK** — perubahan manifest hanya berlaku sesudah build baru.
+
+> Tes Sekolah SENGAJA tak ditarik (keputusan Kyai). Berkas intinya di `ABAIKAN`,
+> perangkainya di `MILIK_WASEELA` — lihat `scripts/sync-from-ammu.mjs`. Kalau kelak
+> dipakai: buang dari kedua daftar, tarik ulang, lalu push migrasi `..._tes_sekolah.sql`.
 
 **Rilis v.1.0.1 — dikerjakan Kyai, urutannya mengikat**
 0. `npm run electron:release` (rilis GitHub `v1.0.1`) → lalu `npm run build:apk` dan
@@ -193,23 +268,40 @@ Web sudah live. Yang tersisa (per 13 Agu 2026):
 
 **Menunggu keputusan Kyai**
 3. Istilah **"pesantren"** (mudah) dan **"santri"** (dalam — menyentuh nama tabel DB).
-3b. **Absensi otomatis dari X609 (ADMS)** — mesinnya mendukung, tapi jalurnya bukan Edge
-   Function (lihat RUNBOOK §4b). Perlu diputuskan apakah dibangun penampung di aplikasi
-   Desktop, atau cukup impor manual seperti sekarang.
-4. Bucket `psb` (bukti transfer) **publik terbaca lewat URL**. Tak ada tautan yang
+3b. ~~Absensi otomatis dari X609~~ — **SELESAI 1 Sep 2026**, tapi lewat jalur TARIK, bukan
+   ADMS. `app/electron/src/solution-sync.ts` bicara protokol ZKTeco di port 4370 dan
+   menarik log sendiri. ADMS ditinggalkan karena mesin ZKTeco menembak `/iclock/...` lewat
+   HTTP polos — tak cocok dengan Edge Function, dan menambalnya berarti membuka penampung
+   HTTP di jaringan pembeli. **BELUM diuji ke mesin sungguhan** (mesinnya di tempat
+   pembeli): uji pertamanya `node build/solution-sync.js <ip>` — lihat RUNBOOK §4b.
+3c. **Jalur ketiga ditambahkan 2 Sep 2026** — `app/electron/src/att-mdb-sync.ts` membaca
+   `att2000.mdb` milik software **Attendance Management** yang sudah dipasang pembeli.
+   Dipakai HANYA kalau PC tak sejaringan dengan mesin; kelemahannya sama dengan Fingerspot
+   (menempel pada software vendor, bisa basi tanpa ada yang tahu). Berbeda dari jalur TCP,
+   jalur ini **sudah diuji end-to-end** di PC ini: 18.000 baris terbaca 1,2 detik dari
+   salinan `att2000.mdb` yang diisi data uji.
    membocorkannya, tapi URL yang tertebak = berkas terbuka. Perlu diputuskan mau
    diprivatkan (butuh signed URL di sisi baca) atau dibiarkan.
-5. **Status repo: publik atau privat?** (13 Agu 2026) Riwayat git era multi-tenant masih
-   membawa identitas lembaga hulu — lihat "cara kebocoran ke-3" di atas. Privat = penutup
-   termurah. Terpisah dari itu: **batasi kunci API Firebase** di Google Cloud Console
-   (HTTP referrer untuk Web, paket + SHA-1 untuk Android) — itu perlindungan yang nyata,
-   terlepas dari repo publik atau tidak.
+5. ~~Status repo: publik atau privat?~~ — **DIPUTUSKAN PUBLIK, 2 Sep 2026 (Kyai).**
+   Konsekuensinya sengaja dicatat: tautan unduh di halaman login dan auto-update
+   `electron-updater` sama-sama menarik dari GitHub Releases `kollepiyah/waseela`, jadi
+   keduanya tetap jalan apa adanya — **tak ada perubahan kode yang diperlukan**. Kalau
+   suatu hari repo jadi diprivatkan, DUA hal patah bersamaan dan gejalanya 404 di sisi
+   pembeli: arahkan `settings.downloadDesktop`/`downloadAndroid` ke Firebase Hosting dan
+   pindahkan `publish` electron-builder ke provider `generic`.
+   Yang MASIH berlaku dan tak terhapus oleh keputusan ini: riwayat git era multi-tenant
+   membawa identitas lembaga hulu (lihat "cara kebocoran ke-3" di atas) — dengan repo
+   publik, itu terbaca siapa saja. Dan **batasi kunci API Firebase** di Google Cloud Console
+   (HTTP referrer untuk Web, paket + SHA-1 untuk Android) — kini bukan lagi pelengkap,
+   melainkan perlindungan utama.
 
 **Butuh akun/aset — detail di RUNBOOK-PEMBELI.md**
 5. **Android**: `google-services.json` untuk paket `app.waseela.id`, **keystore BARU**
    (simpan baik-baik; hilang = tak bisa update selamanya), lalu setel `app-version.json`.
-6. **Desktop**: `npm install` dulu di `app/electron` (belum terpasang, `tsc` tak ada),
-   baru `npm run electron:make`. Berkas `build/index.js` yang ter-commit sudah bersih.
+6. **Desktop**: `app/electron/node_modules` SUDAH terpasang (tsc 5.9.3, diperiksa
+   2 Sep 2026) — `npm run electron:make` bisa langsung. Berkas `build/*.js` ikut ter-commit
+   dan itulah yang dijalankan Electron: sesudah mengubah `src/*.ts`, **jalankan `npm run
+   build` di `app/electron`** atau perubahannya tak pernah terkapalkan.
 7. **FCM + pg_cron/Vault**: secret notifikasi & penjadwalan tagihan otomatis.
 8. **Aset persegi** dari desainer, kalau ikon/splash bikinan skrip dirasa kurang.
 

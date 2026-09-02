@@ -50,6 +50,8 @@ const child_process_1 = require("child_process");
 const electron_updater_1 = require("electron-updater");
 const electron_unhandled_1 = __importDefault(require("electron-unhandled"));
 const fingerprint_sync_1 = require("./fingerprint-sync");
+const solution_sync_1 = require("./solution-sync");
+const att_mdb_sync_1 = require("./att-mdb-sync");
 (0, electron_unhandled_1.default)();
 // v.80.0526: deteksi dev mode berdasarkan file existence (bukan electron-is-dev yang false-positive
 //   saat jalanin `electron .` tanpa packaging). Kalau app/index.html ADA → production load file://.
@@ -817,5 +819,30 @@ electron_1.app.whenReady().then(() => {
 electron_1.app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         electron_1.app.quit();
+    }
+});
+// Tarik log LANGSUNG dari mesin ZKTeco/Solution lewat TCP 4370 — tanpa software vendor.
+// Renderer: window.electronAPI.readZkAttLog({ host, port }) → { ok, rows, count } | { ok:false, error }
+// Keluarannya sebangun dengan read-attlog di atas, jadi renderer memakai engine yang sama.
+electron_1.ipcMain.handle('fingerprint:read-zk', async (_event, config = {}) => {
+    try {
+        const rows = await (0, solution_sync_1.readZkAttLog)({ host: config?.host || undefined, port: config?.port });
+        return { ok: true, rows, count: rows.length };
+    }
+    catch (e) {
+        return { ok: false, error: e?.message || String(e) };
+    }
+});
+// Baca att2000.mdb milik software "Attendance Management" (ZKTeco) lewat Jet 4.0.
+// CADANGAN untuk read-zk di atas: dipakai saat PC ini TAK sejaringan dengan mesin.
+// Renderer: window.electronAPI.readAttMdbLog({ mdbPath }) → { ok, rows, count } | { ok:false, error }
+// Keluarannya sebangun dengan dua handler di atas, jadi renderer memakai engine yang sama.
+electron_1.ipcMain.handle('fingerprint:read-att-mdb', async (_event, config = {}) => {
+    try {
+        const rows = await (0, att_mdb_sync_1.readAttMdbLog)(config || {});
+        return { ok: true, rows, count: rows.length };
+    }
+    catch (e) {
+        return { ok: false, error: e?.message || String(e) };
     }
 });
