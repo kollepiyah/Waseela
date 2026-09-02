@@ -6,8 +6,9 @@
 //     useWaliChildren/ProfilView/localStorage tak perlu diubah.
 //   - admin built-in tetap `auth_method:'admin-builtin'` (deteksi admin + persist).
 //   - guru/santri `auth_method:'supabase'`.
-// Google login (loadSesiFromUser) DITUNDA ke F6c/F7 (akan via Supabase OAuth, bukan
-//   Firebase) — di-stub dgn error jelas selama migrasi.
+// Google login kini SEPENUHNYA lewat Supabase OAuth (PKCE) — lihat Step 0 initAuth.
+//   Stub `loadSesiFromUser` era Firebase sudah dibuang: alurnya redirect, jadi tak
+//   pernah ada objek user yang dikembalikan ke pemanggil.
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import * as authSupabase from '@/services/authSupabase'
@@ -80,6 +81,40 @@ function _loadFullSesi() {
 // Kompat: app lama baca firebase_uid/firebase_email; admin pakai auth_method
 // 'admin-builtin'. Petakan output buildSesi() (supabase_uid/email + auth_method
 // 'supabase') ke bentuk yang dipakai komponen lama TANPA mengubah komponen itu.
+// --- Sebab gagal login Google, dititipkan lintas-redirect ------------------------
+// Alurnya menyeberangi reload penuh (redirect ke Google lalu balik), jadi state Pinia
+//   tak bertahan — sebabnya harus dititipkan di sessionStorage. LoginView membacanya
+//   sekali di onMounted lalu menghapusnya, supaya pesan lama tak muncul lagi nanti.
+export const GOOGLE_GAGAL_KEY = 'waseela_googleGagal'
+
+function _tandaiGoogleGagal(sebab, detail = '') {
+  try {
+    sessionStorage.setItem(GOOGLE_GAGAL_KEY, JSON.stringify({ sebab, detail }))
+  } catch (e) {
+    /* mode privat / storage penuh — pesannya hilang, alurnya tak boleh ikut mati */
+  }
+  // Di web penanda ini selalu ditulis SEBELUM LoginView di-mount (balik OAuth = muat
+  //   ulang halaman), jadi cukup dibaca di onMounted. Di Android tidak: deep link tiba
+  //   saat layar login sudah lama terpasang. Event ini yang memberi tahu layarnya.
+  try {
+    window.dispatchEvent(new CustomEvent('waseela-google-gagal'))
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+/** Ambil sebab gagal login Google SEKALI (langsung dihapus). null = tak ada. */
+export function ambilSebabGoogleGagal() {
+  try {
+    const raw = sessionStorage.getItem(GOOGLE_GAGAL_KEY)
+    if (!raw) return null
+    sessionStorage.removeItem(GOOGLE_GAGAL_KEY)
+    return JSON.parse(raw)
+  } catch (e) {
+    return null
+  }
+}
+
 function _finalizeSesi(sesi) {
   if (!sesi) return sesi
   sesi.firebase_uid = sesi.supabase_uid
@@ -221,19 +256,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * loadSesiFromUser — DITUNDA (F6c/F7). Google OAuth akan dipindah ke Supabase
-   * (signInWithOAuth), bukan Firebase. Selama migrasi, pakai username/WA/NIS + sandi.
-   */
-  // eslint-disable-next-line no-unused-vars
-  async function loadSesiFromUser(user) {
-    const err = new Error(
-      'Login Google sementara dinonaktifkan selama migrasi. Silakan masuk dengan username/WA/NIS + kata sandi.'
-    )
-    err.code = 'auth/google-deferred'
-    throw err
-  }
-
   async function logout() {
     _loggingOut = true // v.111b: cegah _recoverZombieSession nyala saat logout disengaja
     // v.100 K1: hapus fcm_token user yang KELUAR sebelum sign-out — cegah notif anak/wali
@@ -335,15 +357,51 @@ export const useAuthStore = defineStore('auth', () => {
    */
   async function initAuth() {
     // Step 0: OAuth Google return — tukar ?code jadi sesi (detectSessionInUrl:false → manual).
+    // `_baruBalikOAuth` menandai bahwa putaran ini datang dari Google. Dipakai di Step 2
+    //   untuk membedakan dua kegagalan yang tampak sama di layar (dua-duanya mendarat di
+    //   /login): (a) memang belum login, vs (b) Google-nya sah tapi akunnya belum tertaut
+    //   ke guru/santri sehingga buildSesi() null. Tanpa penanda ini (b) gagal SENYAP.
+    let _baruBalikOAuth = false
     try {
       const _code = new URLSearchParams(window.location.search).get('code')
       if (_code) {
         await authSupabase.exchangeOAuthCode(_code)
+        _baruBalikOAuth = true
         const _clean = window.location.origin + window.location.pathname + window.location.hash
         window.history.replaceState({}, '', _clean)
       }
     } catch (e) {
       console.warn('[auth.initAuth] OAuth code exchange gagal:', e?.message || e)
+      _tandaiGoogleGagal('tukar-kode', e?.message || '')
+    }
+
+    // Step 0b (ANDROID/iOS): jalan pulang lewat DEEP LINK, bukan alamat halaman.
+    //   Di app native, Google dibuka di browser sistem dan memulangkan ke
+    //   `app.waseela.id://auth-callback?code=...`. Tautan itu TIDAK mengubah
+    //   window.location app, jadi Step 0 di atas tak akan pernah melihatnya — kodenya
+    //   datang lewat event `appUrlOpen` dari Capacitor.
+    //   Berbeda dengan web, di sini TAK ADA muat ulang halaman: sesudah sesi terbentuk
+    //   layar masih diam di /login, karena itu LoginView memantau isLoggedIn.
+    if (authSupabase.isNativeApp()) {
+      try {
+        const { App } = await import('@capacitor/app')
+        App.addListener('appUrlOpen', async ({ url } = {}) => {
+          if (!url || !url.includes('code=')) return
+          try {
+            // URL skema kustom tak bisa diurai URLSearchParams langsung — ambil query-nya.
+            const code = new URLSearchParams(url.split('?')[1] || '').get('code')
+            if (!code) return
+            _baruBalikOAuth = true
+            await authSupabase.exchangeOAuthCode(code)
+            // onAuthChange yang membangun sesinya (pendengarnya sudah dipasang di Step 2).
+          } catch (e) {
+            console.warn('[auth.appUrlOpen] tukar kode gagal:', e?.message || e)
+            _tandaiGoogleGagal('tukar-kode', e?.message || '')
+          }
+        })
+      } catch (e) {
+        console.warn('[auth.initAuth] @capacitor/app tak tersedia:', e?.message || e)
+      }
     }
     // Step 1: restore cepat dari localStorage (sync)
     restoreAdminSesiFromStorage()
@@ -370,16 +428,37 @@ export const useAuthStore = defineStore('auth', () => {
         fbUser.value = user
         try {
           // Rekonstruksi sesi bila kosong atau milik user lain (sesi basi dari localStorage).
-          if (!sesiAktif.value || sesiAktif.value.supabase_uid !== user.id) {
+          // Balik dari OAuth SELALU membangun ulang, walau uid-nya sama: penautan Google
+          //   dari Profil tak mengubah uid, jadi tanpa ini _syncGoogleEmail() di buildSesi
+          //   tak pernah jalan dan badge "tertaut" tak kunjung berubah — penautannya
+          //   tampak gagal padahal berhasil.
+          const _sudahPunyaSesi = !!sesiAktif.value && sesiAktif.value.supabase_uid === user.id
+          if (_baruBalikOAuth || !_sudahPunyaSesi) {
             const sesi = _finalizeSesi(await authSupabase.buildSesi())
             if (sesi) {
               sesiAktif.value = sesi
               _persistFullSesi(sesi)
               if (sesi.id === 'admin') _persistAdminSesi(sesi)
+            } else if (_baruBalikOAuth && !_sudahPunyaSesi) {
+              // Google-nya sah (token ada), tapi profilnya tak punya guru_id/santri_id.
+              // Sesi app tak bisa dibentuk -> guard melempar ke /login. Tinggalkan sebab
+              // yang bisa dibaca LoginView, kalau tidak layarnya diam tanpa penjelasan.
+              _tandaiGoogleGagal('belum-tertaut', user.email || '')
+              // Buang sesi Supabase yatimnya: kalau dibiarkan, token itu tetap hidup dan
+              //   tiap muat ulang berikutnya mengulang kegagalan yang sama TANPA penanda
+              //   (_baruBalikOAuth cuma true di putaran balik OAuth) — persis gagal senyap
+              //   yang sedang kita buang. sesiAktif memang kosong, jadi pemulih zombie
+              //   tak akan ikut menyala.
+              try {
+                await authSupabase.signOut()
+              } catch (e) {
+                console.warn('[auth.initAuth] signOut sesi Google yatim gagal:', e?.message || e)
+              }
             }
           }
         } catch (e) {
           console.warn('[auth.initAuth] buildSesi fail:', e?.message)
+          if (_baruBalikOAuth) _tandaiGoogleGagal('galat', e?.message || '')
         }
         // v.111: saat token auth siap (INITIAL_SESSION ketika sesi di-restore / SIGNED_IN
         //   ketika login) -> refetch koleksi terpusat. Ini yang memperbaiki "data kosong
@@ -425,7 +504,6 @@ export const useAuthStore = defineStore('auth', () => {
     setSesiAktif,
     updateSesiFoto,
     restoreAdminSesiFromStorage,
-    initAuth,
-    loadSesiFromUser
+    initAuth
   }
 })

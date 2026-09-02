@@ -31,11 +31,31 @@ const DRY = process.argv.includes('--dry')
 const lf = (s) => s.split('\r\n').join('\n') // repo ini LF (lihat .gitattributes)
 const sha = (s) => createHash('sha256').update(s).digest('hex').slice(0, 16)
 
-// Baseline = sidik jari berkas HULU saat sync terakhir. Dipakai KHUSUS untuk berkas
-// MILIK_WASEELA: tanpa ini mereka dilaporkan "berubah" selamanya (versi kita memang
-// beda permanen dari hulu), sehingga perubahan hulu yang sungguhan ikut tenggelam.
+// Baseline = sidik jari saat sync terakhir. DUA nilai per berkas:
+//   hulu — sidik jari isi MENTAH berkas hulu. Untuk berkas MILIK_WASEELA: tanpa ini
+//          mereka dilaporkan "berubah" selamanya (versi kita memang beda permanen dari
+//          hulu), sehingga perubahan hulu yang sungguhan ikut tenggelam.
+//   kita — sidik jari isi yang DITULIS SYNC. Inilah pengaman utamanya: kalau berkas di
+//          working tree tak lagi cocok dengannya, berarti ada yang mengeditnya lokal
+//          sesudah sync terakhir → JANGAN ditimpa, laporkan.
+//
+// KENAPA `kita` ADA (1 Sep 2026). Sebelumnya satu-satunya pengaman adalah daftar tangan
+// MILIK_WASEELA. Daftar itu hanya memuat divergensi yang tercatat saat re-fork 8 Agu;
+// tiga minggu kerja lokal sesudahnya tak pernah didaftarkan, dan sync menimpanya diam-diam
+// — termasuk MEMBATALKAN pengerasan gagal-tertutup pada dua edge function yang dipanggil
+// publik (`if (!CRON_SECRET) return false` kembali jadi `return true`), dan perbaikan POS
+// 15 Agu. Tes tetap hijau: yang diuji util murninya, bukan perangkaiannya. Gerbang teks
+// pun diam: yang hilang bukan kata "ammu".
+//
+// Pelajarannya: pengaman yang bergantung pada INGATAN pasti gagal. `kita` menutup celah
+// itu untuk SEMUA berkas — MILIK_WASEELA kini tinggal dokumentasi ALASAN, bukan pagar.
 const BASELINE_PATH = resolve(ROOT, 'scripts', '.sync-baseline.json')
-const baseline = existsSync(BASELINE_PATH) ? JSON.parse(readFileSync(BASELINE_PATH, 'utf8')) : {}
+const baselineMentah = existsSync(BASELINE_PATH) ? JSON.parse(readFileSync(BASELINE_PATH, 'utf8')) : {}
+// Bentuk lama: { path: "<sha hulu>" }. Bentuk baru: { path: { hulu, kita } }.
+const baseline = {}
+for (const [k, v] of Object.entries(baselineMentah)) {
+  baseline[k] = typeof v === 'string' ? { hulu: v } : v
+}
 const baselineBaru = {}
 
 if (!existsSync(HULU)) {
@@ -55,6 +75,11 @@ const PETA = [
 // TAK PERNAH ditarik: identitas lembaga lain, kode yang sudah diganti, fitur tak dipakai.
 const ABAIKAN = [
   /assets[\\/]muassis\.png$/,
+  // Latar layar login. Versi hulu adalah FOTO bangunan & santri pesantren lain,
+  // tersandi base64 sehingga lolos SEMUA audit teks — ketahuannya cuma lewat
+  // cek-kebocoran (pembanding byte). Waseela memakai gradasi merek; gradasi tak
+  // pernah bisa jadi "tempat milik orang lain". Sekelas muassis.png: JANGAN ditarik.
+  /assets[\\/]loginBg\.js$/,
   /\.broken\.bak$/,
   /utils[\\/]kopMuassis\.js$/, // versi Waseela config-driven
   /services[\\/]firebase\.js$/, // config Firebase Waseela
@@ -63,6 +88,18 @@ const ABAIKAN = [
   /utils[\\/]bmtVa\.js$/, // fitur Virtual Account DIBUANG v.1.0.1 (Kyai, 13 Agu 2026)
   /tests[\\/]unit[\\/]escapeHtml\.test\.js$/, // menguji helper legacy pra-Vue
   /tests[\\/]unit[\\/]extractFirstLink\.test\.js$/
+,
+  // Fitur TES SEKOLAH tak dipakai pembeli (Kyai, 1 Sep 2026). Berkas intinya tak pernah
+  // ada di Waseela; kalau ikut tertarik ia menyeret tabel `tes_sekolah` + migrasinya, dan
+  // halaman yang menunjuk tabel yang tak ada di Supabase pembeli. Empat berkas yang
+  // MEMANGGILNYA ada di MILIK_WASEELA (berkasnya sendiri tetap dipakai), bukan di sini.
+  /components[\\/]TesModeSwitch\.vue$/,
+  /composables[\\/]useTesSekolah\.js$/,
+  /utils[\\/]tesSekolah\.js$/,
+  /views[\\/]MateriTesKelolaView\.vue$/,
+  /views[\\/]TesSekolahView\.vue$/,
+  /tests[\\/]unit[\\/]tesSekolah\.test\.js$/,
+  /migrations[\\/]20260812130000_tes_sekolah\.sql$/
 ]
 
 // MILIK WASEELA — berkas yang sudah berdivergensi STRUKTURAL dari hulu (bukan sekadar
@@ -101,11 +138,74 @@ const MILIK_WASEELA = [
   'app/src/composables/useExcel.js', // hulu tanpa blok import + parser CSV/TSV Waseela
   'app/src/composables/useLocalNotif.js',
   'app/src/composables/useFingerprintSync.js',
+  // Sinkron mesin punya TIGA sumber di Waseela (2 Sep 2026), hulu hanya punya satu:
+  //   fingerspot → baca folder Personnel (sama dengan hulu)
+  //   solution   → tarik LANGSUNG dari mesin lewat TCP 4370 (app/electron/src/solution-sync.ts)
+  //   attmdb     → baca att2000.mdb Attendance Management (app/electron/src/att-mdb-sync.ts)
+  // Store menyimpan merek + setelan tiap jalur; composable memilih bridge-nya lewat tabel
+  // JALUR. Ditarik ulang dari hulu = dua jalur non-Fingerspot hilang diam-diam dan pembeli
+  // kembali ke impor berkas manual.
+  // Berkas .ts-nya sendiri aman tanpa didaftarkan di sini — sync memang tak menyentuh
+  // electron/ (lihat kepala berkas), yang rapuh justru sisi app/src ini.
+  'app/src/stores/fingerprint.js',
   'app/src/composables/useMenus.js',
   'app/src/composables/useRibbonNav.js',
   'app/src/utils/kenaikan.js',
   'app/src/utils/raporPdf.js',
   'app/src/utils/unduhan.js', // nama artefak rilis
+
+  // Dua regresi NYATA yang lolos ke working tree saat sync 1 Sep 2026 — keduanya
+  // perbaikan lokal yang dibuat SESUDAH sync terakhir, jadi belum pernah dilindungi:
+  //
+  //  * gedung.js — hulu mengisi DEFAULT_GEDUNG dengan nama gedung LEMBAGANYA SENDIRI,
+  //    dan memakai `arr.length ? arr : DEFAULT` sehingga gedung terakhir mustahil
+  //    dihapus (begitu kosong, bawaan muncul lagi). Waseela mengosongkan daftarnya dan
+  //    menghormati array kosong. Ini divergensi PERILAKU, tak bisa diungkapkan aturan
+  //    teks. Kebocorannya lolos gerbang POLA_JEJAK karena bentuknya bukan kata "ammu" —
+  //    yang menangkapnya justru tes penjaga tests/unit/gedungDaftarKosong.test.js.
+  //
+  //  * metodeBayar.test.js — versi hulu menguji sumber VA (`va_bmt`) yang SUDAH DIBUANG
+  //
+  //  * santriIdentitas.test.js — fixture alamatnya di hulu memakai ALAMAT ASLI lembaga
+  //    hulu (dusun/desa/kecamatan/kabupaten). Waseela sudah menetralkannya sekali;
+  //    sync 1 Sep 2026 mengembalikannya dan cek-kebocoran menandainya lagi.
+  'tests/unit/santriIdentitas.test.js',
+
+  // ── Divergensi yang ditemukan saat audit sync 1 Sep 2026 ──────────────────────
+  // Semuanya sempat DITIMPA sync hari itu. Yang menangkap bukan tes dan bukan gerbang
+  // teks, melainkan pembandingan berkas-per-berkas terhadap hulu. Sejak `kita` ada di
+  // baseline, kejadian serupa mustahil terulang diam-diam — daftar ini menyimpan
+  // ALASANNYA, supaya penerus tahu kenapa berkas-berkas ini memang beda.
+  //
+  //  * Dua edge function: Waseela mengeraskan `cronAuthorized` jadi GAGAL-TERTUTUP
+  //    (audit A4, 11 Agu 2026) — tanpa CRON_SECRET fungsi MENOLAK semua. Hulu masih
+  //    `if (!CRON_SECRET) return true`. Keduanya di-deploy --no-verify-jwt alias bisa
+  //    dipanggil siapa pun dari internet, jadi menariknya ulang = membuka endpoint yang
+  //    MENERBITKAN TAGIHAN dan MENGURAS notif_queue. JANGAN PERNAH ditimpa hulu.
+  'supabase/functions/dispatch-push/index.ts',
+  'supabase/functions/auto-generate-tagihan/index.ts',
+  //
+  //  * ModalPOS + TagihanView: perbaikan Kyai 15 Agu 2026 — tagihan terbit bisa
+  //    dibetulkan, dan tagihan jenis manual tak lagi hilang dari POS. Perangkaiannya
+  //    memanggil utils/posBarisTagihan.js (milik Waseela). Ditimpa = util itu jadi
+  //    YATIM sementara tesnya tetap hijau — tes menguji util murninya, bukan layarnya.
+  'app/src/components/pos/ModalPOS.vue',
+  'app/src/views/TagihanView.vue',
+  //
+  //  * authSupabase: audit A2 (11 Agu 2026) membuang lazy-create akun saat pendaftaran
+  //    mandiri dimatikan — akun hanya lahir lewat provision-akun (service-role).
+  'app/src/services/authSupabase.js',
+  //
+  //  * Sisa Virtual Account (dibuang v.1.0.1). Komentar & fixture yang menyebut VA/BMT.
+  //    Sengaja TIDAK dijadikan aturan teks: tambalannya lintas-baris dan rapuh, sedang
+  //    isinya cuma komentar — aturan rapuh lebih mahal daripada dua baris di daftar ini.
+  'app/src/utils/nisGenerator.js',
+  'app/src/utils/tagihan.js',
+  'tests/unit/dbUpdateOne.test.js',
+  //    di v.1.0.1. Versi Waseela mengujinya dari sisi lain: nilai lama tetap dibaca
+  //    Transfer, bukan Tunai. Pasangan wajib dari metodeBayar.js yang sudah di sini.
+  'app/src/utils/gedung.js',
+  'tests/unit/metodeBayar.test.js',
 
   // Jenjang Pra PTPT dinamai jumlah juz (keputusan Kyai, 8 Agu 2026) — hulu masih
   // memakai 'Level 1'..'Level 5' di kelas penempatan. Dua berkas ini sepasang:
@@ -129,7 +229,16 @@ const MILIK_WASEELA = [
   'tests/unit/toTitleCase.test.js',
   'tests/unit/hitungUsiaPadaTanggal.test.js',
   'tests/unit/unduhanRilis.test.js', // nama artefak rilis Waseela
-  'tests/unit/putusanPembaruan.test.js'
+  'tests/unit/putusanPembaruan.test.js',
+
+  // Perangkai TES SEKOLAH (Kyai, 1 Sep 2026 — fitur tak ditarik). Diperiksa satu per satu:
+  // sejak baseline 8 Agu 2026 keempatnya HANYA berubah oleh commit tes-sekolah, jadi tak
+  // ada perbaikan lain yang hilang. Kalau ditarik apa adanya, mereka meng-import berkas
+  // yang sengaja tak ada → build Vite GAGAL, bukan sekadar fitur yang mati diam-diam.
+  'app/src/router/index.js', // +2 route ke TesSekolahView & MateriTesKelolaView
+  'app/src/views/TesKenaikanView.vue', // saklar Qiraati/Sekolah (TesModeSwitch)
+  'app/src/views/MasterDataView.vue', // kartu master Materi Tes
+  'app/src/views/CapaianPrestasiView.vue' // blok "Catatan Tes Sekolah" di akun santri
 ]
 
 function walk(dir, ext, out = []) {
@@ -147,6 +256,7 @@ const beda = []
 const milikBerubah = []
 const belumBerbaseline = []
 const perluTangan = []
+const divergensiLokal = []
 
 for (const [dariRel, keRel, ext, rules, brand] of PETA) {
   const dariDir = resolve(HULU, dariRel)
@@ -157,14 +267,16 @@ for (const [dariRel, keRel, ext, rules, brand] of PETA) {
     const dst = resolve(keDir, rel)
     const relRepo = relative(ROOT, dst).split('\\').join('/')
 
-    const mentah = lf(readFileSync(src, 'utf8'))
-    baselineBaru[relRepo] = sha(mentah)
+    const mentah = lf(readFileSync(src, "utf8"))
+    const huluSha = sha(mentah)
+    const lama = baseline[relRepo] || null
+    baselineBaru[relRepo] = { hulu: huluSha }
 
     // Berkas milik Waseela: JANGAN sentuh. Laporkan hanya bila HULU-nya yang berubah
     // sejak sync terakhir (bandingkan sidik jari hulu, bukan isi berkas kita).
     if (MILIK_WASEELA.includes(relRepo)) {
-      if (baseline[relRepo] && baseline[relRepo] !== baselineBaru[relRepo]) milikBerubah.push(relRepo)
-      else if (!baseline[relRepo]) belumBerbaseline.push(relRepo)
+      if (lama && lama.hulu && lama.hulu !== huluSha) milikBerubah.push(relRepo)
+      else if (!lama) belumBerbaseline.push(relRepo)
       continue
     }
 
@@ -181,13 +293,41 @@ for (const [dariRel, keRel, ext, rules, brand] of PETA) {
       isi = withImport
     }
 
-    const ada = existsSync(dst)
-    if (ada && lf(readFileSync(dst, 'utf8')) === isi) continue
-    ;(ada ? beda : baru).push(relRepo)
-    if (!DRY) {
-      mkdirSync(dirname(dst), { recursive: true })
-      writeFileSync(dst, isi)
+    if (!existsSync(dst)) {
+      baru.push(relRepo)
+      if (!DRY) {
+        mkdirSync(dirname(dst), { recursive: true })
+        writeFileSync(dst, isi)
+        baselineBaru[relRepo].kita = sha(isi)
+      }
+      continue
     }
+
+    const kini = lf(readFileSync(dst, "utf8"))
+    if (kini === isi) {
+      // sudah seusia hulu — catat sidik jarinya supaya edit lokal BERIKUTNYA terdeteksi
+      baselineBaru[relRepo].kita = sha(isi)
+      continue
+    }
+
+    // Beda. Apakah isinya persis yang ditulis sync terakhir (belum tersentuh)? → aman ditimpa.
+    if (lama && lama.kita && sha(kini) === lama.kita) {
+      beda.push(relRepo)
+      if (!DRY) {
+        writeFileSync(dst, isi)
+        baselineBaru[relRepo].kita = sha(isi)
+      }
+      continue
+    }
+
+    // Sampai sini: isinya beda DAN bukan hasil tulisan sync terakhir → ada kerja lokal di
+    // dalamnya. GAGAL-AMAN: jangan pernah menimpa. Baseline lama dipertahankan apa adanya
+    // supaya penanda "hulu juga berubah" tetap benar sampai berkasnya benar-benar digabung.
+    divergensiLokal.push({
+      f: relRepo,
+      huluBerubah: !!(lama && lama.hulu && lama.hulu !== huluSha)
+    })
+    if (lama) baselineBaru[relRepo] = { ...lama }
   }
 }
 
@@ -201,6 +341,18 @@ if (baru.length) {
 if (beda.length) {
   console.log(`  DIPERBARUI (${beda.length}):`)
   beda.forEach((f) => console.log('    ~ ' + f))
+  console.log('')
+}
+if (divergensiLokal.length) {
+  console.log(`  ⛔ TAK DITIMPA — ada kerja lokal di dalamnya (${divergensiLokal.length}):`)
+  for (const d of divergensiLokal) {
+    const ket = d.huluBerubah
+      ? '   (hulu juga berubah → gabung tiga-arah)'
+      : '   (hulu tak berubah → tak ada yang perlu ditarik)'
+    console.log('    ! ' + d.f + ket)
+  }
+  console.log('    Isinya beda dari hasil sync terakhir, jadi seseorang mengeditnya di sini.')
+  console.log('    Menimpanya = membatalkan kerja itu diam-diam, dan tes belum tentu merah.')
   console.log('')
 }
 if (milikBerubah.length) {
@@ -218,7 +370,7 @@ if (belumBerbaseline.length) {
   console.log(`  (baseline hulu dicatat untuk ${belumBerbaseline.length} berkas milik Waseela —`)
   console.log('   mulai sync berikutnya hanya perubahan hulu yang sungguhan yang dilaporkan)\n')
 }
-if (!baru.length && !beda.length && !milikBerubah.length) {
+if (!baru.length && !beda.length && !milikBerubah.length && !divergensiLokal.length) {
   console.log('  Sudah seusia hulu — tak ada yang perlu ditarik.\n')
 }
 if (DRY) {

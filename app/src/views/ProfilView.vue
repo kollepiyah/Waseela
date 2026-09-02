@@ -45,7 +45,7 @@
       <i class="fas fa-user-slash text-[var(--text-tertiary)] text-3xl mb-2"></i>
       <p class="text-sm font-bold text-[var(--text-primary)]">Data profil tidak ditemukan</p>
       <p class="text-xs text-[var(--text-secondary)] mt-1">
-        Akun ini ({{ sesi?.role || '?' }}) belum terkonfigurasi penuh. Hubungi admin pondok.
+        Akun ini ({{ sesi?.role || '?' }}) belum terkonfigurasi penuh. Hubungi admin.
       </p>
     </div>
   </div>

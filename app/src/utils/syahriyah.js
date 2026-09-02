@@ -64,16 +64,16 @@ export const GABUNG_MODE = ['auto', 'gabung', 'pisah']
 export const GABUNG_SYARAT = [
   { key: 'punya_sekolah', label: 'Punya sekolah formal', saran: true },
   { key: 'fullday', label: 'Santri fullday', saran: true },
-  // Kyai 4 Agu 2026: "syahriyah pondok itu sudah include Syahriyah Qiraati Pagi & Sore".
+  // Kyai 4 Agu 2026: "syahriyah itu sudah include Syahriyah Qiraati Pagi & Sore".
   //   Sebelum ini aturan itu TAK BISA dinyatakan: syarat yang ada cuma sekolah & fullday,
   //   sedangkan santri Ma'had bisa dua-duanya bukan → jenis ngaji tetap ditagih SENDIRI di
-  //   samping Syahriyah Pondok, alias tertagih dua kali.
+  //   samping Syahriyah Asrama, alias tertagih dua kali.
   { key: 'mahad', label: "Santri Ma'had (mukim)", saran: true },
   // Satu jenis ngaji kadang perlu menempel ke SEKOLAH untuk santri sekolah DAN ke
   //   SYAHRIYAH PONDOK untuk santri mukim. `gabung_syarat` cuma satu nilai, jadi dua
   //   kondisi berbeda mustahil dinyatakan lewat syarat. Pilihan ini menyerahkan
   //   penyaringan ke jenis TUJUAN: `gabungTargetFor` sudah menuntut
-  //   `jenisBerlakuUntuk(target, santri)`, jadi "Syahriyah Pondok" (status_only Ma'had)
+  //   `jenisBerlakuUntuk(target, santri)`, jadi "Syahriyah Asrama" (status_only Ma'had)
   //   hanya menyerap santri mukim dan "Syahriyah SDI" (lembaga_only SDI) hanya anak SDI.
   //   Kandidat PERTAMA yang berlaku yang menang — urutan `gabung_ke` = prioritasnya.
   { key: 'target', label: 'Tanpa syarat tambahan — ikut jenis tujuan' },
@@ -214,7 +214,7 @@ export function syaratGabungTerpenuhi(jenisNgaji, santri) {
   switch (teks(jenisNgaji?.gabung_syarat) || 'punya_sekolah') {
     case 'fullday':
       return fullday
-    // Kyai: syahriyah pondok sudah termasuk ngaji pagi & sore untuk santri mukim.
+    // Kyai: syahriyah sudah termasuk ngaji pagi & sore untuk santri mukim.
     case 'mahad':
       return mukim
     // Penyaringan diserahkan ke jenis tujuan (lihat catatan di GABUNG_SYARAT).

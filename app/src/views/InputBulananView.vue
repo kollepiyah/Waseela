@@ -59,6 +59,14 @@
         Total: <b>TPQ Pagi/Sore + PPPH</b> manual, <b>Pra PTPT</b> auto dari khotam (Lvl
         &le;1&frac12; Juz: 2x, Lvl 2-3 Juz: 3x), <b>PTPT</b> auto = Akhir - Awal Hal.
       </p>
+      <!-- v.1.3.7 (Kyai 31 Agu 2026): tiap bulan mulai kosong. Perlu diterangkan karena
+           bagi yang terbiasa melihat angka bulan lalu sudah terisi, ini terlihat seperti
+           data hilang. -->
+      <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
+        <i class="fas fa-rotate-left mr-1"></i>
+        Kolom prestasi mulai <b>kosong</b> tiap bulan; angka abu-abu di kotak isian hanya
+        <b>petunjuk bulan lalu</b> dan tidak ikut tersimpan. Kelas &amp; Juz tidak di-reset.
+      </p>
     </div>
 
     <!-- Table card -->
@@ -147,10 +155,13 @@
                   class="p-2 font-bold text-[var(--text-primary)] border-b border-[var(--border-subtle)] whitespace-nowrap leading-tight"
                 >
                   {{ s.nama }}
+                  <!-- v.1.3.7: usia dihitung SAAT INI dari tgl_lahir. Kolom `usia` di
+                       baris santri hanyalah cetakan saat terakhir disimpan — santri yang
+                       tak pernah disunting akan terus tampil seusia tahun pendaftarannya. -->
                   <span
-                    v-if="s.usia"
+                    v-if="usiaKini(s.tgl_lahir)"
                     class="block text-[9px] font-bold text-[var(--text-secondary)] bg-[var(--bg-muted)] px-1 rounded mt-0.5 w-fit"
-                    >{{ s.usia }}</span
+                    >{{ usiaKini(s.tgl_lahir) }}</span
                   >
                 </td>
                 <td class="p-2 text-center font-bold border-b border-[var(--border-subtle)]">
@@ -217,6 +228,7 @@
                 <td class="p-1 border-b border-[var(--border-subtle)]">
                   <input
                     v-model="formMap[s.id].prestasi_awal"
+                    :placeholder="petunjukLalu(s, 'awal')"
                     type="text"
                     class="w-full text-center font-black text-[11px] p-1.5 rounded border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)]"
                     @input="markDirty(s.id)"
@@ -227,6 +239,7 @@
                 <td class="p-1 border-b border-[var(--border-subtle)]">
                   <input
                     v-model="formMap[s.id].prestasi_akhir"
+                    :placeholder="petunjukLalu(s, 'akhir')"
                     type="text"
                     class="w-full text-center font-black text-[11px] p-1.5 rounded border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)]"
                     @input="markDirty(s.id)"
@@ -250,6 +263,7 @@
                   <input
                     v-else
                     v-model="formMap[s.id].prestasi_total"
+                    :placeholder="petunjukLalu(s, 'total')"
                     type="text"
                     class="w-full text-center font-black text-[11px] p-1.5 rounded border border-cyan-300 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-900/30 text-cyan-900 dark:text-cyan-200"
                     title="Manual input"
@@ -307,7 +321,10 @@
               <p class="text-sm font-bold text-[var(--text-primary)] truncate">
                 {{ s.nama }}
                 <span class="text-[10px] font-bold text-[var(--text-secondary)]"
-                  >{{ s.jk }}<template v-if="s.usia"> &middot; {{ s.usia }}</template></span
+                  >{{ s.jk
+                  }}<template v-if="usiaKini(s.tgl_lahir)">
+                    &middot; {{ usiaKini(s.tgl_lahir) }}</template
+                  ></span
                 >
               </p>
               <button
@@ -373,6 +390,7 @@
                 >
                 <input
                   v-model="formMap[s.id].prestasi_awal"
+                  :placeholder="petunjukLalu(s, 'awal')"
                   type="text"
                   inputmode="numeric"
                   class="w-full text-center font-black text-sm p-2 rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)]"
@@ -386,6 +404,7 @@
                 >
                 <input
                   v-model="formMap[s.id].prestasi_akhir"
+                  :placeholder="petunjukLalu(s, 'akhir')"
                   type="text"
                   inputmode="numeric"
                   class="w-full text-center font-black text-sm p-2 rounded-lg border border-[var(--border-default)] bg-white dark:bg-slate-900 text-[var(--text-primary)]"
@@ -410,6 +429,7 @@
                 <input
                   v-else
                   v-model="formMap[s.id].prestasi_total"
+                  :placeholder="petunjukLalu(s, 'total')"
                   type="text"
                   inputmode="numeric"
                   class="w-full text-center font-black text-sm p-2 rounded-lg border border-cyan-300 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-900/30 text-cyan-900 dark:text-cyan-200"
@@ -497,13 +517,25 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, watch } from 'vue'
+import { ref, computed, reactive, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { getOne, updateOne } from '@/services/db'
+import { getOne, updateOne, mergeOne, subscribeColl } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
 import { useSantri } from '@/composables/useSantri'
 import { useLembaga } from '@/composables/useLembaga'
 import { sortSantri } from '@/utils/santriSort'
+import { todayJakarta } from '@/utils/format' // v.1.3.7: batas "bulan berjalan" (WIB)
+import { usiaKini } from '@/utils/usia' // usia tampil dihitung hidup, bukan dari kolom simpanan
+import { ownsNgaji, ownsSekolah, headsLembaga } from '@/utils/guruScope' // sumber tunggal "santri ampuan guru"
+// v.1.3.7: angka prestasi MILIK BULAN — sumber tunggal, sama dengan RekapPrestasiView.
+import {
+  periodePrestasi,
+  periodeSebelumnya,
+  petaPrestasiPeriode,
+  nilaiPrestasiBulan,
+  petunjukBulanLalu,
+  payloadRiwayatPrestasi
+} from '@/utils/prestasiBulanan'
 import { useGuru } from '@/composables/useGuru'
 import { useToast } from '@/composables/useToast'
 import { useMobileShell } from '@/composables/useMobileShell'
@@ -593,22 +625,28 @@ const filteredSantri = computed(() => {
     )
   }
 
-  // Guru scope — show only santri assigned to this guru
+  // Guru scope — hanya santri ampuan guru yang login.
+  // v.1.3.7 (Kyai 31 Agu 2026, "eror di akun guru"): penyaring di sini dulu ditulis
+  //   sendiri dan sudah berpisah dari aturan induknya di useSantri:
+  //     • `guru_sekolah[]` tak pernah diperiksa → WALI KELAS SEKOLAH melihat daftar
+  //       KOSONG, padahal santri yang sama muncul di Data Santri & Rekap Prestasi;
+  //     • kepala/PJ lembaga tak dikenali → ia pun kosong;
+  //     • nama diambil dari `sesi.nama` saja, bukan `sesi.guru || sesi.nama`;
+  //     • sisanya mencocokkan `guru_id`/`guru_pagi_id`/`guru_sore_id` — field yang tak
+  //       pernah ada di baris santri (pengampu disimpan sebagai NAMA), jadi cabang itu
+  //       tak pernah bernilai benar.
+  //   Sekarang memakai utils/guruScope, sumber tunggal yang sama dengan useSantri dan
+  //   policy RLS santri_upd_pengampu — "yang kelihatan = yang boleh disimpan".
   if (isGuruScoped.value) {
-    const myId = String(auth.sesiAktif?.id || '').toLowerCase()
-    const myNama = String(auth.sesiAktif?.nama || '')
-      .toLowerCase()
-      .trim()
-    list = list.filter((s) => {
-      const namaGuru = [s.guru, s.guru_pagi, s.guru_sore]
-        .flat()
-        .filter(Boolean)
-        .map((g) => String(g).toLowerCase().trim())
-      const idGuru = [s.guru_id, s.guru_pagi_id, s.guru_sore_id]
-        .filter(Boolean)
-        .map((g) => String(g).toLowerCase())
-      return namaGuru.includes(myNama) || idGuru.includes(myId)
-    })
+    const sesi = auth.sesiAktif
+    const myNama = sesi?.guru || sesi?.nama || ''
+    list = list.filter(
+      (s) =>
+        ownsNgaji(s, myNama) ||
+        ownsSekolah(s, myNama) ||
+        headsLembaga(sesi, s.lembaga) ||
+        headsLembaga(sesi, s.lembaga_sekolah)
+    )
   }
 
   // Lembaga filter — special handling untuk TPQ shift-variant
@@ -679,8 +717,24 @@ function isAutoCompute(s) {
 
 const hasPtpt = computed(() => filteredSantri.value.some((s) => lembagaKey(s) === 'ptpt'))
 
-// --- Periode key (YYYY_MM) ---
+// --- Periode key (YYYY_MM) --- kunci `catatan_bulanan` di baris santri. Bentuk lamanya
+//   dipertahankan apa adanya: mengubahnya akan menyapu semua catatan yang sudah ada.
 const periodeKey = computed(() => `${tahun.value}_${String(bulan.value + 1).padStart(2, '0')}`)
+// v.1.3.7: periode snapshot prestasi bulanan ('YYYY-MM') — BEDA pemisah dari periodeKey
+//   di atas karena `riwayat_prestasi` sudah memakai bentuk ini sejak v.100d.
+const periodeRp = computed(() => periodePrestasi(bulan.value + 1, tahun.value))
+const bulanLabelRp = computed(() => `${NAMA_BULAN[bulan.value]} ${tahun.value}`)
+const riwayatPrestasiRaw = ref([])
+const petaPrestasiBulan = computed(() =>
+  petaPrestasiPeriode(riwayatPrestasiRaw.value, periodeRp.value)
+)
+const petaPrestasiBulanLalu = computed(() =>
+  petaPrestasiPeriode(riwayatPrestasiRaw.value, periodeSebelumnya(periodeRp.value))
+)
+/** Petunjuk bulan lalu — PLACEHOLDER, tak ikut tersimpan. */
+function petunjukLalu(s, field) {
+  return petunjukBulanLalu(petaPrestasiBulanLalu.value.get(String(s?.id)) || null, s || {})[field]
+}
 
 // --- Pra PTPT khotam counting helper ---
 function levelMultiplier(level) {
@@ -725,22 +779,31 @@ const dirtyIds = ref(new Set())
 const saving = ref(false)
 const dirtyCount = computed(() => dirtyIds.value.size)
 
+// v.1.3.7 (Kyai 31 Agu 2026): "kenapa tidak tereset setiap bulan … harusnya kosong."
+//   Form ini dulu selalu diisi dari BARIS SANTRI (`s.prestasi_awal` dst) — satu-satunya set
+//   angka yang tak punya dimensi bulan — sehingga berganti bulan tak mengubah apa pun, dan
+//   angka bulan lalu tampil sebagai isian yang tinggal ditekan Simpan. Kini sumbernya
+//   snapshot `riwayat_prestasi` bulan terpilih; belum ada → kosong. Aturannya di
+//   utils/prestasiBulanan, sama persis dengan RekapPrestasiView (dulu dua layar ini menulis
+//   angka bulanan yang sama dengan cara yang berbeda, dan hanya salah satunya mencatat bulan).
 watch(
-  [filteredSantri, periodeKey],
+  [filteredSantri, periodeKey, petaPrestasiBulan],
   ([list, key]) => {
     for (const s of list) {
       const existingCatatan =
         (s.catatan_bulanan && typeof s.catatan_bulanan === 'object' && s.catatan_bulanan[key]) || ''
       const current = formMap[s.id]
       if (!current || current._periodKey !== key) {
+        const nb = nilaiPrestasiBulan(petaPrestasiBulan.value.get(String(s.id)) || null, s)
         formMap[s.id] = {
           _periodKey: key,
-          prestasi_awal: s.prestasi_awal || '',
-          prestasi_akhir: s.prestasi_akhir || '',
-          prestasi_total: s.prestasi_total || '',
-          kelas: s.kelas || '',
-          kelas_sekolah: s.kelas_sekolah || '',
-          juz: parseAngka(s.juz) || '',
+          prestasi_awal: nb.awal,
+          prestasi_akhir: nb.akhir,
+          prestasi_total: nb.total,
+          // kelas & juz = keadaan BERJALAN santri, bukan ukuran bulanan — tak di-reset.
+          kelas: nb.kelas,
+          kelas_sekolah: nb.kelas_sekolah,
+          juz: parseAngka(nb.juz) || '',
           catatan: existingCatatan
         }
       }
@@ -842,23 +905,32 @@ async function simpanBatch() {
         totalStr = form.prestasi_total || ''
       }
 
+      // Catatan & kelas selalu ikut baris santri (keadaan berjalan, bukan ukuran bulanan).
+      const catatanMap =
+        s.catatan_bulanan && typeof s.catatan_bulanan === 'object' ? { ...s.catatan_bulanan } : {}
+      catatanMap[periodeKey.value] = form.catatan || ''
       const payload = {
-        prestasi_awal: form.prestasi_awal || '',
-        prestasi_akhir: form.prestasi_akhir || '',
-        prestasi_total: totalStr,
         kelas: form.kelas || '',
-        kelas_sekolah: form.kelas_sekolah || ''
+        kelas_sekolah: form.kelas_sekolah || '',
+        catatan_bulanan: catatanMap
       }
-
       if (isPtpt) {
         const juzNum = parseAngka(form.juz)
         payload.juz = juzNum > 0 ? `JUZ ${juzNum}` : ''
       }
-
-      const catatanMap =
-        s.catatan_bulanan && typeof s.catatan_bulanan === 'object' ? { ...s.catatan_bulanan } : {}
-      catatanMap[periodeKey.value] = form.catatan || ''
-      payload.catatan_bulanan = catatanMap
+      // v.1.3.7: baris santri = "angka TERAKHIR yang pernah disimpan" (dibaca Data Santri,
+      //   profil, ekspor). Dua penjaga sekaligus:
+      //   • hanya dicerminkan saat menyunting bulan BERJALAN — mengoreksi bulan lampau tak
+      //     boleh memundurkan angka berjalan santri;
+      //   • hanya bila isiannya TIDAK kosong — sejak form ini mulai kosong tiap bulan,
+      //     menyimpan perubahan catatan saja akan menghapus angka terakhir santri kalau
+      //     kolom prestasinya ikut ditulis apa adanya.
+      const bulanBerjalan = periodeRp.value >= todayJakarta().slice(0, 7)
+      if (bulanBerjalan) {
+        if (form.prestasi_awal) payload.prestasi_awal = form.prestasi_awal
+        if (form.prestasi_akhir) payload.prestasi_akhir = form.prestasi_akhir
+        if (totalStr) payload.prestasi_total = totalStr
+      }
 
       // F6e: updateOne RMW akan UPSERT bila row tak ada (≠ Firestore updateDoc yg throw NOT_FOUND).
       // Cek keberadaan dulu agar santri yang terhapus di sesi lain tak jadi stub row malformed.
@@ -868,6 +940,19 @@ async function simpanBatch() {
         continue
       }
       await updateOne('santri', String(id), payload)
+      // v.1.3.7: snapshot BULANAN. Layar ini dulu TIDAK pernah menulisnya — angka yang
+      //   diinput guru di sini tak pernah jadi milik bulan mana pun, jadi ia otomatis
+      //   "muncul lagi" di bulan berikutnya karena tak ada bulan yang mengklaimnya.
+      const rp = payloadRiwayatPrestasi({
+        santri: s,
+        periode: periodeRp.value,
+        bulanLabel: bulanLabelRp.value,
+        awal: form.prestasi_awal || '',
+        akhir: form.prestasi_akhir || '',
+        total: totalStr,
+        juz: isPtpt ? payload.juz || '' : ''
+      })
+      await mergeOne('riwayat_prestasi', rp.id, rp)
     }
     toast.success(`Tersimpan ${dirtyIds.value.size} santri`)
     dirtyIds.value.clear()
@@ -878,6 +963,19 @@ async function simpanBatch() {
     saving.value = false
   }
 }
+
+// v.1.3.7: snapshot prestasi bulanan. Dilanggan penuh (bukan per periode) karena form
+//   butuh bulan terpilih SEKALIGUS bulan sebelumnya untuk petunjuk placeholder-nya —
+//   pola yang sama dengan RekapPrestasiView.
+let unsubRiwayatP = null
+onMounted(() => {
+  unsubRiwayatP = subscribeColl('riwayat_prestasi', (docs) => {
+    riwayatPrestasiRaw.value = docs || []
+  })
+})
+onUnmounted(() => {
+  if (unsubRiwayatP) unsubRiwayatP()
+})
 
 // v.21.71.0526: PTPT range juz hint per kelas (Kelas 1 = Juz 1-5, Kelas 2 = Juz 6-10, ..., Kelas 6 = Juz 26-30)
 function ptptJuzHint(kelas) {

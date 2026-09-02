@@ -1,372 +1,1470 @@
 {
-  "app/src/App.vue": "71af0eccac796c82",
-  "app/src/assets/loginBg.js": "ce5e22179b12e974",
-  "app/src/assets/main.css": "2d2c7a5aadd91175",
-  "app/src/assets/ribbon.css": "5709fab96e40fb31",
-  "app/src/assets/standard-ui.css": "e3b0c44298fc1c14",
-  "app/src/components/charts/AdminStatsCharts.vue": "9efd4ea9b7644c34",
-  "app/src/components/charts/TrenCapaianChart.vue": "b86424dfb6b17ba2",
-  "app/src/components/dashboard/DasborKeuangan.vue": "ca0d19ad0d3f93dd",
-  "app/src/components/dashboard/DasborPendidikan.vue": "b355200138e38d8a",
-  "app/src/components/dashboard/DashboardGreeting.vue": "a089ca607f8d17d8",
-  "app/src/components/dashboard/DashboardJamHijri.vue": "de8192b79d62f148",
-  "app/src/components/dashboard/DashboardKalender.vue": "f9a30d716fba67f8",
-  "app/src/components/dashboard/DashboardPosts.vue": "25ac5d3eb34531b9",
-  "app/src/components/form/EditKelasSantriDialog.vue": "b1484b87f16ab8d0",
-  "app/src/components/form/MultiSelectGuruPengajar.vue": "1b6d7e452afbd43f",
-  "app/src/components/form/MultiSelectGuruSekolah.vue": "e1e558e720e2851b",
-  "app/src/components/layout/AppHeader.vue": "844991eebdc5aba5",
-  "app/src/components/layout/AppLayout.vue": "e6a68cfc10d1aa05",
-  "app/src/components/layout/AppNotifBell.vue": "ec54eef2ee397472",
-  "app/src/components/layout/AppShell.vue": "80c9e34aad1c38b0",
-  "app/src/components/layout/AppSidebar.vue": "24f6df484c796f98",
-  "app/src/components/layout/BackButton.vue": "65cf91b638e4cbe7",
-  "app/src/components/layout/BottomNav.vue": "052f8ce1ea335d74",
-  "app/src/components/layout/EmptyState.vue": "fe58b31431a22a52",
-  "app/src/components/layout/GlobalSearch.vue": "d93bbdee92f69746",
-  "app/src/components/layout/PageHeader.vue": "c885cc8df2805b5f",
-  "app/src/components/layout/SkeletonCard.vue": "0ccf072f23d76d60",
-  "app/src/components/pos/ModalPOS.vue": "9bba97b570076d21",
-  "app/src/components/posts/PostCard.vue": "7d1605c82ae311cc",
-  "app/src/components/posts/ReactionBar.vue": "e49ab7fbae061c5a",
-  "app/src/components/PrinterSettingsModal.vue": "3cc27fb552f6be04",
-  "app/src/components/ReceiptModal.vue": "809e3ec6d5d0b17d",
-  "app/src/components/ribbon/RibbonBackstage.vue": "aeec9ea7298c6f70",
-  "app/src/components/ribbon/RibbonBar.vue": "f5e0cf14b797b174",
-  "app/src/components/ribbon/RibbonButton.vue": "c7ff0019443707e2",
-  "app/src/components/ribbon/RibbonClock.vue": "08b5f710d2bd26ce",
-  "app/src/components/ribbon/RibbonGroup.vue": "c0678e9c5e117f5c",
-  "app/src/components/ribbon/RibbonIcon.vue": "ee42647f2787af69",
-  "app/src/components/ribbon/RibbonLayout.vue": "28bdd9d384e94dac",
-  "app/src/components/ribbon/RibbonStatusBar.vue": "062c3301add962bc",
-  "app/src/components/ribbon/RibbonTabBar.vue": "dc474c3e98213115",
-  "app/src/components/ribbon/RibbonTitleBar.vue": "63e188d239584c28",
-  "app/src/components/statistik/DistribusiPrestasi.vue": "f75b3260aa80a5cc",
-  "app/src/components/statistik/OperasionalGuru.vue": "ed79c1427f696b6f",
-  "app/src/components/statistik/RingkasanSantriLembaga.vue": "58938a2b84e1b811",
-  "app/src/components/ui/ConfirmDialog.vue": "e09ecf939e470fcd",
-  "app/src/components/ui/ToastStack.vue": "1dc77f4b1b64b589",
-  "app/src/components/ui/UiActionCard.vue": "5035dc02b67e8d3f",
-  "app/src/components/ui/UiButton.vue": "e78cdecd08ac78be",
-  "app/src/components/ui/UiCard.vue": "804d3f1ae9efee93",
-  "app/src/components/ui/UiInput.vue": "15ac81f98236c82c",
-  "app/src/composables/useAbsensi.js": "c4fa80abfe9fb469",
-  "app/src/composables/useAndroidUpdate.js": "0e45b4893f36ef3f",
-  "app/src/composables/useCeremonial.js": "057509d866a47945",
-  "app/src/composables/useClock.js": "b307ba3367e00cd4",
-  "app/src/composables/useConfirm.js": "fdd5680fd72ca1df",
-  "app/src/composables/useDataAudit.js": "72fa88b4868549ce",
-  "app/src/composables/useDb.js": "afb0f889633a4f23",
-  "app/src/composables/useDesktopPrint.js": "c6628ec056e5c490",
-  "app/src/composables/useDesktopShell.js": "515954fbb089bb77",
-  "app/src/composables/useEdgeSwipeBack.js": "2afeef7f3a70677e",
-  "app/src/composables/useExcel.js": "8307be1aafe4598e",
-  "app/src/composables/useFingerprintSync.js": "9c18c1d90693c110",
-  "app/src/composables/useGedungScope.js": "2ce465df7a547e86",
-  "app/src/composables/useGlondongan.js": "f9ab9d274fe47d53",
-  "app/src/composables/useGoogleSheet.js": "2493abbee500ef03",
-  "app/src/composables/useGuru.js": "48e76497a6dad0b3",
-  "app/src/composables/useGuruForm.js": "7d0491b8a42434bb",
-  "app/src/composables/useHaptic.js": "c047335e318364fa",
-  "app/src/composables/useIzinGuru.js": "14b967bb46b3c857",
-  "app/src/composables/useKegiatan.js": "e8460dbbba1f5123",
-  "app/src/composables/useKeuangan.js": "d5be5c1285cf1e61",
-  "app/src/composables/useKeuanganDashboard.js": "a73b040fed0574df",
-  "app/src/composables/useLembaga.js": "32f35bc6dad688f1",
-  "app/src/composables/useLembagaForm.js": "b39dc094330cad81",
-  "app/src/composables/useLocalNotif.js": "ad670a8f765af14e",
-  "app/src/composables/useMenus.js": "48efdb4432062fc6",
-  "app/src/composables/useMobileShell.js": "a990c7058abb3255",
-  "app/src/composables/useNativeDownload.js": "56175f18a7a63a2c",
-  "app/src/composables/useNotifications.js": "40bdfea46fd491fd",
-  "app/src/composables/usePjGuru.js": "60d2264967f4b761",
-  "app/src/composables/usePullToRefresh.js": "15247e98da74b47a",
-  "app/src/composables/usePushNotifications.js": "8eca10a09c8d53c6",
-  "app/src/composables/useRibbonContext.js": "5c01b55d696f2edc",
-  "app/src/composables/useRibbonNav.js": "c0395d4933e37d1c",
-  "app/src/composables/useRibbonPrefs.js": "127b31620ffab6d1",
-  "app/src/composables/useRibbonUser.js": "dc2f66d8d42d54eb",
-  "app/src/composables/useSantri.js": "6637d8340ad1b479",
-  "app/src/composables/useSantriForm.js": "e32a30b9a37610b9",
-  "app/src/composables/useStatistikDashboard.js": "0e0fdffc0715be81",
-  "app/src/composables/useStatistikScope.js": "1f43114c1ec0c9f7",
-  "app/src/composables/useSupabaseImport.js": "7ff80fcc0e489621",
-  "app/src/composables/useTesKenaikan.js": "6a7b0200bcd7d4ef",
-  "app/src/composables/useToast.js": "27526b386cae632d",
-  "app/src/composables/useUpdater.js": "40589a996ee5d61f",
-  "app/src/composables/useWaliChildren.js": "13da820425ff89fd",
-  "app/src/composables/useWidgetSync.js": "a326153956f63fc2",
-  "app/src/composables/useWindowControls.js": "e1a57768cb0ec2d4",
-  "app/src/main.js": "08c2fbeba2b1e8ff",
-  "app/src/router/index.js": "5834d0ee00ee6d3b",
-  "app/src/services/analytics.js": "189d313ddc5e3422",
-  "app/src/services/authSupabase.js": "13450fabe9c63dc3",
-  "app/src/services/db.js": "862a1049b11a8c3a",
-  "app/src/services/importMap.js": "e358dfa89b2dbbe4",
-  "app/src/services/notif.js": "979a0d913bf7b532",
-  "app/src/services/pdf.js": "354897e6c1956679",
-  "app/src/services/queryClient.js": "6bb46bbe1367d5c8",
-  "app/src/services/santriFields.js": "195e34aa6ba33032",
-  "app/src/services/storage.js": "f6a4fa41d2a6f624",
-  "app/src/services/supabase.js": "01de47ddd0add806",
-  "app/src/services/supabaseStorage.js": "880859d05ce220c6",
-  "app/src/stores/auth.js": "5691ffec954f3f72",
-  "app/src/stores/collections.js": "b5e6b6f11b95de1d",
-  "app/src/stores/fingerprint.js": "63f62615e1f6b562",
-  "app/src/stores/settings.js": "629320c9c89a83a5",
-  "app/src/stores/ui.js": "6688e4b5ff3cdc4d",
-  "app/src/utils/absenHarian.js": "6b2c3d2933146866",
-  "app/src/utils/absensiMaterialize.js": "f93d31ee2dbfb568",
-  "app/src/utils/absensiRekap.js": "4f3abc6f46a2ded0",
-  "app/src/utils/auditLog.js": "2b358ccad8dcfe41",
-  "app/src/utils/bebanMengajar.js": "d3bdb68b69869aea",
-  "app/src/utils/bisyarohScope.js": "f30792e997a65d58",
-  "app/src/utils/bmtVa.js": "897dfe29c97bf7c4",
-  "app/src/utils/bukuIndukLaporan.js": "e451bd7d743ef553",
-  "app/src/utils/escpImage.js": "7940300b7aebe4ec",
-  "app/src/utils/format.js": "c14dde0078f6ef2b",
-  "app/src/utils/fuzzyMatch.js": "12fb9ef8eb79b315",
-  "app/src/utils/gedung.js": "04e204a7848468c0",
-  "app/src/utils/glondongan.js": "f3541f6ab77f4007",
-  "app/src/utils/guruScope.js": "48e5ad50a7f16b50",
-  "app/src/utils/hijri.js": "5c3c58f824679bf7",
-  "app/src/utils/jabatanUnit.js": "b2c1115d5755f8ac",
-  "app/src/utils/jenjang.js": "572d6f7f8062c3bc",
-  "app/src/utils/jenjangQiraati.js": "01cb331dc8a1f356",
-  "app/src/utils/kartuJejak.js": "b6485456a557b7c6",
-  "app/src/utils/kasLembaga.js": "a80e4f674ff4a1cf",
-  "app/src/utils/kelasHitung.js": "b1bfc3652c4ebdc7",
-  "app/src/utils/kenaikan.js": "81cb60106dc04356",
-  "app/src/utils/liburNasional.js": "4ece0f9483b92122",
-  "app/src/utils/liburScope.js": "fe86bde28de831c7",
-  "app/src/utils/masaTempuh.js": "050b32846c221738",
-  "app/src/utils/metodeBayar.js": "c00c702fa8862fcb",
-  "app/src/utils/nigGenerator.js": "f3ab8bc1048b58df",
-  "app/src/utils/nisGenerator.js": "82d0199af365df45",
-  "app/src/utils/pasanganGuru.js": "4bff8b0ba1e9e5df",
-  "app/src/utils/pasaran.js": "8f5fc6e631977154",
-  "app/src/utils/pdfBuilder.js": "2dcea532739782ac",
-  "app/src/utils/periodeTagihan.js": "27f82d31b98cc86c",
-  "app/src/utils/pesanWa.js": "8cdda1f8ba3a1edf",
-  "app/src/utils/posDana.js": "bc4c014f19bea009",
-  "app/src/utils/potonganPos.js": "aefe6efdf73e99c7",
-  "app/src/utils/predikat.js": "f92c209518c5b2cb",
-  "app/src/utils/promosiKenaikan.js": "eaf2394d8ab515a2",
-  "app/src/utils/rapikanGabungan.js": "075e6edb01b6e0e2",
-  "app/src/utils/raporPdf.js": "5065f43e5506c0c8",
-  "app/src/utils/raporSchema.js": "c7b4466eb9198f90",
-  "app/src/utils/receiptHtml.js": "25095654daba96f8",
-  "app/src/utils/riwayatPendidikanPdf.js": "1bd3d8011f7f5f19",
-  "app/src/utils/riwayatSantriPdf.js": "c5fbb687e9602b7d",
-  "app/src/utils/roleScope.js": "642f3f42b69a27e3",
-  "app/src/utils/santriIdentitas.js": "d624b2855da82278",
-  "app/src/utils/santriSort.js": "d5f5bd95d2b19700",
-  "app/src/utils/shellOverride.js": "8024843678e0f294",
-  "app/src/utils/shiftDerive.js": "2f9870397c68df79",
-  "app/src/utils/shiftMaster.js": "cd1e1b1474118452",
-  "app/src/utils/simulasiBisyaroh.js": "f2fb8266f72b384b",
-  "app/src/utils/simulasiPemasukan.js": "9e3758d7002803ec",
-  "app/src/utils/statusSantri.js": "740d37bc47187156",
-  "app/src/utils/strukBuilder.js": "2ffd22bc2455d504",
-  "app/src/utils/syahriyah.js": "08952b8bff4565a2",
-  "app/src/utils/tagihan.js": "f2f9f7f53da157fb",
-  "app/src/utils/tagihanId.js": "a5476ae7608b20a9",
-  "app/src/utils/terbilang.js": "f74506654cc6ccd9",
-  "app/src/utils/tesKenaikan.js": "c1c042e995ac4d7b",
-  "app/src/utils/tesRaporFeed.js": "b68a6d1613c922a8",
-  "app/src/utils/trxStruk.js": "18e04e7953e49412",
-  "app/src/utils/unduhan.js": "ab3672dbf87cc42c",
-  "app/src/utils/usia.js": "8b35821eef808669",
-  "app/src/utils/v100_dedupe.js": "f03264d665814bac",
-  "app/src/utils/v100_lembagaFix.js": "cb820be106d53ad1",
-  "app/src/views/AbsensiGuruView.vue": "d3e5e59a386c183e",
-  "app/src/views/AbsensiSantriView.vue": "f5490eda56f1c508",
-  "app/src/views/BantuanView.vue": "c050a260aacfcd2a",
-  "app/src/views/BerandaDesktopView.vue": "33f70b5e9800ff0e",
-  "app/src/views/BisyarohView.vue": "905721a5f170b8c3",
-  "app/src/views/BukuIndukView.vue": "c6b1224c6cc36321",
-  "app/src/views/CapaianPrestasiView.vue": "f68c9d5e529eecf9",
-  "app/src/views/CeremonialView.vue": "087265c26f6b10c9",
-  "app/src/views/DashboardView.vue": "87f0867771ca516e",
-  "app/src/views/FieldSchemaView.vue": "f6200db854875c80",
-  "app/src/views/GlondonganView.vue": "e6382c2fae60881d",
-  "app/src/views/GuruBelumInputView.vue": "61b1060a94d4e0a3",
-  "app/src/views/GuruFormView.vue": "9232dbfe9e8cdd31",
-  "app/src/views/GuruView.vue": "6e7dd6638616cccf",
-  "app/src/views/HutangPiutangView.vue": "783033c76acf1c77",
-  "app/src/views/ImporKalenderView.vue": "0193fa3375a55fd3",
-  "app/src/views/ImporSupabaseView.vue": "550fd0d7088e4e4d",
-  "app/src/views/InputBulananView.vue": "59e52aac4a0c83ac",
-  "app/src/views/JabatanKelolaView.vue": "1ae49f8a1309d905",
-  "app/src/views/KalenderKegiatanView.vue": "5aa92fb89f360006",
-  "app/src/views/KegiatanPesantrenView.vue": "e31bf30cf785be96",
-  "app/src/views/KelasGuruView.vue": "1e57fdab3a20e4c2",
-  "app/src/views/KelasView.vue": "c0e00b3f01bb09cb",
-  "app/src/views/KeuanganDashboardView.vue": "3043a81f90f9fce5",
-  "app/src/views/KeuanganDesktopView.vue": "75795534bd1eaf86",
-  "app/src/views/KritikSaranView.vue": "7db1f8d4a05ac63b",
-  "app/src/views/LaporanKeuanganView.vue": "e466d3c6399b1dbc",
-  "app/src/views/LaporanView.vue": "b62e91bbbd1fe253",
-  "app/src/views/LembagaDetailView.vue": "3f144d99a6625834",
-  "app/src/views/LembagaFormView.vue": "75f9c64b010027f4",
-  "app/src/views/LembagaView.vue": "6fc4fd1beb6c0e8e",
-  "app/src/views/LoginView.vue": "425d0f632278fddb",
-  "app/src/views/MapelDesktopView.vue": "b36100c9425b7d19",
-  "app/src/views/MasterDataView.vue": "00a23884f95ce925",
-  "app/src/views/MasterFormBridgeView.vue": "37ef13feb6947b5a",
-  "app/src/views/MesinAbsensiView.vue": "7120abec7977a9b1",
-  "app/src/views/NaikKelasView.vue": "342c0b8aab76e8d1",
-  "app/src/views/NotifikasiView.vue": "0723e42f041d4524",
-  "app/src/views/PembayaranPendingView.vue": "2b7ded62e242c95a",
-  "app/src/views/PembayaranView.vue": "570180fc3c5d53ec",
-  "app/src/views/PengaduanView.vue": "ba0fdbb4b0f9fd46",
-  "app/src/views/PengaturanDesktopView.vue": "626f26bc78e034f2",
-  "app/src/views/PengaturanKeuanganView.vue": "eb3937a38f71f8da",
-  "app/src/views/PengaturanView.vue": "f92b41f891ffdf6d",
-  "app/src/views/PersonalView.vue": "b60c6f9e4f729dbc",
-  "app/src/views/PosSantriView.vue": "e495e07f31fba3d2",
-  "app/src/views/PostsView.vue": "89eac6a20298f9e5",
-  "app/src/views/PpdbAdminView.vue": "36fa7f8143a007cd",
-  "app/src/views/PpdbDetailView.vue": "84a3399aeb213e92",
-  "app/src/views/PpdbFormView.vue": "27c44d14076bb59e",
-  "app/src/views/profil/ProfilAdmin.vue": "28078c4e58bdd3d3",
-  "app/src/views/profil/ProfilGuru.vue": "b8a583ddfcc5e197",
-  "app/src/views/profil/ProfilPengaturanSaya.vue": "f2e499077a22df74",
-  "app/src/views/profil/ProfilSantri.vue": "d062b9eac3668908",
-  "app/src/views/ProfilDetailView.vue": "9d015c618816084e",
-  "app/src/views/ProfilView.vue": "3f21145ad8ecc2ea",
-  "app/src/views/RaporView.vue": "ec8930baf67408c2",
-  "app/src/views/RekapDiniyahView.vue": "6c9b5bef1e781551",
-  "app/src/views/RekapPrestasiView.vue": "78e6f5b14e682195",
-  "app/src/views/RibbonPlaceholderView.vue": "d31e234fd39d228d",
-  "app/src/views/RiwayatPosView.vue": "e2f71fcb48c94f38",
-  "app/src/views/RiwayatSantriView.vue": "fabe555a0856cb05",
-  "app/src/views/SantriFormView.vue": "1a542e6ea8b5d274",
-  "app/src/views/SantriView.vue": "e8899962fdf92457",
-  "app/src/views/StatistikHubView.vue": "1b92055b6c1b127d",
-  "app/src/views/StatistikLembagaDetailView.vue": "3621bf2a6765ae4a",
-  "app/src/views/StatistikSantriDetailView.vue": "fc49b0c4d79a1e38",
-  "app/src/views/StatistikView.vue": "4bfc980826ee9574",
-  "app/src/views/SupervisiView.vue": "6a895da7430a7cac",
-  "app/src/views/TabunganView.vue": "f83eecfec53bb1e3",
-  "app/src/views/TagihanView.vue": "06d9e8684478175e",
-  "app/src/views/TesKenaikanView.vue": "cd5b51297f4e75b4",
-  "app/src/views/UangPosView.vue": "93b95e432b7a9432",
-  "tests/unit/absenHarian.test.js": "7352a9f828294529",
-  "tests/unit/bebanMengajar.test.js": "bb427f2cd48898f2",
-  "tests/unit/bisyarohPerJpBulanan.test.js": "4c1839ec9e98706c",
-  "tests/unit/bisyarohPerTepat.test.js": "c72aeaca29f157ba",
-  "tests/unit/buildAuthEmail.test.js": "d09c1d99a9b40a95",
-  "tests/unit/bukuIndukLaporan.test.js": "956974a7ff4f3753",
-  "tests/unit/ceremonialKandidat.test.js": "167b8bc81b892cd9",
-  "tests/unit/dbRealtimeDebounce.test.js": "6bb74f5b48acb415",
-  "tests/unit/dbUpdateOne.test.js": "b46cd88f4c2481c5",
-  "tests/unit/formatTanggal.test.js": "97ced0588a693e5d",
-  "tests/unit/guruAktif.test.js": "57512c784eaa83ab",
-  "tests/unit/guruLembagaRefs.test.js": "6207a7b9ff2de2ba",
-  "tests/unit/hitungUsiaPadaTanggal.test.js": "9cdfe0dbfa8bc159",
-  "tests/unit/importSantriGabung.test.js": "c5464c1ec34e5efe",
-  "tests/unit/jenjangQiraati.test.js": "82f947abe3a05206",
-  "tests/unit/kartuJejak.test.js": "71fd2b7b90804cac",
-  "tests/unit/kartuJuzLulus.test.js": "4f492b4faee91552",
-  "tests/unit/kasLembaga.test.js": "0e6a9efef671c72e",
-  "tests/unit/kelasHitung.test.js": "1f9994489bb95ffd",
-  "tests/unit/lembagaSekolah.test.js": "ca92a26268529754",
-  "tests/unit/loginLintasJalur.test.js": "5b0f8c18fc80612f",
-  "tests/unit/masaTempuh.test.js": "1e0bac29a283417f",
-  "tests/unit/metodeBayar.test.js": "ec1d6f6f1b86d7f5",
-  "tests/unit/pasanganGuru.test.js": "9c8fb42ab724056c",
-  "tests/unit/pecahJabatan.test.js": "70b52e74094bd3c3",
-  "tests/unit/peranGlondongan.test.js": "745237cd91354cb7",
-  "tests/unit/periodeTagihan.test.js": "3e72fc64d75b1f08",
-  "tests/unit/pjGuru.test.js": "1a93454b85942613",
-  "tests/unit/pjPtptKenaikan.test.js": "6d3b339d3f65b757",
-  "tests/unit/posDana.test.js": "2d0c260bc1631652",
-  "tests/unit/potonganPos.test.js": "682a6256b2891f56",
-  "tests/unit/putusanPembaruan.test.js": "858d7d34a047bf48",
-  "tests/unit/rapikanGabungan.test.js": "494f8aa962a06ec3",
-  "tests/unit/rekapPenyimakGlondongan.test.js": "a1851a0658ac8de1",
-  "tests/unit/rentangTanggal.test.js": "eb3628ed6f27faf6",
-  "tests/unit/ribbonPageActions.test.js": "6eef293a865cb007",
-  "tests/unit/ringkasSetorTarik.test.js": "00921d22e81418c6",
-  "tests/unit/santriIdentitas.test.js": "4fa2ade4fb71a177",
-  "tests/unit/scanTanpaAbsen.test.js": "6079f9994b4d446b",
-  "tests/unit/scopePj.test.js": "87ce99ac49b2df5b",
-  "tests/unit/scopeQiraati.test.js": "4b15be881ff1c379",
-  "tests/unit/sekolahSini.test.js": "ce69186910e3efbd",
-  "tests/unit/settingsKeuanganMerge.test.js": "a3a35900f844c5b5",
-  "tests/unit/shiftDeriveMirrorEdge.test.js": "bb72d19ceb753adc",
-  "tests/unit/shiftNomor.test.js": "1520bf70a2ec807f",
-  "tests/unit/shiftPulang.test.js": "deae010e7732fa45",
-  "tests/unit/simulasiBisyaroh.test.js": "24f13461e9e18b5b",
-  "tests/unit/simulasiPemasukan.test.js": "134033cf4757ce7f",
-  "tests/unit/statusSantri.test.js": "347add743d608da2",
-  "tests/unit/subscribeCollFilter.test.js": "6653de05672fde21",
-  "tests/unit/syahriyah.test.js": "8e2f74b41938be0b",
-  "tests/unit/syahriyahMirrorEdge.test.js": "f38f0be765b8c9b5",
-  "tests/unit/tagihan.test.js": "64c90ab840640754",
-  "tests/unit/tagihanId.test.js": "afe5516953b221bf",
-  "tests/unit/tanggalTransaksiWib.test.js": "19de1ffe1ada0567",
-  "tests/unit/todayJakarta.test.js": "e5f543e89f6325d9",
-  "tests/unit/toleransiScan.test.js": "6e25cb3868f2af89",
-  "tests/unit/toTitleCase.test.js": "8ac96f0e7d3e947e",
-  "tests/unit/trxStruk.test.js": "638cbca5079ec35f",
-  "tests/unit/tugasAktifGlondongan.test.js": "72ae5fb0eb1e1a77",
-  "tests/unit/tunjanganScope.test.js": "60a14514cb5c8f43",
-  "tests/unit/unduhanRilis.test.js": "c69804b3110c98cb",
-  "tests/unit/urutanGlondongan.test.js": "ed4e293b80a1d30c",
-  "tests/unit/versiSkemaLama.test.js": "89a0a9888c372571",
-  "tests/unit/waLink.test.js": "133602a08fbb042d",
-  "tests/unit/_toAuthPassword.test.js": "0b9ef19b8101cdc0",
-  "supabase/migrations/20260622090000_init_foundation.sql": "6cc5dda592cb52ee",
-  "supabase/migrations/20260622090100_core.sql": "516af636fc3dd5e3",
-  "supabase/migrations/20260622090200_keuangan.sql": "df0472876da1eaeb",
-  "supabase/migrations/20260622090300_akademik.sql": "7b1bb7d9c1fd37bd",
-  "supabase/migrations/20260622090400_konten.sql": "302e64b02f106983",
-  "supabase/migrations/20260622090500_profiles_rls.sql": "dd30250745b7ca98",
-  "supabase/migrations/20260622090600_realtime_grants.sql": "bec30b62d702d131",
-  "supabase/migrations/20260622090700_auth_login.sql": "2fe03e8bf62f93bd",
-  "supabase/migrations/20260622091000_push_and_cron.sql": "5e455b2b0d3a23d8",
-  "supabase/migrations/20260622092000_storage_policies.sql": "fc392d738da75f39",
-  "supabase/migrations/20260622093000_save_push_token_rpc.sql": "5951a794e88903c2",
-  "supabase/migrations/20260622094000_sync_guru_profile_role.sql": "8dd9c6d8894d7251",
-  "supabase/migrations/20260622095000_analytics_rpc.sql": "3f81f4656994f7bd",
-  "supabase/migrations/20260625120000_realtime_add_master_data.sql": "ec0ae1a22fd59f24",
-  "supabase/migrations/20260629100000_fix_analytics_pegawai_status.sql": "bb35c8e945741b62",
-  "supabase/migrations/20260629100100_guard_guru_self_escalation.sql": "c1d5e462087b2d04",
-  "supabase/migrations/20260629110000_bmt_va_uangsaku.sql": "b580ea3afcb93d35",
-  "supabase/migrations/20260701100000_tes_glondongan.sql": "07be6e164a27fb57",
-  "supabase/migrations/20260702120000_auth_login_source.sql": "c8c2af61dc7df274",
-  "supabase/migrations/20260706120000_wali_pii_scope.sql": "92feaff8c5f0d3e2",
-  "supabase/migrations/20260706130000_pengaduan.sql": "e9f312a525f2c205",
-  "supabase/migrations/20260714120000_settings_write_keuangan.sql": "c6e33b269ba13b2f",
-  "supabase/migrations/20260715120000_tagihan_terbayar_backfill.sql": "49d16ab930a807a4",
-  "supabase/migrations/20260719120000_santri_upd_guru_pengampu.sql": "2967501baf81196b",
-  "supabase/migrations/20260719130000_ceremonial_ptpt.sql": "a959ddbdfe90b53f",
-  "supabase/migrations/20260719140000_rls_helpers_ptpt.sql": "d0578f3d5bf0671a",
-  "supabase/migrations/20260719140100_rls_tes_glondongan_lock.sql": "547ce62d6e54fb51",
-  "supabase/migrations/20260719140200_rls_ceremonial_lock.sql": "110b2cf09bdf0fb7",
-  "supabase/migrations/20260721120000_push_multi_device.sql": "866d37f23b8b9b18",
-  "supabase/migrations/20260722120000_auth_is_pj_lembaga_ketat.sql": "fb2d03f7014e0deb",
-  "supabase/migrations/20260723120000_realtime_add_sisa.sql": "d14755ba4734c060",
-  "supabase/migrations/20260723130000_absensi_shift_guru_staff_write.sql": "45f1d92bc7d899e9",
-  "supabase/migrations/20260729120000_keuangan_view_scope.sql": "2201cce4f9c796a5",
-  "supabase/migrations/20260729130000_settings_keuangan_key.sql": "e29189c67f803a76",
-  "supabase/migrations/20260729140000_guru_sel_staff.sql": "b048c451d95953a0",
-  "supabase/migrations/20260803120000_audit_agu_rls_tighten.sql": "7551c8b8a9b563ba",
-  "supabase/migrations/20260803130000_provision_akun_rpc.sql": "42f57a00890dfdad",
-  "supabase/migrations/20260803140000_provisi_izin.sql": "9b670f1d1043d811",
-  "supabase/migrations/20260804120000_santri_upd_pj_ptpt.sql": "84d43f254c9353a1",
-  "supabase/migrations/20260806120000_hiview_scan_log.sql": "da6bb6a675c74a48",
-  "supabase/migrations/20260807170000_settings_strip_keuangan_ulang.sql": "5bed12d6c6b35e8a",
-  "supabase/functions/auto-generate-tagihan/index.ts": "0937a4772fb76837",
-  "supabase/functions/auto-generate-tagihan/syahriyah.ts": "334a0fe003705e17",
-  "supabase/functions/dispatch-push/index.ts": "610c8273a509a54f",
-  "supabase/functions/get-link-preview/index.ts": "bcfb8061b3b341eb",
-  "supabase/functions/hiview-absen/index.ts": "19cf27886f8fc1e6",
-  "supabase/functions/hiview-absen/shiftDerive.ts": "47b1b95d2b5fc09a",
-  "supabase/functions/hiview-absen/shiftMaster.ts": "25aa0fd0681a4ec5",
-  "supabase/functions/provision-akun/index.ts": "52f2cdb473198139",
-  "supabase/functions/reset-user-password/index.ts": "9ec2f6c8c6dbdd1a",
-  "supabase/functions/_shared/cors.ts": "4e1f888d1ed0789a"
+  "app/src/App.vue": {
+    "hulu": "71af0eccac796c82",
+    "kita": "3ab06e3a6b8b8d77"
+  },
+  "app/src/assets/main.css": {
+    "hulu": "2d2c7a5aadd91175",
+    "kita": "2237a9bfdd36c4d2"
+  },
+  "app/src/assets/ribbon.css": {
+    "hulu": "5709fab96e40fb31",
+    "kita": "2a510450261bc41f"
+  },
+  "app/src/assets/standard-ui.css": {
+    "hulu": "e3b0c44298fc1c14",
+    "kita": "e3b0c44298fc1c14"
+  },
+  "app/src/components/charts/AdminStatsCharts.vue": {
+    "hulu": "98ad3301bc63aaa0",
+    "kita": "98ad3301bc63aaa0"
+  },
+  "app/src/components/charts/TrenCapaianChart.vue": {
+    "hulu": "b86424dfb6b17ba2",
+    "kita": "b86424dfb6b17ba2"
+  },
+  "app/src/components/dashboard/DasborKeuangan.vue": {
+    "hulu": "d44c6a546253ba99",
+    "kita": "d44c6a546253ba99"
+  },
+  "app/src/components/dashboard/DasborPendidikan.vue": {
+    "hulu": "b355200138e38d8a",
+    "kita": "b355200138e38d8a"
+  },
+  "app/src/components/dashboard/DashboardGreeting.vue": {
+    "hulu": "a089ca607f8d17d8",
+    "kita": "c5debbdc43686455"
+  },
+  "app/src/components/dashboard/DashboardJamHijri.vue": {
+    "hulu": "de8192b79d62f148",
+    "kita": "39855f4265cacc04"
+  },
+  "app/src/components/dashboard/DashboardKalender.vue": {
+    "hulu": "f9a30d716fba67f8",
+    "kita": "f9a30d716fba67f8"
+  },
+  "app/src/components/dashboard/DashboardPosts.vue": {
+    "hulu": "25ac5d3eb34531b9",
+    "kita": "1f876ea95ebca07a"
+  },
+  "app/src/components/form/EditKelasSantriDialog.vue": {
+    "hulu": "b1484b87f16ab8d0",
+    "kita": "028780ac9729c060"
+  },
+  "app/src/components/form/MultiSelectGuruPengajar.vue": {
+    "hulu": "1b6d7e452afbd43f",
+    "kita": "1b6d7e452afbd43f"
+  },
+  "app/src/components/form/MultiSelectGuruSekolah.vue": {
+    "hulu": "e1e558e720e2851b",
+    "kita": "e1e558e720e2851b"
+  },
+  "app/src/components/layout/AppHeader.vue": {
+    "hulu": "844991eebdc5aba5",
+    "kita": "bc197239ee8e7209"
+  },
+  "app/src/components/layout/AppLayout.vue": {
+    "hulu": "e6a68cfc10d1aa05",
+    "kita": "e6a68cfc10d1aa05"
+  },
+  "app/src/components/layout/AppNotifBell.vue": {
+    "hulu": "ec54eef2ee397472",
+    "kita": "ec54eef2ee397472"
+  },
+  "app/src/components/layout/AppShell.vue": {
+    "hulu": "80c9e34aad1c38b0",
+    "kita": "80c9e34aad1c38b0"
+  },
+  "app/src/components/layout/AppSidebar.vue": {
+    "hulu": "7ca1a75bf33c2a4a"
+  },
+  "app/src/components/layout/BackButton.vue": {
+    "hulu": "65cf91b638e4cbe7",
+    "kita": "65cf91b638e4cbe7"
+  },
+  "app/src/components/layout/BottomNav.vue": {
+    "hulu": "052f8ce1ea335d74",
+    "kita": "052f8ce1ea335d74"
+  },
+  "app/src/components/layout/EmptyState.vue": {
+    "hulu": "fe58b31431a22a52",
+    "kita": "fe58b31431a22a52"
+  },
+  "app/src/components/layout/GlobalSearch.vue": {
+    "hulu": "d93bbdee92f69746",
+    "kita": "426f5aca668633aa"
+  },
+  "app/src/components/layout/PageHeader.vue": {
+    "hulu": "c885cc8df2805b5f",
+    "kita": "c885cc8df2805b5f"
+  },
+  "app/src/components/layout/SkeletonCard.vue": {
+    "hulu": "0ccf072f23d76d60",
+    "kita": "0ccf072f23d76d60"
+  },
+  "app/src/components/pos/ModalPOS.vue": {
+    "hulu": "9bba97b570076d21"
+  },
+  "app/src/components/posts/PostCard.vue": {
+    "hulu": "7d1605c82ae311cc"
+  },
+  "app/src/components/posts/ReactionBar.vue": {
+    "hulu": "e49ab7fbae061c5a",
+    "kita": "e49ab7fbae061c5a"
+  },
+  "app/src/components/PrinterSettingsModal.vue": {
+    "hulu": "3cc27fb552f6be04",
+    "kita": "bcfccca5c58dbf7e"
+  },
+  "app/src/components/ReceiptModal.vue": {
+    "hulu": "809e3ec6d5d0b17d",
+    "kita": "809e3ec6d5d0b17d"
+  },
+  "app/src/components/ribbon/RibbonBackstage.vue": {
+    "hulu": "f80a301cb961679b"
+  },
+  "app/src/components/ribbon/RibbonBar.vue": {
+    "hulu": "f5e0cf14b797b174",
+    "kita": "f5e0cf14b797b174"
+  },
+  "app/src/components/ribbon/RibbonButton.vue": {
+    "hulu": "c7ff0019443707e2",
+    "kita": "c7ff0019443707e2"
+  },
+  "app/src/components/ribbon/RibbonClock.vue": {
+    "hulu": "08b5f710d2bd26ce",
+    "kita": "08b5f710d2bd26ce"
+  },
+  "app/src/components/ribbon/RibbonGroup.vue": {
+    "hulu": "c0678e9c5e117f5c",
+    "kita": "c0678e9c5e117f5c"
+  },
+  "app/src/components/ribbon/RibbonIcon.vue": {
+    "hulu": "ee42647f2787af69",
+    "kita": "61e2d4c1bb6a7889"
+  },
+  "app/src/components/ribbon/RibbonLayout.vue": {
+    "hulu": "28bdd9d384e94dac",
+    "kita": "910398b832c073b5"
+  },
+  "app/src/components/ribbon/RibbonStatusBar.vue": {
+    "hulu": "d44d7cc43e3dafe9"
+  },
+  "app/src/components/ribbon/RibbonTabBar.vue": {
+    "hulu": "dc474c3e98213115",
+    "kita": "dc474c3e98213115"
+  },
+  "app/src/components/ribbon/RibbonTitleBar.vue": {
+    "hulu": "63e188d239584c28",
+    "kita": "63e188d239584c28"
+  },
+  "app/src/components/statistik/DistribusiPrestasi.vue": {
+    "hulu": "f75b3260aa80a5cc",
+    "kita": "b3d9548ffa969336"
+  },
+  "app/src/components/statistik/OperasionalGuru.vue": {
+    "hulu": "ed79c1427f696b6f",
+    "kita": "ed79c1427f696b6f"
+  },
+  "app/src/components/statistik/RingkasanSantriLembaga.vue": {
+    "hulu": "58938a2b84e1b811",
+    "kita": "58938a2b84e1b811"
+  },
+  "app/src/components/ui/ConfirmDialog.vue": {
+    "hulu": "e09ecf939e470fcd",
+    "kita": "e09ecf939e470fcd"
+  },
+  "app/src/components/ui/ToastStack.vue": {
+    "hulu": "1dc77f4b1b64b589",
+    "kita": "1dc77f4b1b64b589"
+  },
+  "app/src/components/ui/UiActionCard.vue": {
+    "hulu": "5035dc02b67e8d3f",
+    "kita": "5035dc02b67e8d3f"
+  },
+  "app/src/components/ui/UiButton.vue": {
+    "hulu": "e78cdecd08ac78be",
+    "kita": "e78cdecd08ac78be"
+  },
+  "app/src/components/ui/UiCard.vue": {
+    "hulu": "804d3f1ae9efee93",
+    "kita": "804d3f1ae9efee93"
+  },
+  "app/src/components/ui/UiInput.vue": {
+    "hulu": "15ac81f98236c82c",
+    "kita": "15ac81f98236c82c"
+  },
+  "app/src/composables/useAbsensi.js": {
+    "hulu": "c4fa80abfe9fb469",
+    "kita": "c4fa80abfe9fb469"
+  },
+  "app/src/composables/useAndroidUpdate.js": {
+    "hulu": "0e45b4893f36ef3f",
+    "kita": "a87f883b13ad2717"
+  },
+  "app/src/composables/useCeremonial.js": {
+    "hulu": "057509d866a47945",
+    "kita": "057509d866a47945"
+  },
+  "app/src/composables/useClock.js": {
+    "hulu": "b307ba3367e00cd4",
+    "kita": "b307ba3367e00cd4"
+  },
+  "app/src/composables/useConfirm.js": {
+    "hulu": "fdd5680fd72ca1df",
+    "kita": "fdd5680fd72ca1df"
+  },
+  "app/src/composables/useDataAudit.js": {
+    "hulu": "72fa88b4868549ce",
+    "kita": "72fa88b4868549ce"
+  },
+  "app/src/composables/useDb.js": {
+    "hulu": "afb0f889633a4f23",
+    "kita": "afb0f889633a4f23"
+  },
+  "app/src/composables/useDesktopPrint.js": {
+    "hulu": "c6628ec056e5c490",
+    "kita": "09997fa40f6b55a4"
+  },
+  "app/src/composables/useDesktopShell.js": {
+    "hulu": "515954fbb089bb77",
+    "kita": "515954fbb089bb77"
+  },
+  "app/src/composables/useEdgeSwipeBack.js": {
+    "hulu": "2afeef7f3a70677e",
+    "kita": "2afeef7f3a70677e"
+  },
+  "app/src/composables/useExcel.js": {
+    "hulu": "8307be1aafe4598e"
+  },
+  "app/src/composables/useFingerprintSync.js": {
+    "hulu": "9c18c1d90693c110"
+  },
+  "app/src/composables/useGedungScope.js": {
+    "hulu": "2ce465df7a547e86",
+    "kita": "2ce465df7a547e86"
+  },
+  "app/src/composables/useGlondongan.js": {
+    "hulu": "433f972028c54aa0",
+    "kita": "433f972028c54aa0"
+  },
+  "app/src/composables/useGoogleSheet.js": {
+    "hulu": "2493abbee500ef03",
+    "kita": "2493abbee500ef03"
+  },
+  "app/src/composables/useGuru.js": {
+    "hulu": "48e76497a6dad0b3",
+    "kita": "48e76497a6dad0b3"
+  },
+  "app/src/composables/useGuruForm.js": {
+    "hulu": "7d0491b8a42434bb",
+    "kita": "7d0491b8a42434bb"
+  },
+  "app/src/composables/useHaptic.js": {
+    "hulu": "c047335e318364fa",
+    "kita": "c047335e318364fa"
+  },
+  "app/src/composables/useIzinGuru.js": {
+    "hulu": "14b967bb46b3c857",
+    "kita": "14b967bb46b3c857"
+  },
+  "app/src/composables/useKegiatan.js": {
+    "hulu": "e8460dbbba1f5123",
+    "kita": "e8460dbbba1f5123"
+  },
+  "app/src/composables/useKeuangan.js": {
+    "hulu": "62ebd79ff639c1e9",
+    "kita": "62ebd79ff639c1e9"
+  },
+  "app/src/composables/useKeuanganDashboard.js": {
+    "hulu": "3bf82c572a23b8a2",
+    "kita": "08429d589d86bd30"
+  },
+  "app/src/composables/useLembaga.js": {
+    "hulu": "32f35bc6dad688f1"
+  },
+  "app/src/composables/useLembagaForm.js": {
+    "hulu": "b39dc094330cad81",
+    "kita": "c64c9eecffb0cfab"
+  },
+  "app/src/composables/useLocalNotif.js": {
+    "hulu": "ad670a8f765af14e"
+  },
+  "app/src/composables/useMenus.js": {
+    "hulu": "48efdb4432062fc6"
+  },
+  "app/src/composables/useMobileShell.js": {
+    "hulu": "a990c7058abb3255",
+    "kita": "a990c7058abb3255"
+  },
+  "app/src/composables/useNativeDownload.js": {
+    "hulu": "56175f18a7a63a2c",
+    "kita": "e0fe9c7b430b1b4d"
+  },
+  "app/src/composables/useNotifications.js": {
+    "hulu": "40bdfea46fd491fd",
+    "kita": "40bdfea46fd491fd"
+  },
+  "app/src/composables/usePjGuru.js": {
+    "hulu": "60d2264967f4b761",
+    "kita": "60d2264967f4b761"
+  },
+  "app/src/composables/usePullToRefresh.js": {
+    "hulu": "15247e98da74b47a",
+    "kita": "15247e98da74b47a"
+  },
+  "app/src/composables/usePushNotifications.js": {
+    "hulu": "8eca10a09c8d53c6"
+  },
+  "app/src/composables/useRibbonContext.js": {
+    "hulu": "5c01b55d696f2edc",
+    "kita": "5c01b55d696f2edc"
+  },
+  "app/src/composables/useRibbonNav.js": {
+    "hulu": "c0395d4933e37d1c"
+  },
+  "app/src/composables/useRibbonPrefs.js": {
+    "hulu": "127b31620ffab6d1",
+    "kita": "d190b2c6338ecc33"
+  },
+  "app/src/composables/useRibbonUser.js": {
+    "hulu": "dc2f66d8d42d54eb",
+    "kita": "dc2f66d8d42d54eb"
+  },
+  "app/src/composables/useSantri.js": {
+    "hulu": "6637d8340ad1b479",
+    "kita": "6637d8340ad1b479"
+  },
+  "app/src/composables/useSantriForm.js": {
+    "hulu": "130bfe996e2647e8",
+    "kita": "27099daa897f596d"
+  },
+  "app/src/composables/useStatistikDashboard.js": {
+    "hulu": "0e0fdffc0715be81",
+    "kita": "0e0fdffc0715be81"
+  },
+  "app/src/composables/useStatistikScope.js": {
+    "hulu": "1f43114c1ec0c9f7",
+    "kita": "1f43114c1ec0c9f7"
+  },
+  "app/src/composables/useSupabaseImport.js": {
+    "hulu": "7ff80fcc0e489621",
+    "kita": "7ff80fcc0e489621"
+  },
+  "app/src/composables/useTesKenaikan.js": {
+    "hulu": "6a7b0200bcd7d4ef",
+    "kita": "6a7b0200bcd7d4ef"
+  },
+  "app/src/composables/useToast.js": {
+    "hulu": "27526b386cae632d",
+    "kita": "27526b386cae632d"
+  },
+  "app/src/composables/useUpdater.js": {
+    "hulu": "40589a996ee5d61f",
+    "kita": "b0a5b42a61e98caf"
+  },
+  "app/src/composables/useWaliChildren.js": {
+    "hulu": "13da820425ff89fd",
+    "kita": "13da820425ff89fd"
+  },
+  "app/src/composables/useWidgetSync.js": {
+    "hulu": "a326153956f63fc2",
+    "kita": "301fc689a8626b3d"
+  },
+  "app/src/composables/useWindowControls.js": {
+    "hulu": "e1a57768cb0ec2d4",
+    "kita": "e1a57768cb0ec2d4"
+  },
+  "app/src/main.js": {
+    "hulu": "cd737f5d13024b28"
+  },
+  "app/src/router/index.js": {
+    "hulu": "49be5fd1fe194fbb"
+  },
+  "app/src/services/analytics.js": {
+    "hulu": "189d313ddc5e3422",
+    "kita": "189d313ddc5e3422"
+  },
+  "app/src/services/authSupabase.js": {
+    "hulu": "f208f5a53c0bf65a"
+  },
+  "app/src/services/db.js": {
+    "hulu": "cfb49efce6dd896b"
+  },
+  "app/src/services/importMap.js": {
+    "hulu": "e358dfa89b2dbbe4",
+    "kita": "88e1f17486b983f2"
+  },
+  "app/src/services/notif.js": {
+    "hulu": "979a0d913bf7b532",
+    "kita": "13f7a7ef2a9642e5"
+  },
+  "app/src/services/pdf.js": {
+    "hulu": "354897e6c1956679",
+    "kita": "354897e6c1956679"
+  },
+  "app/src/services/queryClient.js": {
+    "hulu": "6bb46bbe1367d5c8",
+    "kita": "6bb46bbe1367d5c8"
+  },
+  "app/src/services/santriFields.js": {
+    "hulu": "195e34aa6ba33032",
+    "kita": "3934956cc34cb359"
+  },
+  "app/src/services/storage.js": {
+    "hulu": "f6a4fa41d2a6f624",
+    "kita": "f6a4fa41d2a6f624"
+  },
+  "app/src/services/supabase.js": {
+    "hulu": "01de47ddd0add806"
+  },
+  "app/src/services/supabaseStorage.js": {
+    "hulu": "880859d05ce220c6",
+    "kita": "880859d05ce220c6"
+  },
+  "app/src/stores/auth.js": {
+    "hulu": "bd322fcbe4b0d667",
+    "kita": "83dbb3a5fa3244c2"
+  },
+  "app/src/stores/collections.js": {
+    "hulu": "b5e6b6f11b95de1d",
+    "kita": "b5e6b6f11b95de1d"
+  },
+  "app/src/stores/fingerprint.js": {
+    "hulu": "63f62615e1f6b562",
+    "kita": "40e3de63f1672f85"
+  },
+  "app/src/stores/settings.js": {
+    "hulu": "4e26d5a68e31b5a0"
+  },
+  "app/src/stores/ui.js": {
+    "hulu": "6688e4b5ff3cdc4d",
+    "kita": "fe989d587a7c327a"
+  },
+  "app/src/utils/absenHarian.js": {
+    "hulu": "9eec1f743caacbb7",
+    "kita": "9eec1f743caacbb7"
+  },
+  "app/src/utils/absensiMaterialize.js": {
+    "hulu": "f93d31ee2dbfb568",
+    "kita": "f93d31ee2dbfb568"
+  },
+  "app/src/utils/absensiRekap.js": {
+    "hulu": "4f3abc6f46a2ded0",
+    "kita": "4f3abc6f46a2ded0"
+  },
+  "app/src/utils/auditLog.js": {
+    "hulu": "2b358ccad8dcfe41",
+    "kita": "2b358ccad8dcfe41"
+  },
+  "app/src/utils/bebanMengajar.js": {
+    "hulu": "d3bdb68b69869aea",
+    "kita": "d3bdb68b69869aea"
+  },
+  "app/src/utils/bisyarohScope.js": {
+    "hulu": "e3c6131808327593",
+    "kita": "e3c6131808327593"
+  },
+  "app/src/utils/bukuIndukLaporan.js": {
+    "hulu": "405f3a22f8bfb3ef",
+    "kita": "405f3a22f8bfb3ef"
+  },
+  "app/src/utils/escpImage.js": {
+    "hulu": "7940300b7aebe4ec",
+    "kita": "7940300b7aebe4ec"
+  },
+  "app/src/utils/format.js": {
+    "hulu": "c14dde0078f6ef2b",
+    "kita": "c14dde0078f6ef2b"
+  },
+  "app/src/utils/fuzzyMatch.js": {
+    "hulu": "12fb9ef8eb79b315",
+    "kita": "12fb9ef8eb79b315"
+  },
+  "app/src/utils/gedung.js": {
+    "hulu": "04e204a7848468c0"
+  },
+  "app/src/utils/glondongan.js": {
+    "hulu": "f3541f6ab77f4007",
+    "kita": "f3541f6ab77f4007"
+  },
+  "app/src/utils/guruScope.js": {
+    "hulu": "48e5ad50a7f16b50",
+    "kita": "48e5ad50a7f16b50"
+  },
+  "app/src/utils/hijri.js": {
+    "hulu": "5c3c58f824679bf7",
+    "kita": "5c3c58f824679bf7"
+  },
+  "app/src/utils/jabatanUnit.js": {
+    "hulu": "b2c1115d5755f8ac",
+    "kita": "b2c1115d5755f8ac"
+  },
+  "app/src/utils/jenjang.js": {
+    "hulu": "572d6f7f8062c3bc",
+    "kita": "572d6f7f8062c3bc"
+  },
+  "app/src/utils/jenjangQiraati.js": {
+    "hulu": "01cb331dc8a1f356",
+    "kita": "01cb331dc8a1f356"
+  },
+  "app/src/utils/kartuJejak.js": {
+    "hulu": "b6485456a557b7c6",
+    "kita": "b6485456a557b7c6"
+  },
+  "app/src/utils/kasLembaga.js": {
+    "hulu": "a80e4f674ff4a1cf",
+    "kita": "6afb77f4dbdf29c7"
+  },
+  "app/src/utils/kelasHitung.js": {
+    "hulu": "b1bfc3652c4ebdc7",
+    "kita": "b1bfc3652c4ebdc7"
+  },
+  "app/src/utils/kenaikan.js": {
+    "hulu": "81cb60106dc04356"
+  },
+  "app/src/utils/lembagaShift.js": {
+    "hulu": "7a59a25eff58bdd3",
+    "kita": "7a59a25eff58bdd3"
+  },
+  "app/src/utils/liburNasional.js": {
+    "hulu": "4ece0f9483b92122",
+    "kita": "4ece0f9483b92122"
+  },
+  "app/src/utils/liburScope.js": {
+    "hulu": "fe86bde28de831c7",
+    "kita": "fe86bde28de831c7"
+  },
+  "app/src/utils/masaTempuh.js": {
+    "hulu": "050b32846c221738",
+    "kita": "050b32846c221738"
+  },
+  "app/src/utils/metodeBayar.js": {
+    "hulu": "c00c702fa8862fcb"
+  },
+  "app/src/utils/nigGenerator.js": {
+    "hulu": "f3ab8bc1048b58df",
+    "kita": "f3ab8bc1048b58df"
+  },
+  "app/src/utils/nisGenerator.js": {
+    "hulu": "82d0199af365df45"
+  },
+  "app/src/utils/pasanganGuru.js": {
+    "hulu": "4bff8b0ba1e9e5df",
+    "kita": "4bff8b0ba1e9e5df"
+  },
+  "app/src/utils/pasaran.js": {
+    "hulu": "8f5fc6e631977154",
+    "kita": "8f5fc6e631977154"
+  },
+  "app/src/utils/pdfBuilder.js": {
+    "hulu": "2dcea532739782ac",
+    "kita": "2bcb1977a7e0541f"
+  },
+  "app/src/utils/periodeTagihan.js": {
+    "hulu": "27f82d31b98cc86c",
+    "kita": "0948a8a327c57044"
+  },
+  "app/src/utils/pesanWa.js": {
+    "hulu": "d596d0dfb91377f2",
+    "kita": "d596d0dfb91377f2"
+  },
+  "app/src/utils/posDana.js": {
+    "hulu": "bc4c014f19bea009",
+    "kita": "bc4c014f19bea009"
+  },
+  "app/src/utils/potonganPos.js": {
+    "hulu": "aefe6efdf73e99c7",
+    "kita": "aefe6efdf73e99c7"
+  },
+  "app/src/utils/pratinjauSlip.js": {
+    "hulu": "a7f47853961345fe",
+    "kita": "a7f47853961345fe"
+  },
+  "app/src/utils/predikat.js": {
+    "hulu": "f92c209518c5b2cb",
+    "kita": "f92c209518c5b2cb"
+  },
+  "app/src/utils/prestasiBulanan.js": {
+    "hulu": "c024c01bcbd297c7",
+    "kita": "c024c01bcbd297c7"
+  },
+  "app/src/utils/promosiKenaikan.js": {
+    "hulu": "eaf2394d8ab515a2",
+    "kita": "eaf2394d8ab515a2"
+  },
+  "app/src/utils/rapikanGabungan.js": {
+    "hulu": "075e6edb01b6e0e2",
+    "kita": "075e6edb01b6e0e2"
+  },
+  "app/src/utils/raporPdf.js": {
+    "hulu": "5065f43e5506c0c8"
+  },
+  "app/src/utils/raporSchema.js": {
+    "hulu": "c7b4466eb9198f90",
+    "kita": "c7b4466eb9198f90"
+  },
+  "app/src/utils/receiptHtml.js": {
+    "hulu": "25095654daba96f8",
+    "kita": "2f8c2ba0b4622606"
+  },
+  "app/src/utils/riwayatPendidikanPdf.js": {
+    "hulu": "1bd3d8011f7f5f19",
+    "kita": "1bd3d8011f7f5f19"
+  },
+  "app/src/utils/riwayatSantriPdf.js": {
+    "hulu": "c5fbb687e9602b7d",
+    "kita": "c5fbb687e9602b7d"
+  },
+  "app/src/utils/roleScope.js": {
+    "hulu": "642f3f42b69a27e3",
+    "kita": "642f3f42b69a27e3"
+  },
+  "app/src/utils/santriIdentitas.js": {
+    "hulu": "d624b2855da82278",
+    "kita": "d624b2855da82278"
+  },
+  "app/src/utils/santriSort.js": {
+    "hulu": "d5f5bd95d2b19700"
+  },
+  "app/src/utils/shellOverride.js": {
+    "hulu": "8024843678e0f294",
+    "kita": "8024843678e0f294"
+  },
+  "app/src/utils/shiftDerive.js": {
+    "hulu": "2f9870397c68df79",
+    "kita": "fdd51ccd8b08de7a"
+  },
+  "app/src/utils/shiftMaster.js": {
+    "hulu": "cd1e1b1474118452",
+    "kita": "7f92e4a4770981c9"
+  },
+  "app/src/utils/simulasiBisyaroh.js": {
+    "hulu": "9ae9783e9aa5a52e",
+    "kita": "9ae9783e9aa5a52e"
+  },
+  "app/src/utils/simulasiPemasukan.js": {
+    "hulu": "9e3758d7002803ec",
+    "kita": "9e3758d7002803ec"
+  },
+  "app/src/utils/statusSantri.js": {
+    "hulu": "740d37bc47187156",
+    "kita": "740d37bc47187156"
+  },
+  "app/src/utils/strukBuilder.js": {
+    "hulu": "2ffd22bc2455d504",
+    "kita": "1798b57ee49ae7ad"
+  },
+  "app/src/utils/syahriyah.js": {
+    "hulu": "08952b8bff4565a2",
+    "kita": "343429ca9945132e"
+  },
+  "app/src/utils/tagihan.js": {
+    "hulu": "f2f9f7f53da157fb"
+  },
+  "app/src/utils/tagihanId.js": {
+    "hulu": "a5476ae7608b20a9",
+    "kita": "a5476ae7608b20a9"
+  },
+  "app/src/utils/terbilang.js": {
+    "hulu": "f74506654cc6ccd9",
+    "kita": "f74506654cc6ccd9"
+  },
+  "app/src/utils/tesKenaikan.js": {
+    "hulu": "c1c042e995ac4d7b",
+    "kita": "c1c042e995ac4d7b"
+  },
+  "app/src/utils/tesRaporFeed.js": {
+    "hulu": "b68a6d1613c922a8",
+    "kita": "b68a6d1613c922a8"
+  },
+  "app/src/utils/trxStruk.js": {
+    "hulu": "18e04e7953e49412",
+    "kita": "18e04e7953e49412"
+  },
+  "app/src/utils/unduhan.js": {
+    "hulu": "ab3672dbf87cc42c"
+  },
+  "app/src/utils/usia.js": {
+    "hulu": "549f78558c3b72d4",
+    "kita": "549f78558c3b72d4"
+  },
+  "app/src/utils/v100_dedupe.js": {
+    "hulu": "f03264d665814bac",
+    "kita": "f03264d665814bac"
+  },
+  "app/src/utils/v100_lembagaFix.js": {
+    "hulu": "cb820be106d53ad1",
+    "kita": "cb820be106d53ad1"
+  },
+  "app/src/views/AbsensiGuruView.vue": {
+    "hulu": "319b92e11ac4a722"
+  },
+  "app/src/views/AbsensiSantriView.vue": {
+    "hulu": "d328a6b745752da4",
+    "kita": "d328a6b745752da4"
+  },
+  "app/src/views/BantuanView.vue": {
+    "hulu": "d3d2b20d1a222034"
+  },
+  "app/src/views/BerandaDesktopView.vue": {
+    "hulu": "33f70b5e9800ff0e",
+    "kita": "33f70b5e9800ff0e"
+  },
+  "app/src/views/BisyarohView.vue": {
+    "hulu": "d455c058635a0ad9",
+    "kita": "f79d521a039ca50b"
+  },
+  "app/src/views/BukuIndukView.vue": {
+    "hulu": "5fc40c9adb02e54f",
+    "kita": "e53b90de7a1733df"
+  },
+  "app/src/views/CapaianPrestasiView.vue": {
+    "hulu": "91640abeb76dfc85"
+  },
+  "app/src/views/CeremonialView.vue": {
+    "hulu": "087265c26f6b10c9",
+    "kita": "00560fb5cc7e8c26"
+  },
+  "app/src/views/DashboardView.vue": {
+    "hulu": "cc775a7526893544"
+  },
+  "app/src/views/FieldSchemaView.vue": {
+    "hulu": "f6200db854875c80",
+    "kita": "f6200db854875c80"
+  },
+  "app/src/views/GlondonganView.vue": {
+    "hulu": "55bc3b9255792751",
+    "kita": "cff01f06a4ae42c2"
+  },
+  "app/src/views/GuruBelumInputView.vue": {
+    "hulu": "61b1060a94d4e0a3",
+    "kita": "61b1060a94d4e0a3"
+  },
+  "app/src/views/GuruFormView.vue": {
+    "hulu": "44ba2ad1c06e087a",
+    "kita": "2be131478deb073d"
+  },
+  "app/src/views/GuruView.vue": {
+    "hulu": "6e7dd6638616cccf",
+    "kita": "a46b652f84ea2eff"
+  },
+  "app/src/views/HutangPiutangView.vue": {
+    "hulu": "783033c76acf1c77",
+    "kita": "783033c76acf1c77"
+  },
+  "app/src/views/ImporKalenderView.vue": {
+    "hulu": "0193fa3375a55fd3",
+    "kita": "0193fa3375a55fd3"
+  },
+  "app/src/views/ImporSupabaseView.vue": {
+    "hulu": "550fd0d7088e4e4d",
+    "kita": "93cf7dc19cc677a3"
+  },
+  "app/src/views/InputBulananView.vue": {
+    "hulu": "cd2ed4a0eeba50cb",
+    "kita": "cd2ed4a0eeba50cb"
+  },
+  "app/src/views/JabatanKelolaView.vue": {
+    "hulu": "1ae49f8a1309d905",
+    "kita": "1ae49f8a1309d905"
+  },
+  "app/src/views/KalenderKegiatanView.vue": {
+    "hulu": "5aa92fb89f360006",
+    "kita": "5aa92fb89f360006"
+  },
+  "app/src/views/KegiatanPesantrenView.vue": {
+    "hulu": "e31bf30cf785be96",
+    "kita": "e31bf30cf785be96"
+  },
+  "app/src/views/KelasGuruView.vue": {
+    "hulu": "1e57fdab3a20e4c2",
+    "kita": "1e57fdab3a20e4c2"
+  },
+  "app/src/views/KelasView.vue": {
+    "hulu": "c0e00b3f01bb09cb",
+    "kita": "c0e00b3f01bb09cb"
+  },
+  "app/src/views/KeuanganDashboardView.vue": {
+    "hulu": "a29da03d32d85ad8",
+    "kita": "31d5acc42cc7553e"
+  },
+  "app/src/views/KeuanganDesktopView.vue": {
+    "hulu": "75795534bd1eaf86",
+    "kita": "75795534bd1eaf86"
+  },
+  "app/src/views/KritikSaranView.vue": {
+    "hulu": "7db1f8d4a05ac63b",
+    "kita": "7db1f8d4a05ac63b"
+  },
+  "app/src/views/LaporanKeuanganView.vue": {
+    "hulu": "e85429b3d506c45c",
+    "kita": "e85429b3d506c45c"
+  },
+  "app/src/views/LaporanView.vue": {
+    "hulu": "b62e91bbbd1fe253",
+    "kita": "b62e91bbbd1fe253"
+  },
+  "app/src/views/LembagaDetailView.vue": {
+    "hulu": "3f144d99a6625834",
+    "kita": "3f144d99a6625834"
+  },
+  "app/src/views/LembagaFormView.vue": {
+    "hulu": "75f9c64b010027f4",
+    "kita": "75f9c64b010027f4"
+  },
+  "app/src/views/LembagaView.vue": {
+    "hulu": "6fc4fd1beb6c0e8e",
+    "kita": "6fc4fd1beb6c0e8e"
+  },
+  "app/src/views/LoginView.vue": {
+    "hulu": "c7aef00d85f1bfbe"
+  },
+  "app/src/views/MapelDesktopView.vue": {
+    "hulu": "b36100c9425b7d19",
+    "kita": "b36100c9425b7d19"
+  },
+  "app/src/views/MasterDataView.vue": {
+    "hulu": "184410262a88548f"
+  },
+  "app/src/views/MasterFormBridgeView.vue": {
+    "hulu": "37ef13feb6947b5a",
+    "kita": "37ef13feb6947b5a"
+  },
+  "app/src/views/MesinAbsensiView.vue": {
+    "hulu": "7120abec7977a9b1"
+  },
+  "app/src/views/NaikKelasView.vue": {
+    "hulu": "bfe28d1cbf980880",
+    "kita": "8c619ac4d87af78e"
+  },
+  "app/src/views/NotifikasiView.vue": {
+    "hulu": "0723e42f041d4524",
+    "kita": "0723e42f041d4524"
+  },
+  "app/src/views/PembayaranPendingView.vue": {
+    "hulu": "2b7ded62e242c95a",
+    "kita": "2b7ded62e242c95a"
+  },
+  "app/src/views/PembayaranView.vue": {
+    "hulu": "ebf28c0e1c894888"
+  },
+  "app/src/views/PengaduanView.vue": {
+    "hulu": "ba0fdbb4b0f9fd46",
+    "kita": "ba0fdbb4b0f9fd46"
+  },
+  "app/src/views/PengaturanDesktopView.vue": {
+    "hulu": "626f26bc78e034f2",
+    "kita": "5cc1ba5371fec372"
+  },
+  "app/src/views/PengaturanKeuanganView.vue": {
+    "hulu": "2e16828ffb119301"
+  },
+  "app/src/views/PengaturanView.vue": {
+    "hulu": "d3ddac7b59278e45"
+  },
+  "app/src/views/PersonalView.vue": {
+    "hulu": "67f0eb4e9cd1b063",
+    "kita": "67f0eb4e9cd1b063"
+  },
+  "app/src/views/PosSantriView.vue": {
+    "hulu": "e495e07f31fba3d2",
+    "kita": "38590efe751a4dd9"
+  },
+  "app/src/views/PostsView.vue": {
+    "hulu": "89eac6a20298f9e5",
+    "kita": "a7ba30e1619ab035"
+  },
+  "app/src/views/PpdbAdminView.vue": {
+    "hulu": "18a7e384e62d8311"
+  },
+  "app/src/views/PpdbDetailView.vue": {
+    "hulu": "84a3399aeb213e92",
+    "kita": "07a4e79d9f1640af"
+  },
+  "app/src/views/PpdbFormView.vue": {
+    "hulu": "27c44d14076bb59e"
+  },
+  "app/src/views/profil/ProfilAdmin.vue": {
+    "hulu": "28078c4e58bdd3d3"
+  },
+  "app/src/views/profil/ProfilGuru.vue": {
+    "hulu": "b8a583ddfcc5e197",
+    "kita": "b8a583ddfcc5e197"
+  },
+  "app/src/views/profil/ProfilPengaturanSaya.vue": {
+    "hulu": "aa1c7ed1aa02fd00",
+    "kita": "aa1c7ed1aa02fd00"
+  },
+  "app/src/views/profil/ProfilSantri.vue": {
+    "hulu": "d062b9eac3668908",
+    "kita": "d062b9eac3668908"
+  },
+  "app/src/views/ProfilDetailView.vue": {
+    "hulu": "9d015c618816084e",
+    "kita": "9d015c618816084e"
+  },
+  "app/src/views/ProfilView.vue": {
+    "hulu": "3f21145ad8ecc2ea",
+    "kita": "1f5f077f3fbc45ea"
+  },
+  "app/src/views/RaporView.vue": {
+    "hulu": "ec8930baf67408c2"
+  },
+  "app/src/views/RekapDiniyahView.vue": {
+    "hulu": "91f8493e98ee62b1",
+    "kita": "91f8493e98ee62b1"
+  },
+  "app/src/views/RekapPrestasiView.vue": {
+    "hulu": "2844359816d2134f",
+    "kita": "2844359816d2134f"
+  },
+  "app/src/views/RibbonPlaceholderView.vue": {
+    "hulu": "d31e234fd39d228d",
+    "kita": "d31e234fd39d228d"
+  },
+  "app/src/views/RiwayatPosView.vue": {
+    "hulu": "e2f71fcb48c94f38",
+    "kita": "e2f71fcb48c94f38"
+  },
+  "app/src/views/RiwayatSantriView.vue": {
+    "hulu": "fabe555a0856cb05",
+    "kita": "fabe555a0856cb05"
+  },
+  "app/src/views/SantriFormView.vue": {
+    "hulu": "1a542e6ea8b5d274",
+    "kita": "086fe8aad8c15197"
+  },
+  "app/src/views/SantriView.vue": {
+    "hulu": "e8899962fdf92457",
+    "kita": "20ad9a8fa3636c78"
+  },
+  "app/src/views/StatistikHubView.vue": {
+    "hulu": "1b92055b6c1b127d",
+    "kita": "1b92055b6c1b127d"
+  },
+  "app/src/views/StatistikLembagaDetailView.vue": {
+    "hulu": "3621bf2a6765ae4a",
+    "kita": "3621bf2a6765ae4a"
+  },
+  "app/src/views/StatistikSantriDetailView.vue": {
+    "hulu": "fc49b0c4d79a1e38",
+    "kita": "fc49b0c4d79a1e38"
+  },
+  "app/src/views/StatistikView.vue": {
+    "hulu": "4bfc980826ee9574",
+    "kita": "1a41dcde46052ae7"
+  },
+  "app/src/views/SupervisiView.vue": {
+    "hulu": "6a895da7430a7cac",
+    "kita": "6a895da7430a7cac"
+  },
+  "app/src/views/TabunganView.vue": {
+    "hulu": "f83eecfec53bb1e3"
+  },
+  "app/src/views/TagihanView.vue": {
+    "hulu": "bac29b79e59a9d1c"
+  },
+  "app/src/views/TesKenaikanView.vue": {
+    "hulu": "90f7795f78721276"
+  },
+  "app/src/views/UangPosView.vue": {
+    "hulu": "93b95e432b7a9432",
+    "kita": "93b95e432b7a9432"
+  },
+  "tests/unit/absenHarian.test.js": {
+    "hulu": "3b41139af0826f0d",
+    "kita": "d79e6ebc4150a2ba"
+  },
+  "tests/unit/bebanMengajar.test.js": {
+    "hulu": "bb427f2cd48898f2",
+    "kita": "bb427f2cd48898f2"
+  },
+  "tests/unit/bisyarohPerJpBulanan.test.js": {
+    "hulu": "4c1839ec9e98706c",
+    "kita": "3aea27f7ea5a79f4"
+  },
+  "tests/unit/bisyarohPerTepat.test.js": {
+    "hulu": "c72aeaca29f157ba",
+    "kita": "c72aeaca29f157ba"
+  },
+  "tests/unit/buildAuthEmail.test.js": {
+    "hulu": "d09c1d99a9b40a95"
+  },
+  "tests/unit/bukuIndukLaporan.test.js": {
+    "hulu": "eacbf8d039b0b1a7",
+    "kita": "eacbf8d039b0b1a7"
+  },
+  "tests/unit/ceremonialKandidat.test.js": {
+    "hulu": "167b8bc81b892cd9",
+    "kita": "167b8bc81b892cd9"
+  },
+  "tests/unit/dbRealtimeDebounce.test.js": {
+    "hulu": "6bb74f5b48acb415",
+    "kita": "1cdf65eb1cb3779d"
+  },
+  "tests/unit/dbUpdateOne.test.js": {
+    "hulu": "b46cd88f4c2481c5"
+  },
+  "tests/unit/draftGlondongan.test.js": {
+    "hulu": "d75fd7cf4a58db20",
+    "kita": "d75fd7cf4a58db20"
+  },
+  "tests/unit/formatTanggal.test.js": {
+    "hulu": "97ced0588a693e5d"
+  },
+  "tests/unit/guruAktif.test.js": {
+    "hulu": "57512c784eaa83ab",
+    "kita": "57512c784eaa83ab"
+  },
+  "tests/unit/guruLembagaRefs.test.js": {
+    "hulu": "6207a7b9ff2de2ba",
+    "kita": "1baf01bd769d5f31"
+  },
+  "tests/unit/hitungUsiaPadaTanggal.test.js": {
+    "hulu": "9cdfe0dbfa8bc159"
+  },
+  "tests/unit/importSantriGabung.test.js": {
+    "hulu": "c5464c1ec34e5efe",
+    "kita": "c5464c1ec34e5efe"
+  },
+  "tests/unit/jenisPotonganScope.test.js": {
+    "hulu": "16f4ee75f0b30900",
+    "kita": "16f4ee75f0b30900"
+  },
+  "tests/unit/jenjangQiraati.test.js": {
+    "hulu": "82f947abe3a05206",
+    "kita": "82f947abe3a05206"
+  },
+  "tests/unit/kartuJejak.test.js": {
+    "hulu": "71fd2b7b90804cac",
+    "kita": "71fd2b7b90804cac"
+  },
+  "tests/unit/kartuJuzLulus.test.js": {
+    "hulu": "4f492b4faee91552",
+    "kita": "4f492b4faee91552"
+  },
+  "tests/unit/kasLembaga.test.js": {
+    "hulu": "0e6a9efef671c72e",
+    "kita": "0e6a9efef671c72e"
+  },
+  "tests/unit/kelasHitung.test.js": {
+    "hulu": "1f9994489bb95ffd",
+    "kita": "1f9994489bb95ffd"
+  },
+  "tests/unit/lembagaKelompokCermin.test.js": {
+    "hulu": "d8fc7cd4293103e2",
+    "kita": "f124636718ac5dc0"
+  },
+  "tests/unit/lembagaSekolah.test.js": {
+    "hulu": "ca92a26268529754",
+    "kita": "ca92a26268529754"
+  },
+  "tests/unit/lembagaShift.test.js": {
+    "hulu": "fa5ddbb8c419056c",
+    "kita": "f39e3b31448691a1"
+  },
+  "tests/unit/loginLintasJalur.test.js": {
+    "hulu": "5b0f8c18fc80612f",
+    "kita": "36ea634c7a047c44"
+  },
+  "tests/unit/masaTempuh.test.js": {
+    "hulu": "1e0bac29a283417f",
+    "kita": "1e0bac29a283417f"
+  },
+  "tests/unit/metodeBayar.test.js": {
+    "hulu": "ec1d6f6f1b86d7f5"
+  },
+  "tests/unit/pasanganGuru.test.js": {
+    "hulu": "9c8fb42ab724056c",
+    "kita": "9c8fb42ab724056c"
+  },
+  "tests/unit/pecahJabatan.test.js": {
+    "hulu": "70b52e74094bd3c3",
+    "kita": "6ab8b156dff1c957"
+  },
+  "tests/unit/peranGlondongan.test.js": {
+    "hulu": "745237cd91354cb7",
+    "kita": "745237cd91354cb7"
+  },
+  "tests/unit/periodeTagihan.test.js": {
+    "hulu": "3e72fc64d75b1f08",
+    "kita": "3e72fc64d75b1f08"
+  },
+  "tests/unit/pjGuru.test.js": {
+    "hulu": "1a93454b85942613",
+    "kita": "1a93454b85942613"
+  },
+  "tests/unit/pjPtptKenaikan.test.js": {
+    "hulu": "6d3b339d3f65b757",
+    "kita": "6d3b339d3f65b757"
+  },
+  "tests/unit/posDana.test.js": {
+    "hulu": "2d0c260bc1631652",
+    "kita": "2d0c260bc1631652"
+  },
+  "tests/unit/potonganPos.test.js": {
+    "hulu": "682a6256b2891f56",
+    "kita": "682a6256b2891f56"
+  },
+  "tests/unit/pratinjauSlip.test.js": {
+    "hulu": "d513a38db3b71784",
+    "kita": "d513a38db3b71784"
+  },
+  "tests/unit/prestasiBulanan.test.js": {
+    "hulu": "bb82a61c2a58f2de",
+    "kita": "bb82a61c2a58f2de"
+  },
+  "tests/unit/putusanPembaruan.test.js": {
+    "hulu": "858d7d34a047bf48"
+  },
+  "tests/unit/rapikanGabungan.test.js": {
+    "hulu": "494f8aa962a06ec3",
+    "kita": "faabe4c4bfa4314a"
+  },
+  "tests/unit/rekapPenyimakGlondongan.test.js": {
+    "hulu": "a1851a0658ac8de1",
+    "kita": "a1851a0658ac8de1"
+  },
+  "tests/unit/rentangTanggal.test.js": {
+    "hulu": "eb3628ed6f27faf6",
+    "kita": "eb3628ed6f27faf6"
+  },
+  "tests/unit/ribbonPageActions.test.js": {
+    "hulu": "6eef293a865cb007",
+    "kita": "6eef293a865cb007"
+  },
+  "tests/unit/ringkasSetorTarik.test.js": {
+    "hulu": "00921d22e81418c6",
+    "kita": "00921d22e81418c6"
+  },
+  "tests/unit/santriAmpuanGuru.test.js": {
+    "hulu": "da1113e01df39cf6",
+    "kita": "da1113e01df39cf6"
+  },
+  "tests/unit/santriIdentitas.test.js": {
+    "hulu": "4fa2ade4fb71a177"
+  },
+  "tests/unit/scanTanpaAbsen.test.js": {
+    "hulu": "6079f9994b4d446b",
+    "kita": "6079f9994b4d446b"
+  },
+  "tests/unit/scopePj.test.js": {
+    "hulu": "87ce99ac49b2df5b",
+    "kita": "87ce99ac49b2df5b"
+  },
+  "tests/unit/scopeQiraati.test.js": {
+    "hulu": "4b15be881ff1c379",
+    "kita": "4b15be881ff1c379"
+  },
+  "tests/unit/sekolahSini.test.js": {
+    "hulu": "ce69186910e3efbd",
+    "kita": "2bcaf95f6ff9c36c"
+  },
+  "tests/unit/settingsKeuanganMerge.test.js": {
+    "hulu": "a3a35900f844c5b5",
+    "kita": "a3a35900f844c5b5"
+  },
+  "tests/unit/shiftDeriveMirrorEdge.test.js": {
+    "hulu": "bb72d19ceb753adc",
+    "kita": "ad5404dc61226724"
+  },
+  "tests/unit/shiftNomor.test.js": {
+    "hulu": "1520bf70a2ec807f",
+    "kita": "1520bf70a2ec807f"
+  },
+  "tests/unit/shiftPulang.test.js": {
+    "hulu": "deae010e7732fa45",
+    "kita": "deae010e7732fa45"
+  },
+  "tests/unit/simulasiBisyaroh.test.js": {
+    "hulu": "db4580eeb14882ba",
+    "kita": "e94d1841074182e5"
+  },
+  "tests/unit/simulasiPemasukan.test.js": {
+    "hulu": "134033cf4757ce7f",
+    "kita": "d90433201159b2e2"
+  },
+  "tests/unit/statusSantri.test.js": {
+    "hulu": "347add743d608da2",
+    "kita": "347add743d608da2"
+  },
+  "tests/unit/subscribeCollFilter.test.js": {
+    "hulu": "6653de05672fde21",
+    "kita": "9265306f98ed16e6"
+  },
+  "tests/unit/syahriyah.test.js": {
+    "hulu": "8e2f74b41938be0b",
+    "kita": "c6c0212cda8314ec"
+  },
+  "tests/unit/syahriyahMirrorEdge.test.js": {
+    "hulu": "f38f0be765b8c9b5",
+    "kita": "2da71d7a37720907"
+  },
+  "tests/unit/tagihan.test.js": {
+    "hulu": "64c90ab840640754",
+    "kita": "f65a24b8abaca1f0"
+  },
+  "tests/unit/tagihanId.test.js": {
+    "hulu": "afe5516953b221bf",
+    "kita": "afe5516953b221bf"
+  },
+  "tests/unit/tanggalTransaksiWib.test.js": {
+    "hulu": "19de1ffe1ada0567",
+    "kita": "7262e5eba137a58c"
+  },
+  "tests/unit/todayJakarta.test.js": {
+    "hulu": "e5f543e89f6325d9",
+    "kita": "e5f543e89f6325d9"
+  },
+  "tests/unit/toleransiScan.test.js": {
+    "hulu": "6e25cb3868f2af89",
+    "kita": "6e25cb3868f2af89"
+  },
+  "tests/unit/toTitleCase.test.js": {
+    "hulu": "8ac96f0e7d3e947e"
+  },
+  "tests/unit/trxStruk.test.js": {
+    "hulu": "638cbca5079ec35f",
+    "kita": "688418d697b5d57f"
+  },
+  "tests/unit/tugasAktifGlondongan.test.js": {
+    "hulu": "72ae5fb0eb1e1a77",
+    "kita": "72ae5fb0eb1e1a77"
+  },
+  "tests/unit/tunjanganScope.test.js": {
+    "hulu": "60a14514cb5c8f43",
+    "kita": "192d346f65a4743f"
+  },
+  "tests/unit/unduhanRilis.test.js": {
+    "hulu": "c69804b3110c98cb"
+  },
+  "tests/unit/urutanGlondongan.test.js": {
+    "hulu": "ed4e293b80a1d30c",
+    "kita": "ed4e293b80a1d30c"
+  },
+  "tests/unit/usia.test.js": {
+    "hulu": "2a23a0861d4e4176",
+    "kita": "2a23a0861d4e4176"
+  },
+  "tests/unit/versiSkemaLama.test.js": {
+    "hulu": "89a0a9888c372571",
+    "kita": "e214c37b1b770af6"
+  },
+  "tests/unit/waLink.test.js": {
+    "hulu": "133602a08fbb042d",
+    "kita": "133602a08fbb042d"
+  },
+  "tests/unit/_toAuthPassword.test.js": {
+    "hulu": "0b9ef19b8101cdc0"
+  },
+  "supabase/migrations/20260622090000_init_foundation.sql": {
+    "hulu": "6cc5dda592cb52ee",
+    "kita": "e8707811b0765030"
+  },
+  "supabase/migrations/20260622090100_core.sql": {
+    "hulu": "516af636fc3dd5e3",
+    "kita": "516af636fc3dd5e3"
+  },
+  "supabase/migrations/20260622090200_keuangan.sql": {
+    "hulu": "df0472876da1eaeb",
+    "kita": "df0472876da1eaeb"
+  },
+  "supabase/migrations/20260622090300_akademik.sql": {
+    "hulu": "7b1bb7d9c1fd37bd",
+    "kita": "7b1bb7d9c1fd37bd"
+  },
+  "supabase/migrations/20260622090400_konten.sql": {
+    "hulu": "302e64b02f106983",
+    "kita": "302e64b02f106983"
+  },
+  "supabase/migrations/20260622090500_profiles_rls.sql": {
+    "hulu": "dd30250745b7ca98",
+    "kita": "dd30250745b7ca98"
+  },
+  "supabase/migrations/20260622090600_realtime_grants.sql": {
+    "hulu": "bec30b62d702d131",
+    "kita": "bec30b62d702d131"
+  },
+  "supabase/migrations/20260622090700_auth_login.sql": {
+    "hulu": "2fe03e8bf62f93bd",
+    "kita": "75970025c4c4163c"
+  },
+  "supabase/migrations/20260622091000_push_and_cron.sql": {
+    "hulu": "5e455b2b0d3a23d8",
+    "kita": "b6c58c067a2b1fa3"
+  },
+  "supabase/migrations/20260622092000_storage_policies.sql": {
+    "hulu": "fc392d738da75f39",
+    "kita": "fc392d738da75f39"
+  },
+  "supabase/migrations/20260622093000_save_push_token_rpc.sql": {
+    "hulu": "5951a794e88903c2",
+    "kita": "5951a794e88903c2"
+  },
+  "supabase/migrations/20260622094000_sync_guru_profile_role.sql": {
+    "hulu": "8dd9c6d8894d7251",
+    "kita": "8dd9c6d8894d7251"
+  },
+  "supabase/migrations/20260622095000_analytics_rpc.sql": {
+    "hulu": "3f81f4656994f7bd",
+    "kita": "3f81f4656994f7bd"
+  },
+  "supabase/migrations/20260625120000_realtime_add_master_data.sql": {
+    "hulu": "ec0ae1a22fd59f24",
+    "kita": "ec0ae1a22fd59f24"
+  },
+  "supabase/migrations/20260629100000_fix_analytics_pegawai_status.sql": {
+    "hulu": "bb35c8e945741b62",
+    "kita": "bb35c8e945741b62"
+  },
+  "supabase/migrations/20260629100100_guard_guru_self_escalation.sql": {
+    "hulu": "c1d5e462087b2d04",
+    "kita": "c1d5e462087b2d04"
+  },
+  "supabase/migrations/20260629110000_bmt_va_uangsaku.sql": {
+    "hulu": "b580ea3afcb93d35",
+    "kita": "b580ea3afcb93d35"
+  },
+  "supabase/migrations/20260701100000_tes_glondongan.sql": {
+    "hulu": "07be6e164a27fb57",
+    "kita": "07be6e164a27fb57"
+  },
+  "supabase/migrations/20260702120000_auth_login_source.sql": {
+    "hulu": "c8c2af61dc7df274",
+    "kita": "c8c2af61dc7df274"
+  },
+  "supabase/migrations/20260706120000_wali_pii_scope.sql": {
+    "hulu": "92feaff8c5f0d3e2",
+    "kita": "92feaff8c5f0d3e2"
+  },
+  "supabase/migrations/20260706130000_pengaduan.sql": {
+    "hulu": "e9f312a525f2c205",
+    "kita": "e9f312a525f2c205"
+  },
+  "supabase/migrations/20260714120000_settings_write_keuangan.sql": {
+    "hulu": "c6e33b269ba13b2f",
+    "kita": "c6e33b269ba13b2f"
+  },
+  "supabase/migrations/20260715120000_tagihan_terbayar_backfill.sql": {
+    "hulu": "49d16ab930a807a4",
+    "kita": "49d16ab930a807a4"
+  },
+  "supabase/migrations/20260719120000_santri_upd_guru_pengampu.sql": {
+    "hulu": "2967501baf81196b",
+    "kita": "2967501baf81196b"
+  },
+  "supabase/migrations/20260719130000_ceremonial_ptpt.sql": {
+    "hulu": "a959ddbdfe90b53f",
+    "kita": "a959ddbdfe90b53f"
+  },
+  "supabase/migrations/20260719140000_rls_helpers_ptpt.sql": {
+    "hulu": "d0578f3d5bf0671a",
+    "kita": "d0578f3d5bf0671a"
+  },
+  "supabase/migrations/20260719140100_rls_tes_glondongan_lock.sql": {
+    "hulu": "547ce62d6e54fb51",
+    "kita": "547ce62d6e54fb51"
+  },
+  "supabase/migrations/20260719140200_rls_ceremonial_lock.sql": {
+    "hulu": "110b2cf09bdf0fb7",
+    "kita": "110b2cf09bdf0fb7"
+  },
+  "supabase/migrations/20260721120000_push_multi_device.sql": {
+    "hulu": "866d37f23b8b9b18",
+    "kita": "866d37f23b8b9b18"
+  },
+  "supabase/migrations/20260722120000_auth_is_pj_lembaga_ketat.sql": {
+    "hulu": "fb2d03f7014e0deb",
+    "kita": "6d0fb576467af022"
+  },
+  "supabase/migrations/20260723120000_realtime_add_sisa.sql": {
+    "hulu": "d14755ba4734c060",
+    "kita": "d14755ba4734c060"
+  },
+  "supabase/migrations/20260723130000_absensi_shift_guru_staff_write.sql": {
+    "hulu": "45f1d92bc7d899e9",
+    "kita": "c2750634632e4119"
+  },
+  "supabase/migrations/20260729120000_keuangan_view_scope.sql": {
+    "hulu": "2201cce4f9c796a5",
+    "kita": "2201cce4f9c796a5"
+  },
+  "supabase/migrations/20260729130000_settings_keuangan_key.sql": {
+    "hulu": "e29189c67f803a76",
+    "kita": "e29189c67f803a76"
+  },
+  "supabase/migrations/20260729140000_guru_sel_staff.sql": {
+    "hulu": "b048c451d95953a0",
+    "kita": "b048c451d95953a0"
+  },
+  "supabase/migrations/20260803120000_audit_agu_rls_tighten.sql": {
+    "hulu": "7551c8b8a9b563ba",
+    "kita": "638afa8650233ce7"
+  },
+  "supabase/migrations/20260803130000_provision_akun_rpc.sql": {
+    "hulu": "42f57a00890dfdad",
+    "kita": "d94a4902acfba65d"
+  },
+  "supabase/migrations/20260803140000_provisi_izin.sql": {
+    "hulu": "9b670f1d1043d811",
+    "kita": "edb86fda310fc980"
+  },
+  "supabase/migrations/20260804120000_santri_upd_pj_ptpt.sql": {
+    "hulu": "84d43f254c9353a1",
+    "kita": "84d43f254c9353a1"
+  },
+  "supabase/migrations/20260806120000_hiview_scan_log.sql": {
+    "hulu": "da6bb6a675c74a48",
+    "kita": "ccdff270f2f57ded"
+  },
+  "supabase/migrations/20260807170000_settings_strip_keuangan_ulang.sql": {
+    "hulu": "5bed12d6c6b35e8a",
+    "kita": "5bed12d6c6b35e8a"
+  },
+  "supabase/migrations/20260812120000_auth_email_internal_ketat.sql": {
+    "hulu": "aa9803bb72ba4406",
+    "kita": "f3261607b654b9c6"
+  },
+  "supabase/migrations/20260831120000_santri_upd_kepala_lembaga.sql": {
+    "hulu": "89cb77dfc695e3b0",
+    "kita": "c5adf4fcf3c6b2c2"
+  },
+  "supabase/functions/auto-generate-tagihan/index.ts": {
+    "hulu": "0937a4772fb76837"
+  },
+  "supabase/functions/auto-generate-tagihan/syahriyah.ts": {
+    "hulu": "334a0fe003705e17",
+    "kita": "4b3b6881b8615d34"
+  },
+  "supabase/functions/dispatch-push/index.ts": {
+    "hulu": "610c8273a509a54f"
+  },
+  "supabase/functions/get-link-preview/index.ts": {
+    "hulu": "bcfb8061b3b341eb",
+    "kita": "f7546917aabcaf86"
+  },
+  "supabase/functions/hiview-absen/index.ts": {
+    "hulu": "19cf27886f8fc1e6"
+  },
+  "supabase/functions/hiview-absen/shiftDerive.ts": {
+    "hulu": "47b1b95d2b5fc09a",
+    "kita": "74287cad8ea3504f"
+  },
+  "supabase/functions/hiview-absen/shiftMaster.ts": {
+    "hulu": "25aa0fd0681a4ec5",
+    "kita": "ed6fbaa1f3aacbc2"
+  },
+  "supabase/functions/provision-akun/index.ts": {
+    "hulu": "52f2cdb473198139",
+    "kita": "f0c9b7004f196caa"
+  },
+  "supabase/functions/reset-user-password/index.ts": {
+    "hulu": "9ec2f6c8c6dbdd1a",
+    "kita": "cffd18b5f035a83d"
+  },
+  "supabase/functions/_shared/cors.ts": {
+    "hulu": "4e1f888d1ed0789a",
+    "kita": "4e1f888d1ed0789a"
+  }
 }

@@ -392,13 +392,279 @@
             <p class="text-xs text-emerald-800">
               <i class="fas fa-info-circle mr-1"></i>Target:
               <b>{{ bulkTargets.length }} guru</b> akan di-generate slip-nya. Nominal dari
-              <b>Jenis Bisyaroh</b> ber-scope + master tunjangan/potongan (Pengaturan Keuangan).
-              Yang sudah punya slip periode ini akan di-OVERWRITE.
+              <b>Jenis Bisyaroh</b>, <b>Jenis Tunjangan</b>, dan <b>Jenis Potongan</b> — semuanya
+              ber-scope (Pengaturan Keuangan). Yang sudah punya slip periode ini akan di-OVERWRITE.
             </p>
           </div>
+          <!-- v.1.3.7 (Kyai 31 Agu 2026): "review per bulan … sudah tertera potongannya dll.
+               sebelum generate slip agar bisa koreksi". Angkanya dari buildSlipPayload —
+               fungsi yang SAMA dengan tombol Generate di bawah, jadi yang ditinjau memang
+               yang akan tersimpan. Tak ada satu baris pun yang ditulis di sini. -->
+          <button
+            :disabled="pratinjauBusy || bulkTargets.length === 0"
+            class="w-full mt-3 bg-[var(--bg-card)] border-2 border-emerald-600 text-emerald-700 dark:text-emerald-300 text-sm font-black py-3 rounded-xl disabled:opacity-50 cursor-pointer transition"
+            @click="jalankanPratinjau"
+          >
+            <i
+              :class="['fas', pratinjauBusy ? 'fa-spinner fa-spin' : 'fa-magnifying-glass', 'mr-2']"
+            ></i>
+            {{
+              pratinjauBusy
+                ? 'Menghitung…'
+                : `Tinjau Dulu ${bulkTargets.length} Slip (${periodeAktif})`
+            }}
+          </button>
+
+          <div v-if="pratinjauRows.length" class="mt-3 space-y-2">
+            <p
+              v-if="pratinjauBasi"
+              class="text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 rounded-lg p-2"
+            >
+              <i class="fas fa-triangle-exclamation mr-1"></i>Pratinjau ini dibuat untuk periode
+              <b>{{ pratinjauPeriode }}</b
+              >, sedangkan yang dipilih sekarang <b>{{ periodeAktif }}</b
+              >. Tinjau ulang sebelum generate.
+            </p>
+
+            <!-- Ringkasan -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div
+                class="bg-[var(--bg-card-elevated)] rounded-xl p-2 border border-[var(--border-subtle)]"
+              >
+                <p class="text-[9px] uppercase font-black text-[var(--text-secondary)]">
+                  Pemasukan
+                </p>
+                <p class="text-sm font-black text-[var(--text-primary)]">
+                  {{ fmtRp(pratinjauRingkas.pemasukan) }}
+                </p>
+              </div>
+              <div class="bg-rose-50 dark:bg-rose-900/20 rounded-xl p-2 border border-rose-200">
+                <p class="text-[9px] uppercase font-black text-rose-700 dark:text-rose-300">
+                  Potongan · {{ pratinjauRingkas.kenaPotongan }} guru
+                </p>
+                <p class="text-sm font-black text-rose-700 dark:text-rose-300">
+                  {{ fmtRp(pratinjauRingkas.potongan) }}
+                </p>
+              </div>
+              <div
+                class="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-2 border border-emerald-200"
+              >
+                <p class="text-[9px] uppercase font-black text-emerald-700 dark:text-emerald-300">
+                  Take Home
+                </p>
+                <p class="text-sm font-black text-emerald-700 dark:text-emerald-300">
+                  {{ fmtRp(pratinjauRingkas.takeHome) }}
+                </p>
+              </div>
+              <div
+                :class="[
+                  'rounded-xl p-2 border',
+                  pratinjauRingkas.perluDilihat
+                    ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200'
+                    : 'bg-[var(--bg-card-elevated)] border-[var(--border-subtle)]'
+                ]"
+              >
+                <p class="text-[9px] uppercase font-black text-[var(--text-secondary)]">
+                  Perlu dilihat
+                </p>
+                <p class="text-sm font-black text-[var(--text-primary)]">
+                  {{ pratinjauRingkas.perluDilihat }} guru
+                </p>
+                <p class="text-[9px] text-[var(--text-tertiary)]">
+                  {{ pratinjauRingkas.akanDitimpa }} slip ditimpa
+                  <span v-if="pratinjauRingkas.sudahCair" class="text-rose-600 font-bold"
+                    >· {{ pratinjauRingkas.sudahCair }} sudah cair</span
+                  >
+                </p>
+              </div>
+            </div>
+
+            <!-- v.1.3.7 (Kyai 31 Agu 2026): peringatan paling penting sebelum Generate —
+                 Bulk Generate menghitung ulang dari Jenis Bisyaroh/Tunjangan/Potongan saja,
+                 jadi penyesuaian yang diinput per bulan lewat Impor Excel TIDAK ikut. -->
+            <div
+              v-if="pratinjauRingkas.penyesuaianHilang"
+              class="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 rounded-xl p-2.5"
+            >
+              <p class="text-[11px] font-black text-amber-800 dark:text-amber-200">
+                <i class="fas fa-triangle-exclamation mr-1"></i
+                >{{ pratinjauRingkas.penyesuaianHilang }} slip memuat penyesuaian bulanan dari Impor
+                Excel
+              </p>
+              <p class="text-[11px] text-amber-800 dark:text-amber-200 mt-0.5">
+                Potongan {{ fmtRp(pratinjauRingkas.penyesuaianPotongan) }}
+                <span v-if="pratinjauRingkas.penyesuaianTunjangan"
+                  >· tunjangan {{ fmtRp(pratinjauRingkas.penyesuaianTunjangan) }}</span
+                >. Bulk Generate <b>tidak membawanya</b> — angka itu akan lenyap dan take home naik
+                kembali. Kalau memang mau di-generate ulang, <b>impor ulang</b> berkas bulanannya
+                sesudah itu.
+              </p>
+            </div>
+
+            <!-- Rekap potongan per jenis: bentuk tercepat melihat scope yang meleset -->
+            <div
+              v-if="pratinjauPotongan.length"
+              class="bg-[var(--bg-card-elevated)] rounded-xl p-2 border border-[var(--border-subtle)]"
+            >
+              <p class="text-[10px] font-black text-[var(--text-secondary)] uppercase mb-1">
+                <i class="fas fa-scissors mr-1"></i>Potongan yang akan terbit
+              </p>
+              <p
+                v-for="p in pratinjauPotongan"
+                :key="p.label"
+                class="text-[11px] text-[var(--text-primary)] flex justify-between gap-2 py-0.5 border-t border-[var(--border-subtle)] first:border-0"
+                :title="p.nama.join(', ')"
+              >
+                <span class="truncate"
+                  >{{ p.label }}
+                  <span class="text-[var(--text-tertiary)]">· {{ p.guru }} guru</span></span
+                >
+                <b class="text-rose-700 dark:text-rose-300 whitespace-nowrap">{{
+                  fmtRp(p.total)
+                }}</b>
+              </p>
+            </div>
+
+            <label class="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+              <input v-model="pratinjauHanyaPerlu" type="checkbox" class="accent-emerald-600" />
+              Tampilkan hanya yang perlu dilihat
+            </label>
+
+            <!-- Daftar per guru -->
+            <ul class="space-y-1 max-h-96 overflow-y-auto">
+              <li
+                v-for="b in pratinjauTampil"
+                :key="b.guruId"
+                class="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] overflow-hidden"
+              >
+                <button
+                  type="button"
+                  class="w-full flex items-center justify-between gap-2 p-2 text-left"
+                  @click="pratinjauToggle(b.guruId)"
+                >
+                  <div class="min-w-0">
+                    <p class="text-xs font-bold text-[var(--text-primary)] truncate">
+                      {{ b.nama }}
+                      <span class="text-[10px] font-normal text-[var(--text-tertiary)]"
+                        >· {{ b.lembaga || '-' }}</span
+                      >
+                    </p>
+                    <p class="text-[10px] text-[var(--text-secondary)]">
+                      Bisyaroh {{ fmtRp(b.bisyaroh) }}
+                      <span v-if="b.tunjangan">· Tunjangan {{ fmtRp(b.tunjangan) }}</span>
+                      <span v-if="b.glondongan">· Glondongan {{ fmtRp(b.glondongan) }}</span>
+                      <span v-if="b.potongan" class="text-rose-600 font-bold"
+                        >· Potongan −{{ fmtRp(b.potongan) }}</span
+                      >
+                    </p>
+                    <p v-if="b.peringatan.length" class="mt-0.5 flex flex-wrap gap-1">
+                      <span
+                        v-for="k in b.peringatan"
+                        :key="k"
+                        :title="peringatanInfo(k).pesan"
+                        :class="[
+                          'px-1.5 py-0.5 rounded text-[9px] font-black',
+                          k === 'cair' || k === 'potongan_melebihi'
+                            ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
+                            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                        ]"
+                        >{{ peringatanInfo(k).label
+                        }}<span v-if="k === 'berubah'">
+                          {{ b.selisihLain > 0 ? '+' : '' }}{{ fmtRp(b.selisihLain) }}</span
+                        >
+                        <!-- v.1.3.7: penyesuaian bulanan ditulis sebagai POTONGAN/TUNJANGAN
+                             yang akan lenyap, bukan sebagai "+Rp…". Tanda plus di sini dulu
+                             terbaca seolah potongan yang diimpor berubah jadi tambahan. -->
+                        <span v-else-if="k === 'penyesuaian_hilang'">
+                          <template v-if="b.penyesuaian.totalPotongan"
+                            >· potongan {{ fmtRp(b.penyesuaian.totalPotongan) }}</template
+                          ><template v-if="b.penyesuaian.totalTunjangan"
+                            >· tunjangan {{ fmtRp(b.penyesuaian.totalTunjangan) }}</template
+                          ></span
+                        ></span
+                      >
+                    </p>
+                  </div>
+                  <div class="text-right shrink-0">
+                    <p
+                      :class="[
+                        'text-sm font-black',
+                        b.takeHome > 0
+                          ? 'text-emerald-700 dark:text-emerald-300'
+                          : 'text-rose-700 dark:text-rose-300'
+                      ]"
+                    >
+                      {{ fmtRp(b.takeHome) }}
+                    </p>
+                    <i
+                      :class="[
+                        'fas text-[10px] text-[var(--text-tertiary)]',
+                        pratinjauBuka.has(b.guruId) ? 'fa-chevron-up' : 'fa-chevron-down'
+                      ]"
+                    ></i>
+                  </div>
+                </button>
+                <div
+                  v-if="pratinjauBuka.has(b.guruId)"
+                  class="px-3 pb-2 text-[11px] border-t border-[var(--border-subtle)] pt-1.5"
+                >
+                  <p
+                    v-for="(li, i) in b.lineItems"
+                    :key="'li' + i"
+                    class="flex justify-between gap-2 py-0.5"
+                  >
+                    <span class="truncate text-[var(--text-secondary)]">{{ li.label }}</span>
+                    <b class="text-[var(--text-primary)] whitespace-nowrap">{{
+                      fmtRp(li.nominal)
+                    }}</b>
+                  </p>
+                  <p
+                    v-for="(p, i) in b.potonganList"
+                    :key="'pt' + i"
+                    class="flex justify-between gap-2 py-0.5 text-rose-700 dark:text-rose-300"
+                  >
+                    <span class="truncate">{{ p.label }}</span>
+                    <b class="whitespace-nowrap">−{{ fmtRp(p.nominal) }}</b>
+                  </p>
+                  <p
+                    v-if="!b.lineItems.length && !b.potonganList.length"
+                    class="italic text-[var(--text-tertiary)] py-0.5"
+                  >
+                    Tak ada satu pun jenis yang mengenai orang ini.
+                  </p>
+                  <!-- v.1.3.7: apa PERSISNYA yang akan lenyap kalau di-generate ulang -->
+                  <div
+                    v-if="b.penyesuaian.totalPotongan || b.penyesuaian.totalTunjangan"
+                    class="mt-1 pt-1 border-t border-dashed border-amber-300"
+                  >
+                    <p class="text-[10px] font-black text-amber-700 dark:text-amber-300">
+                      Penyesuaian bulanan di slip tersimpan (akan hilang bila di-generate ulang):
+                    </p>
+                    <p
+                      v-for="(t, i) in b.penyesuaian.tunjangan"
+                      :key="'pt' + i"
+                      class="flex justify-between gap-2 py-0.5 text-[var(--text-secondary)]"
+                    >
+                      <span class="truncate">{{ t.label }} (tunjangan)</span>
+                      <b class="whitespace-nowrap">{{ fmtRp(t.nominal) }}</b>
+                    </p>
+                    <p
+                      v-for="(p, i) in b.penyesuaian.potongan"
+                      :key="'pp' + i"
+                      class="flex justify-between gap-2 py-0.5 text-rose-700 dark:text-rose-300"
+                    >
+                      <span class="truncate">{{ p.label }} (potongan)</span>
+                      <b class="whitespace-nowrap">-{{ fmtRp(p.nominal) }}</b>
+                    </p>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+
           <button
             :disabled="bulkRunning || bulkTargets.length === 0"
-            class="w-full bg-gradient-to-r from-emerald-600 dark:from-emerald-800 to-teal-600 dark:to-teal-800 hover:from-emerald-700 dark:from-emerald-900 hover:to-teal-700 dark:to-teal-900 text-white text-sm font-black py-3 rounded-xl shadow-md disabled:opacity-50 cursor-pointer transition"
+            class="w-full mt-3 bg-gradient-to-r from-emerald-600 dark:from-emerald-800 to-teal-600 dark:to-teal-800 hover:from-emerald-700 dark:from-emerald-900 hover:to-teal-700 dark:to-teal-900 text-white text-sm font-black py-3 rounded-xl shadow-md disabled:opacity-50 cursor-pointer transition"
             @click="bulkGenerate"
           >
             <i :class="['fas', bulkRunning ? 'fa-spinner fa-spin' : 'fa-bolt', 'mr-2']"></i>
@@ -452,15 +718,154 @@
               <label
                 class="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-2 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 cursor-pointer"
               >
-                <i class="fas fa-file-import"></i>{{ imporBulananBusy ? 'Mengimpor…' : 'Impor' }}
+                <i class="fas fa-file-import"></i
+                >{{ imporBulananBusy ? 'Membaca…' : 'Impor (tinjau dulu)' }}
                 <input
                   type="file"
                   accept=".xlsx,.xls"
                   class="hidden"
                   :disabled="imporBulananBusy"
-                  @change="imporBulanan"
+                  @change="bacaImporBulanan"
                 />
               </label>
+            </div>
+
+            <!-- v.1.3.7 (Kyai 31 Agu 2026): "impor potongan juga ada pratinjau dulu."
+                 Berkasnya dibaca & dihitung, TAPI belum ada satu slip pun yang ditulis.
+                 Angkanya lewat buildSlipPayload yang sama dengan tombol Terapkan di bawah,
+                 jadi yang ditinjau memang yang akan tersimpan. -->
+            <div v-if="imporRows.length || imporMiss.length" class="mt-3 space-y-2">
+              <div
+                class="bg-[var(--bg-card-elevated)] rounded-xl p-2.5 border border-[var(--border-subtle)]"
+              >
+                <p class="text-[11px] font-black text-[var(--text-primary)]">
+                  <i class="fas fa-magnifying-glass mr-1"></i>Pratinjau impor
+                  <span class="text-[var(--text-tertiary)] font-normal"
+                    >· {{ imporNamaBerkas }} · periode {{ imporPeriode }}</span
+                  >
+                </p>
+                <p class="text-[11px] text-[var(--text-secondary)] mt-1">
+                  <b>{{ imporRows.length }} slip</b> akan diperbarui · tunjangan
+                  <b class="text-emerald-700 dark:text-emerald-300">{{
+                    fmtRp(imporTotal.tunjangan)
+                  }}</b>
+                  · potongan
+                  <b class="text-rose-700 dark:text-rose-300">{{ fmtRp(imporTotal.potongan) }}</b>
+                </p>
+                <p
+                  v-if="imporMiss.length"
+                  class="text-[11px] font-bold text-amber-700 dark:text-amber-300 mt-1"
+                  :title="imporMiss.join(', ')"
+                >
+                  <i class="fas fa-triangle-exclamation mr-1"></i>{{ imporMiss.length }} baris tak
+                  cocok dengan guru mana pun (ID/nama) — dilewati.
+                </p>
+                <p class="text-[10px] text-[var(--text-tertiary)] mt-1">
+                  Slip guru di bawah di-generate ULANG dari Jenis Bisyaroh/Tunjangan/Potongan, lalu
+                  ditambah nominal dari Excel. Penyesuaian bulanan sebelumnya pada slip itu
+                  tergantikan.
+                </p>
+              </div>
+
+              <ul class="space-y-1 max-h-72 overflow-y-auto">
+                <li
+                  v-for="b in imporRows"
+                  :key="'imp-' + b.guruId"
+                  class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-card-elevated)] p-2"
+                >
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <p class="text-[11px] font-bold text-[var(--text-primary)] truncate">
+                        {{ b.nama }}
+                        <span class="text-[10px] font-normal text-[var(--text-tertiary)]"
+                          >· {{ b.lembaga || '-' }}</span
+                        >
+                      </p>
+                      <p class="text-[10px] text-[var(--text-secondary)]">
+                        Bisyaroh {{ fmtRp(b.bisyaroh) }}
+                        <span v-if="b.tunjangan">· Tunjangan {{ fmtRp(b.tunjangan) }}</span>
+                        <span v-if="b.potongan" class="text-rose-600 font-bold"
+                          >· Potongan −{{ fmtRp(b.potongan) }}</span
+                        >
+                      </p>
+                      <p class="text-[10px] mt-0.5">
+                        <span
+                          v-if="b._impor.tunj"
+                          class="text-emerald-700 dark:text-emerald-300 font-bold"
+                          >dari Excel: tunjangan +{{ fmtRp(b._impor.tunj) }}</span
+                        >
+                        <span
+                          v-if="b._impor.pot"
+                          class="text-rose-700 dark:text-rose-300 font-bold ml-1"
+                          >dari Excel: potongan −{{ fmtRp(b._impor.pot) }}</span
+                        >
+                        <span v-if="b._impor.ket" class="text-[var(--text-tertiary)]"
+                          >· "{{ b._impor.ket }}"</span
+                        >
+                      </p>
+                      <p v-if="b.peringatan.length" class="mt-0.5 flex flex-wrap gap-1">
+                        <span
+                          v-for="k in b.peringatan"
+                          :key="k"
+                          :title="peringatanInfo(k).pesan"
+                          :class="[
+                            'px-1.5 py-0.5 rounded text-[9px] font-black',
+                            k === 'cair' || k === 'potongan_melebihi'
+                              ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
+                              : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                          ]"
+                          >{{ peringatanInfo(k).label }}</span
+                        >
+                      </p>
+                    </div>
+                    <div class="text-right shrink-0">
+                      <p
+                        :class="[
+                          'text-xs font-black',
+                          b.takeHome > 0
+                            ? 'text-emerald-700 dark:text-emerald-300'
+                            : 'text-rose-700 dark:text-rose-300'
+                        ]"
+                      >
+                        {{ fmtRp(b.takeHome) }}
+                      </p>
+                      <p v-if="b.adaSlipLama" class="text-[9px] text-[var(--text-tertiary)]">
+                        dari {{ fmtRp(b.lamaTakeHome) }}
+                      </p>
+                    </div>
+                  </div>
+                </li>
+              </ul>
+
+              <div class="flex gap-2">
+                <button
+                  type="button"
+                  :disabled="imporTerapkanBusy || imporRows.length === 0"
+                  class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black py-2.5 rounded-xl disabled:opacity-50"
+                  @click="terapkanImporBulanan"
+                >
+                  <i
+                    :class="[
+                      'fas',
+                      imporTerapkanBusy ? 'fa-spinner fa-spin' : 'fa-check',
+                      'mr-1.5'
+                    ]"
+                  ></i>
+                  {{
+                    imporTerapkanBusy
+                      ? `Menerapkan ${imporDone}/${imporRows.length}…`
+                      : `Terapkan ke ${imporRows.length} Slip`
+                  }}
+                </button>
+                <button
+                  type="button"
+                  :disabled="imporTerapkanBusy"
+                  class="px-4 text-xs font-bold text-[var(--text-secondary)] border border-[var(--border-default)] rounded-xl disabled:opacity-50"
+                  @click="batalImporBulanan"
+                >
+                  Batal
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -501,6 +906,29 @@
                 masa kerja dari <b>Tgl. Tugas</b> (yang kosong tak terhitung). Ubah nominal di bawah
                 untuk melihat dampaknya; menutup halaman mengembalikan semuanya.
               </p>
+
+              <!-- Kyai 12 Agu 2026: glondongan ikut plafon. Ia tak punya kuantitas
+                   hadir-penuh (lahir dari peristiwa, bukan andaian), jadi andaiannya
+                   dinyatakan terang-terangan di sini dan bisa diubah. -->
+              <div
+                v-if="simPenyimakIds.size > 0"
+                class="flex flex-wrap items-center gap-2 text-[11px] text-amber-900/90 dark:text-amber-200/90"
+              >
+                <label for="sim-glond-blok" class="font-black">Glondongan PTPT:</label>
+                <input
+                  id="sim-glond-blok"
+                  v-model.number="simGlondonganBlok"
+                  type="number"
+                  min="0"
+                  max="30"
+                  class="w-16 px-2 py-1 rounded-lg border border-amber-300/60 bg-[var(--bg-card)] text-right font-bold focus:ring-2 focus:ring-amber-500 outline-none"
+                />
+                <span>
+                  blok/bulan tiap penyimak · 1 blok = {{ PTPT_JUZ_PER_KELAS }} juz →
+                  <b>{{ (Number(simGlondonganBlok) || 0) * PTPT_JUZ_PER_KELAS }} juz</b> ×
+                  {{ simPenyimakIds.size }} penyimak terdaftar
+                </span>
+              </div>
               <div class="overflow-x-auto">
                 <table class="w-full text-xs">
                   <thead class="text-[10px] uppercase text-[var(--text-secondary)]">
@@ -1050,7 +1478,10 @@ import {
   jenisTunjanganList,
   barisTunjangan,
   tahunPengabdian,
-  HITUNGAN_TUNJANGAN_OPTIONS
+  HITUNGAN_TUNJANGAN_OPTIONS,
+  // Kyai 31 Agu 2026: potongan ikut ber-scope (jabatan/lembaga/shift/jenis kelamin/orang).
+  jenisPotonganList,
+  barisPotongan
 } from '@/utils/bisyarohScope'
 import { shiftsForGuru } from '@/utils/shiftDerive'
 import { shiftLabelOf, shiftList } from '@/utils/shiftMaster'
@@ -1063,8 +1494,19 @@ import {
   tanggalBulanPenuh,
   simulasiBisyaroh,
   simulasiPerGuru,
-  terapkanNominal
+  terapkanNominal,
+  GLONDONGAN_JENIS_ID,
+  GLONDONGAN_BLOK_DEFAULT
 } from '@/utils/simulasiBisyaroh'
+// v.1.3.7: pratinjau slip sebelum generate (Kyai 31 Agu 2026) — angka SUNGGUHAN
+//   bulan terpilih, bukan coba-coba tarif seperti sub-tab Simulasi di atas.
+import {
+  barisPratinjau,
+  ringkasPratinjau,
+  rekapPotongan,
+  penyesuaianTersimpan,
+  PERINGATAN
+} from '@/utils/pratinjauSlip'
 import { buildLiburScope, liburKenaLembaga } from '@/utils/liburScope' // v.1.2.3: libur per lembaga
 import { tanggalRentang } from '@/utils/absensiRekap'
 import { useKegiatan } from '@/composables/useKegiatan'
@@ -1078,7 +1520,7 @@ import { useToast } from '@/composables/useToast'
 import { useGoogleSheet } from '@/composables/useGoogleSheet' // v.100 Batch12: ekspor ke Google Sheet
 import { useExcel } from '@/composables/useExcel'
 import { fmtRp, getNamaGuruGelar } from '@/utils/format'
-import { periodeBulan } from '@/utils/glondongan' // v.111: bisyaroh tes glondongan PTPT
+import { periodeBulan, getPenyimakGlondongan, PTPT_JUZ_PER_KELAS } from '@/utils/glondongan' // v.111: bisyaroh tes glondongan PTPT
 import ReceiptModal from '@/components/ReceiptModal.vue'
 import { buildSlipBisyarohHtml } from '@/utils/receiptHtml'
 import { cetakSlipBisyarohPdf, exportRekapBisyarohPdf } from '@/utils/strukBuilder'
@@ -1770,6 +2212,7 @@ function ctxGuruPenuh(g, periode) {
     ),
     guruId: String(g.id),
     nama: String(g.nama || ''), // dipakai rincian per orang
+    jk: g.jk || '', // scope jenis kelamin — simulasi harus memakai gerbang yang sama
     shiftIds,
     hadirPerShift,
     hadirTepatPerShift: hadirPerShift, // hadir penuh = semuanya tepat waktu
@@ -1805,15 +2248,60 @@ function simNominalUntuk(kelompok) {
   return out
 }
 
+// ── Glondongan PTPT di simulasi (Kyai 12 Agu 2026) ───────────────────────────
+// Glondongan lahir dari PERISTIWA (baris tes_glondongan yang benar-benar dinilai),
+//   sedangkan simulasi bertumpu pada ANDAIAN. Karena itu ia tak punya kuantitas
+//   hadir-penuh dan selama ini jatuh dari plafon — persis cacat tunjangan dulu.
+//   Andaiannya kini dinyatakan terang: tiap penyimak menyimak N blok sebulan.
+const simGlondonganBlok = ref(GLONDONGAN_BLOK_DEFAULT)
+// Hanya guru yang TERDAFTAR sebagai penyimak yang kena. Kalau diterapkan ke semua guru,
+//   plafonnya menggelembung berlipat — dan alat inilah yang dipakai memutuskan nominal.
+const simPenyimakIds = computed(() => {
+  const peta = getPenyimakGlondongan(lembagaRaw.value)
+  return new Set([...(peta.mahad || []), ...(peta.nonmahad || [])].map(String))
+})
+// Tarif per juz boleh ikut dicoba-coba seperti jenis lain (kunci `bisyaroh:__glondongan__`).
+const simGlondonganTarif = computed(() => {
+  const coba = simNominal.value[`bisyaroh:${GLONDONGAN_JENIS_ID}`]
+  if (coba !== undefined && coba !== '') return Math.max(0, Number(coba) || 0)
+  return Number(settingsStore.settings?.keu_glondongan_per_juz) || 0
+})
+const simOpsiGlondongan = computed(() => ({
+  tarifPerJuz: simGlondonganTarif.value,
+  blokPerGuru: Number(simGlondonganBlok.value) || 0,
+  penyimakIds: simPenyimakIds.value
+}))
+
 const simHasil = computed(() =>
-  simulasiBisyaroh(simJenisPakai.value, simCtxList.value, simTunjanganPakai.value)
+  simulasiBisyaroh(
+    simJenisPakai.value,
+    simCtxList.value,
+    simTunjanganPakai.value,
+    simOpsiGlondongan.value
+  )
 )
 // Kyai 7 Agu 2026: tunjangan IKUT simulasi. Tampil di tabel yang sama supaya total plafon
 //   terbaca sekali jalan — dibedakan lencana, bukan tabel terpisah.
-const simJenisAsli = computed(() => [
-  ...jenisBisyarohList(settingsStore.settings || {}).map((j) => ({ ...j, kel: 'bisyaroh' })),
-  ...jenisTunjanganList(settingsStore.settings || {}).map((j) => ({ ...j, kel: 'tunjangan' }))
-])
+const simJenisAsli = computed(() => {
+  const out = [
+    ...jenisBisyarohList(settingsStore.settings || {}).map((j) => ({ ...j, kel: 'bisyaroh' })),
+    ...jenisTunjanganList(settingsStore.settings || {}).map((j) => ({ ...j, kel: 'tunjangan' }))
+  ]
+  // Jenis SEMU untuk glondongan supaya ia muncul sebagai baris biasa di tabel yang sama —
+  //   kalau ditaruh di kartu terpisah, jumlah baris tabel tak lagi sama dengan total plafon.
+  //   Ditampilkan hanya bila ada penyimak terdaftar; tanpa itu barisnya selalu 0 dan cuma
+  //   menambah kebingungan.
+  if (simPenyimakIds.value.size > 0) {
+    out.push({
+      id: GLONDONGAN_JENIS_ID,
+      kel: 'bisyaroh',
+      label: 'Glondongan PTPT',
+      hitungan: 'per_juz',
+      nominal: Number(settingsStore.settings?.keu_glondongan_per_juz) || 0
+    })
+  }
+  return out
+})
 const simPeta = computed(() => {
   const m = {}
   for (const r of simHasil.value.perJenis)
@@ -1830,6 +2318,10 @@ function simKey(j) {
 }
 /** Label cara hitung, dari sumber yang sama dengan editor Jenis Bisyaroh. */
 function hitunganLabel(h) {
+  // 'per_juz' bukan pilihan Jenis Bisyaroh — ia milik glondongan, yang tarifnya di
+  //   Pengaturan Keuangan, bukan di daftar jenis. Tanpa cabang ini labelnya jatuh ke
+  //   'Flat / bulan' dan pembaca menyangka bayarannya sekali sebulan.
+  if (h === 'per_juz') return '× juz disimak'
   return (
     HITUNGAN_OPTIONS.find((o) => o.value === h)?.label ||
     HITUNGAN_TUNJANGAN_OPTIONS.find((o) => o.value === h)?.label ||
@@ -1854,7 +2346,12 @@ const simSembunyiNol = ref(false)
 const simBuka = ref(new Set()) // guruId yang rinciannya sedang dibentangkan
 
 const simPerGuru = computed(() =>
-  simulasiPerGuru(simJenisPakai.value, simCtxList.value, simTunjanganPakai.value)
+  simulasiPerGuru(
+    simJenisPakai.value,
+    simCtxList.value,
+    simTunjanganPakai.value,
+    simOpsiGlondongan.value
+  )
 )
 const simPerGuruTampil = computed(() => {
   const q = simCariGuru.value.trim().toLowerCase()
@@ -1937,6 +2434,9 @@ function ctxGuru(g, periode) {
       g
     ),
     guruId: String(g.id),
+    // Kyai 31 Agu 2026: scope jenis kelamin. Guru tanpa `jk` tak akan lolos scope yang
+    //   menyaringnya — lihat cocokJk() di utils/bisyarohScope.
+    jk: g.jk || '',
     shiftIds: shiftsForGuru(g, s),
     hadirPerShift: hadirPerShiftGuru(g.id, periode),
     hadirTepatPerShift: hadirTepatPerShiftGuru(g.id, periode), // v.1.2.3: utk per_tepat
@@ -1993,14 +2493,15 @@ function barisTunjanganGuru(g, periode) {
   return barisTunjangan(jenisTunjanganList(settingsStore.settings || {}), ctxGuru(g, periode))
 }
 
-function applicableMaster(key, g) {
-  const sset = settingsStore.settings || {}
-  const arr = Array.isArray(sset[key]) ? sset[key] : []
-  const gid = String(g.id)
-  return arr.filter((m) => {
-    const ids = Array.isArray(m.guru_ids) ? m.guru_ids.map(String) : []
-    return ids.length === 0 || ids.includes(gid)
-  })
+/**
+ * Baris POTONGAN 1 guru — daftar `keuPotonganJenis` lewat mesin scope yang sama dengan
+ * Jenis Bisyaroh & Tunjangan (Kyai 31 Agu 2026: "untuk potongan tambahkan filter seperti
+ * jenis bisyaroh dan tunjangan. dan tambahkan filter laki2 atau perempuan"). Selama daftar
+ * barunya belum pernah disimpan, isinya diturunkan dari `master_potongan` lama, jadi slip
+ * tak berubah sebelum Kyai menyentuh Pengaturan.
+ */
+function barisPotonganGuru(g, periode) {
+  return barisPotongan(jenisPotonganList(settingsStore.settings || {}), ctxGuru(g, periode))
 }
 
 function pilihGuru(g) {
@@ -2032,7 +2533,7 @@ function pilihGuru(g) {
   // Tunjangan: daftar sendiri (bukan dilebur ke Jenis Bisyaroh — keputusan Kyai), tapi
   // sejak 7 Agu 2026 memakai MESIN SCOPE yang sama. Lihat barisTunjanganGuru.
   items.push(...barisTunjanganGuru(g, periode))
-  const potonganAuto = applicableMaster('master_potongan', g).reduce(
+  const potonganAuto = barisPotonganGuru(g, periode).reduce(
     (s, p) => s + (Number(p.nominal) || 0),
     0
   )
@@ -2268,8 +2769,8 @@ const bulkTargets = computed(() => {
 function buildSlipPayload(g, periode, seq, extra = {}) {
   const settings = settingsStore.settings || {}
   const lineItems = buildLineItemsFromGuru(g, periode)
-  const ptList = applicableMaster('master_potongan', g).map((p) => ({
-    label: p.nama || 'Potongan',
+  const ptList = barisPotonganGuru(g, periode).map((p) => ({
+    label: p.label || 'Potongan',
     nominal: Number(p.nominal) || 0
   }))
   lineItems.push(...barisTunjanganGuru(g, periode))
@@ -2279,11 +2780,19 @@ function buildSlipPayload(g, periode, seq, extra = {}) {
         kategori: 'tunjangan',
         lembaga: '-',
         label: t.label || 'Tunjangan',
-        nominal: Number(t.nominal) || 0
+        nominal: Number(t.nominal) || 0,
+        sumber: 'bulanan' // lihat catatan di extraPot
       })
   }
+  // v.1.3.7: `sumber: 'bulanan'` = penyesuaian yang diinput PER BULAN (Impor Excel),
+  //   bukan turunan Jenis Potongan ber-scope. Ditandai supaya pratinjau mengenalinya tanpa
+  //   menebak lewat label; baris lama tanpa tanda ini masih dikenali lewat label.
   const extraPot = (extra.potonganExtra || [])
-    .map((p) => ({ label: p.label || 'Potongan', nominal: Number(p.nominal) || 0 }))
+    .map((p) => ({
+      label: p.label || 'Potongan',
+      nominal: Number(p.nominal) || 0,
+      sumber: 'bulanan'
+    }))
     .filter((p) => p.nominal > 0)
   const allPot = [...ptList, ...extraPot]
   const totalPotongan = allPot.reduce((s, p) => s + p.nominal, 0)
@@ -2319,6 +2828,87 @@ function buildSlipPayload(g, periode, seq, extra = {}) {
   }
 }
 
+// ─── Pratinjau slip sebelum generate (Kyai, 31 Agu 2026) ──────────────────
+// "saya ingin ada simulasi/review per bulan, misal bulan ini dan sudah tertera potongannya
+//  dll. sebelum generate slip agar bisa koreksi."
+//
+// BEDA dari sub-tab "Simulasi": simulasi itu coba-coba TARIF dengan andaian hadir penuh
+// (alat anggaran). Ini angka SUNGGUHAN bulan terpilih — kehadiran, tunjangan, glondongan,
+// dan potongan apa adanya. Sumbernya `buildSlipPayload`, fungsi yang SAMA yang dipakai
+// tombol Generate di bawahnya, jadi yang ditinjau memang yang akan tersimpan. Tak ada satu
+// baris pun yang ditulis ke `keuangan_gaji` di sini.
+const pratinjauRows = ref([])
+const pratinjauPeriode = ref('') // periode saat pratinjau dibuat — utk mendeteksi basi
+const pratinjauBusy = ref(false)
+const pratinjauBuka = ref(new Set()) // guruId yang rinciannya dibentangkan
+const pratinjauHanyaPerlu = ref(false) // saring: hanya yang berperingatan
+const periodeAktif = computed(() => `${tahun.value}-${String(bulan.value).padStart(2, '0')}`)
+// Pratinjau basi begitu periode / daftar target berubah — angka lama di layar yang
+//   tampak masih sah adalah cara paling mudah salah memutuskan.
+const pratinjauBasi = computed(
+  () => pratinjauRows.value.length > 0 && pratinjauPeriode.value !== periodeAktif.value
+)
+const pratinjauTampil = computed(() =>
+  pratinjauHanyaPerlu.value
+    ? pratinjauRows.value.filter((b) => b.peringatan.length > 0)
+    : pratinjauRows.value
+)
+const pratinjauRingkas = computed(() => ringkasPratinjau(pratinjauRows.value))
+const pratinjauPotongan = computed(() => rekapPotongan(pratinjauRows.value))
+
+/** Label potongan & tunjangan yang DIHASILKAN aturan ber-scope untuk guru ini. */
+function labelScopeGuru(g, periode) {
+  return {
+    potongan: new Set(barisPotonganGuru(g, periode).map((p) => String(p.label || 'Potongan'))),
+    tunjangan: new Set(barisTunjanganGuru(g, periode).map((t) => String(t.label || 'Tunjangan')))
+  }
+}
+
+async function jalankanPratinjau() {
+  if (pratinjauBusy.value || bulkTargets.value.length === 0) return
+  pratinjauBusy.value = true
+  try {
+    const periode = periodeAktif.value
+    // Sama seperti bulkGenerate: pastikan "hadir sekolah" guru gabungan sudah
+    //   materialisasi dulu, kalau tidak angka bonus kehadiran di pratinjau bisa lebih
+    //   kecil daripada yang nanti tersimpan. Idempoten & create-only, dan layar ini
+    //   memang sudah menjalankannya otomatis tiap periode berganti.
+    await materialisasiGabunganPeriode(periode)
+    const rows = []
+    for (const g of bulkTargets.value) {
+      const payload = buildSlipPayload(g, periode, rows.length, { via: 'pratinjau' })
+      const lama =
+        gaji.value.find((x) => String(x.guru_id) === String(g.id) && x.periode === periode) || null
+      // v.1.3.7 (Kyai 31 Agu 2026, "saya input potongan tapi dihitung tunjangan"):
+      //   slip tersimpan bisa memuat penyesuaian PER BULAN dari Impor Excel. Tanpa
+      //   mengenalinya, pratinjau melaporkan bedanya sebagai "Nominal berubah +Rp…" --
+      //   tanda plus yang terbaca seolah potongannya berubah jadi tambahan.
+      rows.push(
+        barisPratinjau(payload, lama, penyesuaianTersimpan(lama, labelScopeGuru(g, periode)))
+      )
+    }
+    rows.sort(
+      (a, b) => b.peringatan.length - a.peringatan.length || a.nama.localeCompare(b.nama, 'id')
+    )
+    pratinjauRows.value = rows
+    pratinjauPeriode.value = periode
+    pratinjauBuka.value = new Set()
+  } catch (e) {
+    toast.error('Gagal menyusun pratinjau: ' + (e.message || e))
+  } finally {
+    pratinjauBusy.value = false
+  }
+}
+function pratinjauToggle(id) {
+  const s = new Set(pratinjauBuka.value)
+  if (s.has(id)) s.delete(id)
+  else s.add(id)
+  pratinjauBuka.value = s
+}
+function peringatanInfo(kode) {
+  return PERINGATAN[kode] || { label: kode, pesan: '' }
+}
+
 async function bulkGenerate() {
   if (
     !confirm(
@@ -2345,6 +2935,10 @@ async function bulkGenerate() {
       }
       bulkDone.value++
     }
+    // Pratinjau menggambarkan keadaan SEBELUM generate; sesudah ini ia tak lagi
+    //   menggambarkan apa pun, jadi dibuang daripada menyesatkan.
+    pratinjauRows.value = []
+    pratinjauPeriode.value = ''
     toast.success(`Bulk generate selesai: ${bulkDone.value}/${bulkTargets.value.length} slip`)
   } catch (e) {
     toast.error('Bulk generate gagal: ' + (e.message || e))
@@ -2450,10 +3044,46 @@ function unduhTemplateBulanan() {
   })
 }
 
-async function imporBulanan(ev) {
+// ─── Impor Tunjangan & Potongan bulanan — v.1.3.7: BACA DULU, baru terapkan ──
+// Kyai, 31 Agu 2026: "impor potongan juga ada pratinjau dulu."
+//
+// Dulu satu fungsi: pilih berkas -> confirm() bawaan peramban yang cuma menyebut JUMLAH
+// baris -> langsung menulis. Yang paling perlu dilihat justru yang tak pernah tampak di
+// sana: nominal per orang, guru yang namanya tak cocok, dan take home hasilnya. Sekarang
+// berkasnya dibaca & dihitung lebih dulu, tanpa satu pun tulisan ke keuangan_gaji.
+//
+// Angkanya lewat buildSlipPayload yang SAMA dengan tombol Terapkan, dengan extra yang SAMA
+// pula -- jadi yang ditinjau memang yang akan tersimpan, bukan taksiran yang mirip.
+const imporRows = ref([]) // baris pratinjau (hasil barisPratinjau)
+const imporTargets = ref([]) // { g, tunj, pot, ket } — dipakai saat menerapkan
+const imporMiss = ref([]) // nama/ID di berkas yang tak cocok guru mana pun
+const imporPeriode = ref('')
+const imporNamaBerkas = ref('')
+const imporTerapkanBusy = ref(false)
+const imporDone = ref(0)
+const imporTotal = computed(() => {
+  let tunjangan = 0
+  let potongan = 0
+  for (const t of imporTargets.value) {
+    tunjangan += Number(t.tunj) || 0
+    potongan += Number(t.pot) || 0
+  }
+  return { tunjangan, potongan }
+})
+
+function batalImporBulanan() {
+  imporRows.value = []
+  imporTargets.value = []
+  imporMiss.value = []
+  imporPeriode.value = ''
+  imporNamaBerkas.value = ''
+}
+
+async function bacaImporBulanan(ev) {
   const file = ev.target.files?.[0]
   if (!file) return
   imporBulananBusy.value = true
+  batalImporBulanan()
   try {
     const rows = await importFile(file)
     if (!rows.length) {
@@ -2473,9 +3103,8 @@ async function imporBulanan(ev) {
           .toLowerCase()
       ] = g
     }
-    // Kumpulkan dulu target (guru + nominal) supaya bisa konfirmasi jumlahnya.
     const targets = []
-    let miss = 0
+    const miss = []
     for (const r of rows) {
       const id = String(_pick(r, ['id', 'guru_id']) || '').trim()
       const nama = String(_pick(r, ['nama', 'nama guru']) || '').trim()
@@ -2483,47 +3112,98 @@ async function imporBulanan(ev) {
       const tunj = _parseRp(_pick(r, ['tunjangan (rp)', 'tunjangan']))
       const pot = _parseRp(_pick(r, ['potongan (rp)', 'potongan']))
       if (!g) {
-        if (tunj || pot) miss++
+        // Hanya baris yang BERISI nominal yang layak dilaporkan tak cocok; baris kosong
+        //   memang tak diapa-apakan, melaporkannya cuma bikin panik.
+        if (tunj || pot) miss.push(nama || id || '(tanpa nama)')
         continue
       }
       if (tunj <= 0 && pot <= 0) continue
-      const ket = String(_pick(r, ['keterangan']) || '').trim()
-      targets.push({ g, tunj, pot, ket })
+      targets.push({ g, tunj, pot, ket: String(_pick(r, ['keterangan']) || '').trim() })
     }
     if (targets.length === 0) {
       toast.info(
-        `Tidak ada baris berisi tunjangan/potongan${miss ? ` (${miss} guru tak cocok)` : ''}.`
+        `Tidak ada baris berisi tunjangan/potongan${miss.length ? ` (${miss.length} guru tak cocok)` : ''}.`
       )
+      imporMiss.value = miss
+      imporPeriode.value = periode
+      imporNamaBerkas.value = file.name || ''
       return
     }
-    if (
-      !confirm(
-        `Terapkan ke ${targets.length} slip periode ${periode}?\n\nSlip guru tsb akan di-GENERATE ULANG dari Jenis Bisyaroh + master, lalu ditambah tunjangan/potongan dari Excel. Penyesuaian manual sebelumnya pada slip itu tergantikan.`
-      )
-    )
-      return
-    let ok = 0
+    const pratinjau = []
     let seq = 0
     for (const t of targets) {
+      const payload = buildSlipPayload(t.g, periode, seq++, extraImpor(t))
+      const lama =
+        gaji.value.find((x) => String(x.guru_id) === String(t.g.id) && x.periode === periode) ||
+        null
+      const b = barisPratinjau(
+        payload,
+        lama,
+        penyesuaianTersimpan(lama, labelScopeGuru(t.g, periode))
+      )
+      // Nominal dari Excel dibawa apa adanya supaya pratinjau bisa menyebut ANGKA YANG
+      //   KYAI KETIK, bukan cuma hasil akhirnya -- itulah yang dicocokkan dengan berkasnya.
+      b._impor = { tunj: t.tunj, pot: t.pot, ket: t.ket }
+      pratinjau.push(b)
+    }
+    // Penyesuaian bulanan justru DITULIS ULANG oleh impor ini, jadi peringatan
+    //   "penyesuaian bulanan akan hilang" tak berlaku di sini -- membiarkannya hanya
+    //   membuat Kyai ragu pada tombol yang justru sedang memasang penyesuaian itu.
+    for (const b of pratinjau) {
+      b.peringatan = b.peringatan.filter((k) => k !== 'penyesuaian_hilang' && k !== 'berubah')
+    }
+    pratinjau.sort(
+      (a, b) => b.peringatan.length - a.peringatan.length || a.nama.localeCompare(b.nama, 'id')
+    )
+    imporTargets.value = targets
+    imporRows.value = pratinjau
+    imporMiss.value = miss
+    imporPeriode.value = periode
+    imporNamaBerkas.value = file.name || ''
+  } catch (e) {
+    toast.error('Gagal membaca berkas: ' + (e.message || e))
+  } finally {
+    imporBulananBusy.value = false
+    ev.target.value = ''
+  }
+}
+
+/** Bentuk `extra` buildSlipPayload dari satu baris Excel. SATU tempat, dipakai pratinjau
+ *  maupun saat menerapkan -- kalau disalin, keduanya bisa menghitung beda. */
+function extraImpor(t) {
+  return {
+    via: 'impor_bulanan',
+    tunjanganExtra: t.tunj > 0 ? [{ label: t.ket || 'Tunjangan (impor)', nominal: t.tunj }] : [],
+    potonganExtra: t.pot > 0 ? [{ label: t.ket || 'Potongan (impor)', nominal: t.pot }] : []
+  }
+}
+
+async function terapkanImporBulanan() {
+  if (imporTerapkanBusy.value || imporTargets.value.length === 0) return
+  imporTerapkanBusy.value = true
+  imporDone.value = 0
+  try {
+    const periode = imporPeriode.value
+    let ok = 0
+    let seq = 0
+    for (const t of imporTargets.value) {
       try {
-        const payload = buildSlipPayload(t.g, periode, seq++, {
-          via: 'impor_bulanan',
-          tunjanganExtra:
-            t.tunj > 0 ? [{ label: t.ket || 'Tunjangan (impor)', nominal: t.tunj }] : [],
-          potonganExtra: t.pot > 0 ? [{ label: t.ket || 'Potongan (impor)', nominal: t.pot }] : []
-        })
+        const payload = buildSlipPayload(t.g, periode, seq++, extraImpor(t))
         await setOne('keuangan_gaji', payload.id, payload)
         ok++
       } catch (e) {
         console.warn('[imporBulanan]', t.g?.nama, e.message)
       }
+      imporDone.value++
     }
-    toast.success(`${ok} slip diperbarui${miss ? `, ${miss} guru tak cocok (ID/nama)` : ''}.`)
+    const gagal = imporTargets.value.length - ok
+    batalImporBulanan()
+    if (gagal > 0) toast.warning(`${ok} slip diperbarui, ${gagal} gagal — cek console.`)
+    else toast.success(`${ok} slip diperbarui.`)
   } catch (e) {
-    toast.error('Gagal impor: ' + (e.message || e))
+    toast.error('Gagal menerapkan: ' + (e.message || e))
   } finally {
-    imporBulananBusy.value = false
-    ev.target.value = ''
+    imporTerapkanBusy.value = false
   }
 }
 

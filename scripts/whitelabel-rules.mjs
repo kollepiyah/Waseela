@@ -19,6 +19,31 @@ export const EXT_BACKEND = /\.(ts|sql|toml)$/
 export const BRAND_IMPORT = "import { BRAND } from '@/config/brand'"
 
 // ── app/src ─────────────────────────────────────────────────────────────────
+// ── Palet merek ─────────────────────────────────────────────────────────────
+// Hulu memakai teal, Waseela emerald. Sampai 1 Sep 2026 penggantian ini dikerjakan
+// TANGAN saat re-fork, jadi setiap sync mengembalikan warna hulu tanpa suara. Bukan
+// kebocoran identitas — gerbang teks memang tak akan pernah menangkapnya — tapi tetap
+// salah: pembeli melihat warna merek yang bukan miliknya. Sebagai aturan, ia otomatis.
+//
+// Varian huruf besar ikut didaftarkan: kelas Tailwind arbitrary (bg-[#5EEAD4]) dan
+// atribut SVG memakainya. Bagi peramban hex tak peka besar-kecil, tapi menyeragamkan
+// jadi satu bentuk akan membuat berkas kita selamanya "beda" dari hasil aturan.
+const PALET = [
+  ['#0f766e', '#065f46'], // primary / --theme-color
+  ['#115e59', '#064e3b'], // primary-hover
+  ['#134e4a', '#043d2f'], // paling gelap (mode gelap + gradasi)
+  ['#ccfbf1', '#d1fae5'], // soft
+  ['#99f6e4', '#a7f3d0'], // soft-hover
+  ['#f0fdfa', '#ecfdf5'], // latar sidebar & hover
+  ['#14b8a6', '#10b981'], // accent
+  ['#0d9488', '#059669'], // accent-hover
+  ['#5eead4', '#6ee7b7'] // sorot (jam hijri)
+]
+const PALET_RULES = PALET.flatMap(([a, b]) => [
+  [a, b],
+  [a.toUpperCase(), b.toUpperCase()]
+])
+
 export const RULES_SRC = [
   // Prefix CSS & identifier internal (paling spesifik dulu)
   ['ammu-ribbon-app', 'wsl-ribbon-app'],
@@ -42,6 +67,17 @@ export const RULES_SRC = [
   // Nama event & resource
   ["'ammu:open-printer-settings'", "'waseela:open-printer-settings'"],
   ["'ic_stat_ammu'", "'ic_stat_waseela'"],
+
+  // Deep link jalan-pulang login Google di Android (hulu v.1.3.5, ditarik 1 Sep 2026).
+  // Skemanya = applicationId, jadi ia IKUT berganti bersama paket: app.waseela.id.
+  // ⚠ Dua tempat lain wajib seragam, dan tak satu pun disentuh skrip ini:
+  //   1. intent-filter di app/android/app/src/main/AndroidManifest.xml (cangkang,
+  //      tak ikut sync — sudah ditambahkan tangan bersama aturan ini).
+  //   2. Supabase pembeli → Auth → URL Configuration → Redirect URLs.
+  //      Tanpa itu Supabase mengabaikan deep link-nya dan memulangkan ke Site URL,
+  //      sehingga login Google di Android mentok di halaman galat browser.
+  ['app.ammu.id', 'app.waseela.id'],
+  ['ammu-google-gagal', 'waseela-google-gagal'],
 
   // Fallback identitas → BRAND.* (kopLine1/2 default KOSONG, jadi tak ada nama lembaga asing)
   //
@@ -77,6 +113,8 @@ export const RULES_SRC = [
 
   // Label & komentar spesifik (harus SEBELUM aturan generik di bawah)
   ['name: \'Notifikasi Ammu\',', 'name: `Notifikasi ${BRAND.appName}`,'],
+  // Judul lembar ekspor Jenis Potongan (hulu 31 Agu 2026) — menyebut merek hulu.
+  ["title: 'Jenis Potongan — Ammu (scope dikosongkan = berlaku semua)',", 'title: `Jenis Potongan — ${BRAND.appName} (scope dikosongkan = berlaku semua)`,'],
   ["txtHeaderBar: 'Ammu Online',", 'txtHeaderBar: BRAND.txtHeaderBar,'],
   ['© 2026 Mambaul Ulum', '© {{ new Date().getFullYear() }} {{ BRAND.copyrightName }}'],
   ['sudah include nya (hindari "TPQ TPQ MAMBAUL ULUM")', 'sudah include-nya (hindari "TPQ TPQ <NAMA>")'],
@@ -174,6 +212,33 @@ export const RULES_SRC = [
   ['Ammu Channel', 'kanal informasi'],
   ['Ammu Online', 'Waseela'],
   ['Portal MU', 'Waseela']
+  ,
+
+  ...PALET_RULES,
+
+  // Istilah "pondok" DIBUANG dari teks user-facing (Kyai, 9 Agu 2026): lembaga pembeli
+  // bukan pondok. Nama variabel/kolom DB (namaPondokSingkat dll) sengaja TIDAK ikut —
+  // biayanya besar, manfaatnya nol, dan tak terlihat pembeli.
+  //
+  // Sengaja per-frasa, bukan sapuan ` pondok` → ``. Sapuan buta akan merusak kalimat
+  // ("nomor pondok" jadi "nomor", bukan "nomor induk lembaga") dan menyentuh komentar
+  // yang memang membicarakan lembaga hulu.
+  ['Pondok Qiraati', 'Qiraati'],
+  ["label: 'Qiraati (Pondok)'", "label: 'Qiraati'"],
+  ['nomor pondok', 'nomor induk lembaga'],
+  ['No. Induk pondok', 'No. Induk lembaga'],
+  ['Syahriyah Pondok', 'Syahriyah Asrama'],
+  ['syahriyah pondok', 'syahriyah'],
+  ['admin pondok', 'admin'],
+  ['pegawai pondok', 'pegawai'],
+  ['kegiatan pondok', 'kegiatan lembaga'],
+  ['santri pondok', 'santri'],
+  ['seluruh pondok', 'seluruh lembaga'],
+  ['Anda di pondok', 'Anda'],
+  ['KOP pondok', 'KOP lembaga'],
+  ['keuangan pondok', 'keuangan lembaga'],
+  ['kas pondok', 'kas lembaga'],
+  ['Lembaga pondok', 'Lembaga']
 ]
 
 // ── supabase (edge functions + migrations) + tests ──────────────────────────
