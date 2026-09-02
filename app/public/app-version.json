@@ -13,14 +13,14 @@
     "lokal ditandatangani kunci BERBEDA sehingga tak bisa menimpa instalasi dari Play.",
     "",
     "STATUS 13 Agu 2026: Play BELUM rilis, jadi apkUrl sementara menunjuk APK hasil",
-    "`npm run build:apk` yang diunggah manual ke GitHub Release v1.0.1 (lihat",
+    "`npm run build:apk` yang diunggah manual ke GitHub Release v1.0.2 (lihat",
     "scripts/build-apk.cjs — hasilnya sudah disalin dengan nama Waseela.apk). Sesudah",
     "aplikasi terbit di Play, GANTI dengan APK dari Play Console; kalau tidak, pengguna",
     "yang memasang dari Play tak akan bisa memasang pembaruan ini (beda tanda tangan)."
   ],
   "android": {
-    "versionCode": 2,
-    "versionName": "v.1.0.1",
+    "versionCode": 3,
+    "versionName": "v.1.0.2",
     "apkUrl": "https://github.com/kollepiyah/waseela/releases/latest/download/Waseela.apk",
     "halamanRilis": "https://github.com/kollepiyah/waseela/releases/latest",
     "wajib": false,
