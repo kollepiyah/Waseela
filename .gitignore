@@ -63,3 +63,18 @@ Thumbs.db
 
 # === Claude Code local settings (per-user; jangan commit) ===
 .claude/settings.local.json
+
+# === Perkakas agent & sisa scaffolding (per-mesin, bukan sumber proyek) ===
+# Alasannya sama dengan settings.local.json di atas: ini konfigurasi mesin yang
+# mengerjakan, bukan bagian produk. Repo PUBLIK (diputuskan 2 Sep 2026), jadi apa pun
+# yang masuk riwayat menetap selamanya — perkakas tak perlu ikut menetap.
+#
+# Perhatikan garis miring di depan /public/: TANPA itu polanya juga cocok dengan
+# app/public/ yang berisi app-version.json — sumber tunggal tawaran pembaruan Android.
+/.agents/
+# .claude/skills/ hanya berisi symlink BERPATH ABSOLUT ke .agents/ di mesin ini —
+# tak berguna (dan rusak) di kloning mana pun selain sini.
+/.claude/skills/
+/.mcp.json
+/skills-lock.json
+/public/
