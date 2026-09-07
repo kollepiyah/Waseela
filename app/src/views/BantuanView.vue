@@ -284,33 +284,22 @@
           </div>
         </div>
 
-        <!-- v.1.2.8 (Kyai 5 Agu 2026): jalur pembaruan di luar Play Store. Peninjauan
-             Play makan waktu berhari-hari, sedang perbaikan sering perlu hari itu juga.
-             Di aplikasi Android tombolnya = cek pembaruan; di web = unduh APK. -->
+        <!-- Tautan PASANG, bukan pembaruan. Cek pembaruan in-app dimatikan (Kyai,
+             7 Sep 2026) mengikuti hulu; APK tetap dari GitHub Releases karena Waseela
+             belum tayang di Play Store. -->
         <div class="mt-5 pt-4 border-t border-[var(--border-subtle)]">
           <p class="text-sm font-bold text-[var(--text-primary)] mb-1">
             <i class="fab fa-android text-emerald-600 mr-1"></i>Aplikasi Android
           </p>
           <p class="text-xs text-[var(--text-secondary)] leading-relaxed mb-3">
-            Pembaruan lewat Play Store perlu menunggu peninjauan. Berkas APK di bawah berisi versi
-            terbaru yang bisa dipasang langsung.
+            Berkas APK di bawah berisi versi terbaru dan bisa dipasang langsung.
             <template v-if="!isAndroid">
               Setelah terunduh, buka berkasnya untuk memasang — Android akan meminta izin memasang
               dari sumber ini sekali saja.
             </template>
           </p>
           <div class="flex flex-wrap gap-2">
-            <button
-              v-if="bisaCekApk"
-              class="text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg transition cursor-pointer disabled:opacity-50"
-              :disabled="cekApkBusy"
-              @click="cekPembaruanApk"
-            >
-              <i class="fas fa-rotate mr-1" :class="{ 'fa-spin': cekApkBusy }"></i>
-              {{ cekApkBusy ? 'Memeriksa…' : 'Cek Pembaruan' }}
-            </button>
             <a
-              v-else
               :href="APK_URL"
               rel="noopener"
               class="text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg transition"
@@ -474,7 +463,6 @@ import { useSettingsStore } from '@/stores/settings'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useDesktopShell } from '@/composables/useDesktopShell'
-import { useAndroidUpdate } from '@/composables/useAndroidUpdate'
 import { urlApk } from '@/utils/unduhan'
 import { BRAND } from '@/config/brand'
 
@@ -552,24 +540,9 @@ const isAndroid = (() => {
     return false
   }
 })()
-// v.1.2.8: jalur pembaruan di luar Play Store. Tautan diarahkan ke rilis GitHub yang
-//   sama dengan feed pembaruan desktop; sumber versinya /app-version.json (ikut deploy
-//   web). Di aplikasi Android tombolnya jadi "Cek Pembaruan" (lebih tepat daripada
-//   mengunduh buta — app tahu versinya sendiri).
 // v.1.2.9: satu sumber nama berkas rilis — lihat utils/unduhan.js
 const APK_URL = urlApk()
 const APK_RILIS_URL = BRAND.releaseRepo + '/releases'
-const androidUpdate = useAndroidUpdate()
-const bisaCekApk = androidUpdate.tersedia()
-const cekApkBusy = ref(false)
-async function cekPembaruanApk() {
-  cekApkBusy.value = true
-  try {
-    await androidUpdate.cek(true)
-  } finally {
-    cekApkBusy.value = false
-  }
-}
 
 const platformName = computed(() => (isElectron.value ? 'Desktop' : isAndroid ? 'Android' : 'Web'))
 const platformDetail = computed(() =>

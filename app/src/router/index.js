@@ -454,7 +454,21 @@ const routes = [
 
 export const router = createRouter({
   history: createWebHashHistory(),
-  routes
+  routes,
+  // Sesudah Simpan, halaman berikutnya terbuka pada posisi gulir halaman SEBELUMNYA.
+  // Yang bergulir <main id="app-scroll"> di AppLayout, bukan window (root h-screen +
+  // overflow-hidden), jadi scrollBehavior bawaan { top: 0 } tak berpengaruh.
+  // Perubahan QUERY sengaja tak menggulir: Daftar Santri/Guru menulis penyaring ke URL
+  // tiap ketikan — kalau ikut menggulir, layar melompat di setiap huruf.
+  scrollBehavior(to, from) {
+    if (to.path === from.path) return false
+    const el = typeof document !== 'undefined' && document.getElementById('app-scroll')
+    if (el) {
+      el.scrollTop = 0
+      return false
+    }
+    return { top: 0 }
+  }
 })
 
 // Guard: protect non-public routes

@@ -131,10 +131,15 @@
               </p>
               <p class="text-[10px] text-[var(--text-secondary)]">
                 {{ fmtTgl(p.tanggal) }} · {{ p.catatan || '-' }}
-                <span v-if="p.sumber === 'transfer_verified'" class="ml-1 text-cyan-700 font-bold"
-                  >[Transfer]</span
+                <!-- Dulu diturunkan di sini sendiri: selain 'transfer_verified' = "[Tunai]",
+                     jadi pembayaran POS yang kasirnya memilih Transfer tercetak Tunai. -->
+                <span
+                  :class="[
+                    'ml-1 font-bold',
+                    metodeTransaksi(p) === 'Transfer' ? 'text-cyan-700' : 'text-emerald-700'
+                  ]"
+                  >[{{ metodeTransaksi(p) }}]</span
                 >
-                <span v-else class="ml-1 text-emerald-700 font-bold">[Tunai]</span>
               </p>
             </div>
             <div class="text-right">
@@ -468,6 +473,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { subscribeColl, setOne } from '@/services/db'
+import { metodeTransaksi } from '@/utils/metodeBayar'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
@@ -602,7 +608,8 @@ function buildTrxFromGroup(p) {
     kelas_sekolah: s.kelas_sekolah || '',
     operator: p.operator || 'Administrator',
     penyetor: p.wali || '',
-    metode: p.sumber === 'transfer_verified' ? 'TRANSFER' : 'TUNAI',
+    // Satu sumber dengan label di layar; dulu POS-transfer tercetak "TUNAI" di kwitansi.
+    metode: metodeTransaksi(p).toUpperCase(),
     status_siswa: s.aktif === false ? 'Tidak Aktif' : 'Aktif',
     items: rows.map((r) => ({
       jenis: r.kategori || 'Tagihan',

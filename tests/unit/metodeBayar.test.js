@@ -36,6 +36,16 @@ describe('metodeTransaksi — tunai vs transfer', () => {
     // kas manual yang sebenarnya lewat rekening
     expect(metodeTransaksi({ sumber: 'manual', metode: 'Transfer' })).toBe('Transfer')
   })
+
+  // Slip tabungan/uang saku memanggil metodeTransaksi() dengan baris MUTASI, bukan baris
+  // buku induk: bentuknya beda (jenis/no_bukti), tapi dua field yang dibaca — `metode` &
+  // `sumber` — sama. Penjaga perbaikan v.1.4.1: slip dulu HARDCODE "TUNAI".
+  it('baris mutasi tabungan: metode eksplisit, dan baris lama tanpa metode', () => {
+    expect(metodeTransaksi({ jenis: 'setor', nominal: 50000, metode: 'Transfer' })).toBe(
+      'Transfer'
+    )
+    expect(metodeTransaksi({ jenis: 'tarik', nominal: 20000 })).toBe('Tunai')
+  })
 })
 
 describe('ringkasMetode — subtotal laporan harian', () => {

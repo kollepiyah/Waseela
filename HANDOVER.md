@@ -1,7 +1,8 @@
 # 🤝 HANDOVER — Waseela
 
 > Untuk sesi/dev berikutnya: baca ini dulu, lalu [`RUNBOOK-PEMBELI.md`](RUNBOOK-PEMBELI.md).
-> Terakhir diperbarui: **1 Sep 2026** — sync hulu v.1.3.7 (tanpa Tes Sekolah) + sync jadi gagal-aman.
+> Terakhir diperbarui: **7 Sep 2026** — sync hulu v.1.4.1 + notif pembaruan Android dimatikan.
+> Audit terbaru: [`AUDIT-SEP-2026.md`](AUDIT-SEP-2026.md).
 
 ---
 
@@ -111,6 +112,15 @@ sengaja tak pernah menarik `kopMuassis.js` maupun `muassis.png`.
 **Aturan main:** kalau sync membawa literal identitas baru, tambahkan aturannya di
 `scripts/whitelabel-rules.mjs` — **jangan menambal berkasnya langsung**, tambalan itu
 hilang di sync berikutnya. Gerbang akan menolak sampai aturannya ada.
+
+**Gerbang juga bisa salah tuduh (7 Sep 2026).** `POLA_JEJAK` mencari `ammu` di mana saja,
+dan hulu memperkenalkan `jamMulaiShift` — huruf "j-**ammu**-lai". Sync v.1.4.1 tertahan oleh
+8 baris yang sama sekali bukan identitas. Penawarnya lookbehind `(?<![a-z])ammu`: merek hulu
+tak pernah didahului huruf (selalu awal kata, sesudah `.`, `@`, atau `_` — `app.ammu.id`,
+`@ammu.local`, `ic_stat_ammu` semuanya tetap tertangkap). Kalau kelak menambah pola, uji
+DUA arah: jangan cuma memastikan yang jahat tertangkap, pastikan juga yang sah lolos —
+gerbang yang salah tuduh akan ditumpulkan orang yang sedang buru-buru, dan sesudah itu ia
+tak menjaga apa pun.
 
 ### Tiga cara kebocoran lolos (ketiganya sudah kejadian)
 
@@ -238,15 +248,25 @@ diputuskan: `santri` menyentuh nama tabel DB, jadi jangan disapu tanpa arahan Ky
 
 Web sudah live. Yang tersisa (per 1 Sep 2026):
 
-**Menyusul sync hulu v.1.3.7 (1 Sep 2026) — belum dikerjakan**
-A. **`npx supabase db push`** dua migrasi baru ke Supabase pembeli:
-   `20260812120000_auth_email_internal_ketat.sql` (pencocokan identitas hanya untuk email
-   internal) dan `20260831120000_santri_upd_kepala_lembaga.sql`.
+**Menyusul sync hulu v.1.4.1 (7 Sep 2026) — belum dikerjakan**
+A. **`npx supabase db push`** — EMPAT migrasi belum sampai ke Supabase pembeli:
+   `20260812120000_auth_email_internal_ketat.sql`, `20260831120000_santri_upd_kepala_lembaga.sql`,
+   `20260813090000_buang_va_bmt.sql`, dan dua migrasi prestasi baru
+   (`20260902120000_arsip_prestasi_bulanan.sql` → disempurnakan
+   `20260904120000_arsip_prestasi_periode_laporan.sql`; yang kedua menimpa yang pertama,
+   dorong berurutan).
+A2. **Jadwalkan `arsip-prestasi-bulanan` di pg_cron** — migrasinya hanya membuat fungsinya,
+   TIDAK menjadwalkannya, dan tak ada tombol pemicu di aplikasi. Tanpa langkah ini papan
+   peringkat tak pernah diarsipkan tiap tanggal 25 dan tak ada gejala apa pun. Ini sumbat
+   yang sama dengan temuan pg_cron di audit Agustus — sekarang dua fitur bergantung padanya.
 B. **Daftarkan `app.waseela.id://auth-callback`** di Supabase → Auth → URL Configuration →
    Redirect URLs. Tanpa itu login Google di Android tetap mentok di halaman galat browser:
    Supabase mengabaikan deep link-nya dan memulangkan ke Site URL. Intent-filter di
    `AndroidManifest.xml` sudah dipasang, tapi ia tak berarti apa-apa sendirian.
 C. **Bangun ulang APK** — perubahan manifest hanya berlaku sesudah build baru.
+D. **Migrasi BMT hulu sengaja DIBLOKIR.** `20260905120000_bmt_alokasi_utuh.sql` menulis ulang
+   RPC `apply_bmt_payment` + tabel `keuangan_va_inbox` yang sudah kita DROP; kalau tertarik,
+   `db push` gagal. Aturannya sudah di `ABAIKAN` (`scripts/sync-from-ammu.mjs`).
 
 > Tes Sekolah SENGAJA tak ditarik (keputusan Kyai). Berkas intinya di `ABAIKAN`,
 > perangkainya di `MILIK_WASEELA` — lihat `scripts/sync-from-ammu.mjs`. Kalau kelak
@@ -265,6 +285,20 @@ C. **Bangun ulang APK** — perubahan manifest hanya berlaku sesudah build baru.
    lembaga mana pun. Semua kebocoran fallback ketahuannya lewat jalur ini.
 2. **Data awal pembeli**: seed lembaga/kelas, akun `admin`, impor data lama lewat menu
    **Impor Supabase** (jangan tulis skrip migrasi baru — importer-nya sudah ada).
+
+**Notifikasi pembaruan Android — DIMATIKAN (Kyai, 7 Sep 2026)**
+Mengikuti hulu yang sudah rilis lewat Play Store. Yang dilakukan di Waseela:
+`App.vue` tak lagi memanggil `cekOtomatis()`, tombol "Cek Pembaruan" di `BantuanView`
+dibuang, dan `app/public/app-version.json` → `apkUrl` **dikosongkan**. Yang terakhir itu
+remnya untuk APK yang SUDAH terpasang: bundel di dalamnya masih membawa cek-otomatis dan
+tetap menembak berkas itu tiap dibuka — tanpa `apkUrl`, putusannya `belum-siap` dan ia diam.
+Mengisinya lagi = notifikasi hidup kembali di semua HP tersebut.
+
+> Konsekuensi yang disengaja: sampai Waseela tayang di Play Store, pembeli **tak punya
+> jalur pembaruan Android otomatis**. Tautan PASANG tetap hidup (layar login & Bantuan →
+> `utils/unduhan.js` → GitHub Releases); yang mati hanya pemberitahuannya.
+> `useAndroidUpdate.js` sengaja tak dihapus — menghidupkannya kembali cukup memanggil
+> `cekOtomatis()` lagi dan mengisi ulang `apkUrl`.
 
 **Menunggu keputusan Kyai**
 3. Istilah **"pesantren"** (mudah) dan **"santri"** (dalam — menyentuh nama tabel DB).

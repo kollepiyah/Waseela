@@ -86,6 +86,9 @@ const ABAIKAN = [
   /config[\\/]brand\.js$/,
   /functions[\\/]bmt-webhook[\\/]/, // integrasi BMT tak dipakai
   /utils[\\/]bmtVa\.js$/, // fitur Virtual Account DIBUANG v.1.0.1 (Kyai, 13 Agu 2026)
+  // Menulis ulang RPC apply_bmt_payment + tabel keuangan_va_inbox — keduanya sudah
+  // di-DROP di 20260813090000_buang_va_bmt.sql. Ditarik = `supabase db push` GAGAL.
+  /migrations[\\/]20260905120000_bmt_alokasi_utuh\.sql$/,
   /tests[\\/]unit[\\/]escapeHtml\.test\.js$/, // menguji helper legacy pra-Vue
   /tests[\\/]unit[\\/]extractFirstLink\.test\.js$/
 ,

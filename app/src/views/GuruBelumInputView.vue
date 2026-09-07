@@ -7,16 +7,34 @@
       <i class="fas fa-arrow-left"></i>Kembali
     </button>
 
+    <!-- v.1.3.8 (Kyai 2 Sep 2026): "bisa saya ekspor pdf, untuk dishare siapa saja yg
+         belum isi data". Ditaruh di luar kartu header supaya tak ikut tercetak. -->
+    <button
+      v-if="isAdminMode && guruBelumInput.length > 0"
+      type="button"
+      class="ml-3 inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-elevated)] transition cursor-pointer"
+      :class="cetakBusy ? 'opacity-50 pointer-events-none' : ''"
+      @click="cetakPdf"
+    >
+      <i :class="['fas', cetakBusy ? 'fa-spinner fa-spin' : 'fa-file-pdf']"></i>Ekspor PDF
+    </button>
+
     <!-- Header -->
     <div
       class="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-5 md:p-6 text-white shadow-lg"
     >
       <p class="text-[10px] font-black uppercase tracking-widest opacity-90">
-        <i class="fas fa-user-clock mr-1"></i>Guru Belum Input Data Santri
+        <i class="fas fa-user-clock mr-1"></i>Guru Belum Isi Rekap Prestasi
       </p>
       <h2 class="text-xl md:text-2xl font-black mt-1">Periode {{ periodeLabel }}</h2>
       <p class="text-xs md:text-sm font-medium mt-1 opacity-90">
-        {{ guruBelumInput.length }} guru &middot; {{ totalSantriBelum }} santri belum diinput
+        {{ guruBelumInput.length }} guru &middot; {{ totalSantriBelum }} santri belum dinilai
+      </p>
+      <!-- v.1.3.8: rekap diisi untuk bulan LALU, batas tanggal 5 (Kyai, 1 Sep 2026). -->
+      <p v-if="batasLabel" class="text-[11px] font-bold mt-2 opacity-95">
+        <i class="fas fa-clock mr-1"></i>PTPT &amp; PPPH &mdash;
+        <span v-if="rekapSudahTerlambat">sudah lewat batas ({{ batasLabel }})</span>
+        <span v-else>batas pengisian {{ batasLabel }}</span>
       </p>
     </div>
 
@@ -35,7 +53,7 @@
     >
       <i class="fas fa-circle-check text-emerald-500 text-4xl mb-2"></i>
       <p class="text-sm font-bold text-emerald-700 dark:text-emerald-300">
-        Semua guru sudah input bulan ini 🎉
+        Semua guru sudah mengisi rekap {{ periodeLabel }} 🎉
       </p>
     </div>
 
@@ -97,9 +115,17 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStatistikScope } from '@/composables/useStatistikScope'
+// v.1.3.8 (Kyai, 2 Sep 2026): "bisa saya ekspor pdf, untuk dishare siapa saja yg belum isi data".
+import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
+import { useSettingsStore } from '@/stores/settings'
+import { useToast } from '@/composables/useToast'
+import { labelPeriodeRekap } from '@/utils/prestasiBulanan'
 
 const router = useRouter()
-const { isAdminMode, guruBelumInput, periodeKeyNow } = useStatistikScope()
+const settingsStore = useSettingsStore()
+const toast = useToast()
+const { isAdminMode, guruBelumInput, periodeRekap, batasRekapNow, rekapSudahTerlambat } =
+  useStatistikScope()
 
 const open = ref({})
 function toggle(guru) {
@@ -122,10 +148,64 @@ const NAMA_BULAN = [
   'November',
   'Desember'
 ]
-const periodeLabel = computed(() => {
-  const m = String(periodeKeyNow.value).match(/^(\d{4})_(\d{2})$/)
-  return m ? `${NAMA_BULAN[parseInt(m[2]) - 1]} ${m[1]}` : periodeKeyNow.value
+// v.1.4.1: label periode SELALU menyebut bulan datanya — 'September 2026 (data Agustus
+//   2026)'. Nama bulan yang berdiri sendiri di sini persis yang bikin Kyai ragu layar ini
+//   dan Rekap Prestasi sedang membicarakan pekerjaan yang sama atau bukan.
+const periodeLabel = computed(() => labelPeriodeRekap(periodeRekap.value))
+const batasLabel = computed(() => {
+  const m = String(batasRekapNow.value).match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  return m ? `${parseInt(m[3])} ${NAMA_BULAN[parseInt(m[2]) - 1]} ${m[1]}` : ''
 })
+
+// Ekspor PDF daftar guru yang belum mengisi — untuk dibagikan (Kyai, 2 Sep 2026).
+//   SATU BARIS PER SANTRI, bukan per guru: yang ditanya penerima pesan selalu "santri saya
+//   yang mana", dan daftar nama di dalam satu sel akan terpotong begitu jumlahnya belasan.
+//   Nama guru sengaja diulang tiap baris supaya potongan tangkapan layar mana pun tetap
+//   terbaca sendiri.
+const cetakBusy = ref(false)
+async function cetakPdf() {
+  if (cetakBusy.value || guruBelumInput.value.length === 0) return
+  cetakBusy.value = true
+  try {
+    let no = 0
+    const rows = []
+    for (const g of guruBelumInput.value) {
+      for (const s of g.santri) {
+        rows.push({
+          no: ++no,
+          guru: g.guru,
+          santri: s.nama,
+          lembaga: s.lembaga || '',
+          kelas: s.kelas || ''
+        })
+      }
+    }
+    const tenggat = rekapSudahTerlambat.value
+      ? `SUDAH LEWAT BATAS (${batasLabel.value})`
+      : `batas pengisian ${batasLabel.value}`
+    await buildListPdf({
+      kind: 'umum',
+      orientation: 'p',
+      format: 'a4',
+      kop: buildKopFromSettings(settingsStore.settings || {}),
+      title: `BELUM ISI REKAP PRESTASI — ${periodeLabel.value.toUpperCase()}
+${guruBelumInput.value.length} guru · ${totalSantriBelum.value} santri · PTPT & PPPH · ${tenggat}`,
+      columns: [
+        { key: 'no', header: 'No', width: 10 },
+        { key: 'guru', header: 'Guru', width: 55 },
+        { key: 'santri', header: 'Santri', width: 55 },
+        { key: 'lembaga', header: 'Lembaga', width: 22 },
+        { key: 'kelas', header: 'Kelas', width: 18 }
+      ],
+      rows,
+      filename: `belum-rekap-prestasi-${periodeRekap.value}.pdf`
+    })
+  } catch (e) {
+    toast.error('Gagal cetak PDF: ' + (e?.message || e))
+  } finally {
+    cetakBusy.value = false
+  }
+}
 
 function goSantri(id) {
   router.push(`/statistik/santri/${id}`)

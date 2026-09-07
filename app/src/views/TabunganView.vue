@@ -687,6 +687,22 @@
                 {{ fmtRp(m.nominal) }}
               </td>
               <td class="px-3 py-2 text-[11px] text-[var(--text-secondary)] truncate max-w-[200px]">
+                <span
+                  :class="[
+                    'mr-1 px-1.5 py-0.5 rounded text-[9px] font-black align-middle',
+                    metodeTransaksi(m) === 'Transfer'
+                      ? 'bg-sky-100 text-sky-700'
+                      : 'bg-emerald-100 text-emerald-700'
+                  ]"
+                >
+                  <i
+                    :class="[
+                      'fas',
+                      metodeTransaksi(m) === 'Transfer' ? 'fa-building-columns' : 'fa-money-bill'
+                    ]"
+                  ></i>
+                  {{ metodeTransaksi(m) }}
+                </span>
                 {{ m.catatan || '-' }}
               </td>
               <td class="px-3 py-2 text-right whitespace-nowrap">
@@ -858,6 +874,39 @@
             <p class="text-[10px] mt-1 text-[var(--text-secondary)]">{{ fmtRp(modalNominal) }}</p>
           </div>
 
+          <!-- Tabungan & Uang Saku belum pernah punya cara bayar; Buku Induk & POS sudah.
+               Tanpa ini laporan hariannya tak bisa dicocokkan dengan uang di laci. -->
+          <div>
+            <label
+              class="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]"
+            >
+              Cara Bayar
+            </label>
+            <div class="grid grid-cols-2 gap-2 mt-1">
+              <button
+                v-for="m in METODE_OPTS"
+                :key="'met_' + m"
+                type="button"
+                :class="[
+                  'px-3 py-2 text-xs font-black rounded-lg border-2 cursor-pointer transition',
+                  modalMetode === m
+                    ? 'bg-cyan-600 text-white border-cyan-700'
+                    : 'bg-[var(--bg-card)] text-cyan-700 border-cyan-300'
+                ]"
+                @click="modalMetode = m"
+              >
+                <i
+                  :class="[
+                    'fas',
+                    m === 'Transfer' ? 'fa-building-columns' : 'fa-money-bill',
+                    'mr-1'
+                  ]"
+                ></i
+                >{{ m }}
+              </button>
+            </div>
+          </div>
+
           <!-- Catatan -->
           <div>
             <label
@@ -983,6 +1032,8 @@ import {
   mutasiSetor,
   kunciLembaga
 } from '@/utils/kasLembaga'
+// Aturan simpulan cara bayar dipakai bersama Buku Induk & pos dana — satu sumber.
+import { metodeTransaksi, METODE_OPTS } from '@/utils/metodeBayar'
 import { cetakSlipTabunganPdf, exportRekapTabunganPdf } from '@/utils/strukBuilder'
 import { buildSlipTabunganEscpBase64 } from '@/utils/escpImage'
 import { isElectron, printRaw, getDefaultPrinter } from '@/composables/useDesktopPrint' // v.96.0626: cetak struk setor/tarik gaya POS (ESC/P grafis raster)
@@ -1346,6 +1397,8 @@ const modalJenis = ref('setor')
 const modalKategori = ref('umum')
 const modalNominal = ref(0)
 const modalCatatan = ref('')
+// Default 'Tunai' = simpulan metodeBayar.js untuk baris lama, jadi arti laporan lama tetap.
+const modalMetode = ref('Tunai')
 const saving = ref(false)
 const autoFilled = ref(false)
 // v.21.100.0527: edit-mode + multi-select bulk delete
@@ -1408,6 +1461,7 @@ function openModal(santriId = '', jenis = 'setor') {
   modalJenis.value = jenis
   modalKategori.value = 'umum'
   modalCatatan.value = ''
+  modalMetode.value = 'Tunai'
   const def = kategoriOptions.value.find((k) => k.id === 'syahriyah')
   modalNominal.value = def?.nominal_default || 0
   autoFilled.value = (def?.nominal_default || 0) > 0
@@ -1451,6 +1505,8 @@ function openEditMutasi(m) {
   modalKategori.value = m.kategori || 'umum'
   modalNominal.value = Number(m.nominal || 0)
   modalCatatan.value = m.catatan || ''
+  // Baris lama tanpa `metode` disimpulkan, bukan dikosongkan.
+  modalMetode.value = metodeTransaksi(m)
   autoFilled.value = false
 }
 
@@ -1557,7 +1613,8 @@ async function simpanMutasi() {
         jenis: modalJenis.value,
         kategori: modalKategori.value,
         nominal: Number(modalNominal.value),
-        catatan: modalCatatan.value
+        catatan: modalCatatan.value,
+        metode: modalMetode.value || 'Tunai'
       })
       toast.success('Mutasi diperbarui')
     } else {
@@ -1582,6 +1639,7 @@ async function simpanMutasi() {
         kategori: modalKategori.value,
         nominal: Number(modalNominal.value),
         catatan: modalCatatan.value,
+        metode: modalMetode.value || 'Tunai',
         tanggal,
         operator: opName,
         createdAt: serverTimestamp()
@@ -1597,6 +1655,7 @@ async function simpanMutasi() {
         kategori: modalKategori.value,
         nominal: Number(modalNominal.value),
         catatan: modalCatatan.value,
+        metode: modalMetode.value || 'Tunai',
         tanggal,
         operator: opName
       }
@@ -1717,15 +1776,21 @@ async function cetakLaporanMutasi() {
     //   dengan kartu rekap per lembaga di atas ('setor' = masuk, selain itu keluar).
     //   Kalau berbeda, satu layar bisa menampilkan dua angka untuk hari yang sama.
     const { setor, tarik } = ringkasSetorTarik(urut)
+    // Laporan ini dipakai menutup kas harian: tanpa memisahkan uang laci dari uang
+    // rekening, angkanya tak bisa dicocokkan. Baris lama disimpulkan 'Tunai'.
+    const subMet = { Tunai: { setor: 0, tarik: 0 }, Transfer: { setor: 0, tarik: 0 } }
     const rows = urut.map((m, i) => {
       const nom = Number(m.nominal || 0)
       const isSetor = mutasiSetor(m)
+      const met = metodeTransaksi(m)
+      if (subMet[met]) subMet[met][isSetor ? 'setor' : 'tarik'] += nom
       return {
         no: i + 1,
         tanggal: m.tanggal ? fmtTgl(m.tanggal) : '',
         bukti: m.no_bukti || '',
         santri: m.nama_cache || getNamaSantri(m.santri_id) || '-',
         lembaga: lembagaMutasi(m) || 'Kas Induk',
+        metode: met,
         setor: isSetor ? fmtRp(nom) : '',
         tarik: isSetor ? '' : fmtRp(nom),
         catatan: m.catatan || ''
@@ -1737,10 +1802,16 @@ async function cetakLaporanMutasi() {
       bukti: '',
       santri: label,
       lembaga: '',
+      metode: '',
       setor: kolomSetor,
       tarik: kolomTarik,
       catatan: ''
     })
+    for (const m of METODE_OPTS) {
+      const sm = subMet[m]
+      if (!sm || (sm.setor === 0 && sm.tarik === 0)) continue
+      rows.push(barisJumlah(`SUBTOTAL ${m.toUpperCase()}`, fmtRp(sm.setor), fmtRp(sm.tarik)))
+    }
     rows.push(barisJumlah(`JUMLAH (${urut.length} mutasi)`, fmtRp(setor), fmtRp(tarik)))
     rows.push(barisJumlah('SALDO BERSIH', fmtRp(setor - tarik), ''))
 
@@ -1768,11 +1839,12 @@ async function cetakLaporanMutasi() {
         { key: 'no', header: 'No', width: 10 },
         { key: 'tanggal', header: 'Tanggal', width: 26 },
         { key: 'bukti', header: 'No. Bukti', width: 26 },
-        { key: 'santri', header: 'Santri', width: 56 },
-        { key: 'lembaga', header: 'Kas Lembaga', width: 30 },
-        { key: 'setor', header: 'Setor', width: 28 },
-        { key: 'tarik', header: 'Tarik', width: 28 },
-        { key: 'catatan', header: 'Catatan', width: 44 }
+        { key: 'santri', header: 'Santri', width: 52 },
+        { key: 'lembaga', header: 'Kas Lembaga', width: 28 },
+        { key: 'metode', header: 'Cara Bayar', width: 24 },
+        { key: 'setor', header: 'Setor', width: 26 },
+        { key: 'tarik', header: 'Tarik', width: 26 },
+        { key: 'catatan', header: 'Catatan', width: 38 }
       ],
       rows,
       filename: `${slug}.pdf`

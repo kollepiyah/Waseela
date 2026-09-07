@@ -269,11 +269,32 @@ export const RULES_BACKEND = [
   ['shift AMMU', 'shift aplikasi'],
   ['AMMU Desktop', 'aplikasi Desktop'],
   ['Ammu Desktop', 'aplikasi Desktop'],
-  ['Ammu Online', 'Waseela']
+  ['Ammu Online', 'Waseela'],
+
+  // tests/unit/kopLembaga.test.js — cabang "settings kosong". Cadangan hulu adalah
+  // nama lembaganya sendiri; di Waseela BRAND, yang sengaja kosong sampai pembeli
+  // mengisi kop. HARUS di atas aturan fixture di bawah: ia mencocokkan teks hulu asli.
+  [
+    "    const k = buildKopLembaga({}, [], '')\n    expect(k.line1).toBe('YAYASAN MAMBAUL ULUM')\n    expect(k.line2).toBe('PONDOK PESANTREN MAMBAUL ULUM')",
+    "    const k = buildKopLembaga({}, [], '')\n    expect(k.line1).toBe(BRAND.kopLine1)\n    expect(k.line2).toBe(BRAND.kopLine2)"
+  ],
+  [
+    "import { buildKopFromSettings, buildKopLembaga } from '@/utils/pdfBuilder'",
+    "import { buildKopFromSettings, buildKopLembaga } from '@/utils/pdfBuilder'\nimport { BRAND } from '@/config/brand'"
+  ],
+
+  // Fixture kop di tests/unit/kopLembaga.test.js — identitas & kota lembaga hulu.
+  ['PONDOK PESANTREN MAMBAUL ULUM', 'LEMBAGA CONTOH'],
+  ['YAYASAN MAMBAUL ULUM', 'YAYASAN CONTOH'],
+  ["'ammu.id'", "'contoh.id'"],
+  [', Jombang', ', Kota Contoh']
 ]
 
 /** Regex gerbang audit — apa pun yang cocok = white-label belum tuntas. */
-export const POLA_JEJAK = /ammu|mambaul|manba'ul|al\s*manshur|almanshur|portal[-\s]?mu\b|portalMu/i
+// Lookbehind pada `ammu`: kata lain bisa memuatnya di tengah (j-ammu-lai di
+// utils/shiftBerjalan). Merek hulu tak pernah didahului huruf — selalu awal kata,
+// sesudah titik, @, atau garis bawah (app.ammu.id, @ammu.local, ic_stat_ammu).
+export const POLA_JEJAK = /(?<![a-z])ammu|mambaul|manba'ul|al\s*manshur|almanshur|portal[-\s]?mu\b|portalMu/i
 
 /** Terapkan satu set aturan ke sebuah string. */
 export function terapkan(teks, rules) {

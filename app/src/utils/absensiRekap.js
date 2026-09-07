@@ -41,6 +41,28 @@ export function rentangBulan(year, month) {
   return { start: isoOf(year, month, 1), end: isoOf(year, month, last) }
 }
 
+// Rentang terkecil yang MEMUAT semua rentang yang diberikan (v.1.4.0).
+//
+// Dipakai memutuskan seberapa lebar jendela absensi yang perlu DITARIK dari server.
+// Layar ini punya dua periode yang hidup berdampingan: matriks bulanan (bulan terpilih)
+// dan rekap per-lembaga yang bisa berjalan MINGGUAN dengan anchor sendiri — dan minggu
+// itu boleh berada di bulan lain sama sekali. Menarik hanya bulan terpilih akan membuat
+// rekap mingguan diam-diam menampilkan nol.
+//
+// Perbandingan ISO 'YYYY-MM-DD' cukup leksikografis; tak perlu Date (dan karena itu tak
+// bisa tergelincir zona waktu). null bila tak ada satu pun rentang yang sah — pemanggil
+// menerjemahkannya sebagai "tanpa penyaring" (perilaku lama: seluruh tabel).
+export function gabungRentang(...rentang) {
+  let start = null
+  let end = null
+  for (const r of rentang) {
+    if (!r || !r.start || !r.end) continue
+    if (start === null || r.start < start) start = r.start
+    if (end === null || r.end > end) end = r.end
+  }
+  return start && end ? { start, end } : null
+}
+
 // Geser anchor n minggu (utk tombol prev/next).
 export function geserMinggu(anchorIso, n) {
   const [y, m, d] = String(anchorIso).split('-').map(Number)
@@ -72,7 +94,29 @@ export function indexAbsensiHarian(rows) {
 
 // Hitung 1 sel rekap (guru,shift) atas tanggalKerja (sudah non-libur).
 // Alpha = tanggalKerja <= today yang tak ada record. belumPulang = hadir/terlambat tanpa jam_pulang.
-export function hitungSel(index, guruId, shift, tanggalKerja, todayIso) {
+//
+// v.1.3.8 `bukanJadwal` (Set of ISO) = hari yang bukan jadwal mengajar guru ini
+// (utils/jadwalGuru). Hari seperti itu boleh KOSONG tanpa jadi alpa — itulah inti
+// perbaikan 1 Sep 2026. Yang sengaja TIDAK dilakukan: membuang tanggalnya dari daftar.
+// Guru yang tetap datang di luar jadwal punya baris absensi sungguhan, dan baris itu
+// harus tetap terhitung hadir — kalau tanggalnya dibuang, kehadiran itu lenyap dan
+// bisyaroh `× kehadiran`-nya ikut hilang. Jadi: yang digugurkan hanya HUKUMANNYA.
+//
+// v.1.4.1 `belumMulaiHariIni` (Kyai, 5 Sep 2026: "shift yg belum dimulai jangan dihitung
+// alpa") = shift ini belum dibuka pada jam sekarang. Hanya mengenai HARI INI — tanggal
+// kemarin tetap alpa berapa pun jamnya. Perlakuannya sengaja sama persis dengan
+// `bukanJadwal`: yang digugurkan HUKUMANNYA, bukan tanggalnya, jadi guru yang sudah
+// terlanjur scan lebih awal (toleransi awal) tetap terhitung hadir hari itu.
+// Aturan jamnya sendiri di utils/shiftBerjalan — jangan disalin ke sini.
+export function hitungSel(
+  index,
+  guruId,
+  shift,
+  tanggalKerja,
+  todayIso,
+  bukanJadwal = null,
+  belumMulaiHariIni = false
+) {
   let H = 0,
     T = 0,
     I = 0,
@@ -82,10 +126,12 @@ export function hitungSel(index, guruId, shift, tanggalKerja, todayIso) {
     belumPulang = 0
   const gid = String(guruId)
   const sh = String(shift).toLowerCase()
+  const lepas = bukanJadwal instanceof Set ? bukanJadwal : new Set(bukanJadwal || [])
   for (const iso of tanggalKerja) {
     const a = index.get(gid + '|' + sh + '|' + iso)
     if (!a) {
-      if (iso <= todayIso) A++
+      const belumDibuka = belumMulaiHariIni && iso === String(todayIso)
+      if (iso <= todayIso && !lepas.has(iso) && !belumDibuka) A++
       continue
     }
     const st = String(a.status || 'hadir').toLowerCase()
