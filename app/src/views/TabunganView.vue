@@ -247,7 +247,10 @@
           </p>
         </div>
 
-        <!-- Orphan banner -->
+        <!-- Orphan banner. v.1.4.3 (Kyai 14 Sep 2026, audit): tombol "Dump console" (alat
+             pengembang) dicabut, penghapusan kini super admin saja, dan HANYA orphan bersaldo nol
+             yang bisa dihapus — yang masih bersaldo adalah uang titipan santri yang harus
+             dipindahkan ke santri yang benar, bukan dibuang. -->
         <div
           v-if="orphanStats.count > 0"
           class="bg-rose-50 border border-rose-200 rounded-xl p-3 mb-2"
@@ -255,31 +258,32 @@
           <div class="flex items-center justify-between gap-2 flex-wrap">
             <p class="text-xs font-bold text-rose-800">
               <i class="fas fa-exclamation-triangle mr-1"></i>
-              {{ orphanStats.count }} mutasi orphan (santri_id tidak ada di koleksi santri) &mdash;
-              {{ fmtRp(orphanStats.totalSaldo) }}
+              {{ orphanStats.count }} santri tak dikenal (santri_id tidak ada di data santri)
+              &mdash; {{ fmtRp(orphanStats.totalSaldo) }}
             </p>
-            <div class="flex gap-1.5 flex-wrap">
-              <button
-                class="text-[11px] font-bold text-rose-700 bg-[var(--bg-card)] border border-rose-300 px-2 py-1 rounded hover:bg-rose-100 cursor-pointer"
-                @click="dumpOrphan"
-              >
-                <i class="fas fa-terminal mr-1"></i>Dump console
-              </button>
-              <button
-                v-if="isFullAccess"
-                :disabled="orphanCleaning"
-                class="text-[11px] font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 px-2 py-1 rounded cursor-pointer"
-                @click="cleanupOrphan"
-              >
-                <i :class="['fas', orphanCleaning ? 'fa-spinner fa-spin' : 'fa-broom', 'mr-1']"></i>
-                {{ orphanCleaning ? 'Membersihkan...' : 'Hapus Mutasi Orphan' }}
-              </button>
-            </div>
+            <button
+              v-if="isAdmin && orphanStats.idsNol.length"
+              :disabled="orphanCleaning"
+              class="text-[11px] font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 px-2 py-1 rounded cursor-pointer"
+              @click="cleanupOrphan"
+            >
+              <i :class="['fas', orphanCleaning ? 'fa-spinner fa-spin' : 'fa-broom', 'mr-1']"></i>
+              {{
+                orphanCleaning
+                  ? 'Membersihkan...'
+                  : `Hapus yang bersaldo nol (${orphanStats.idsNol.length})`
+              }}
+            </button>
           </div>
+          <p v-if="orphanStats.bersaldo" class="text-[10px] text-rose-700 font-bold mt-1.5">
+            <i class="fas fa-hand mr-1"></i>{{ orphanStats.bersaldo }} di antaranya masih bersaldo
+            {{ fmtRp(orphanStats.saldoBersaldo) }} — jangan dihapus: itu uang titipan santri.
+            Pindahkan mutasinya ke santri yang benar lewat tombol Edit (super admin).
+          </p>
           <p class="text-[10px] text-rose-600 mt-1.5">
             <i class="fas fa-info-circle mr-1"></i>
-            Mutasi orphan = transaksi yang santri-nya sudah dihapus dari data santri. "Hapus Mutasi
-            Orphan" akan menghapus permanen seluruh record `{{ COLL }}` dengan santri_id tersebut.
+            Muncul bila santrinya sudah dihapus dari data santri. Sejak v.1.4.3 santri yang masih
+            punya riwayat keuangan tak bisa dihapus, jadi daftar ini hanya berisi sisa lama.
           </p>
         </div>
 
@@ -466,10 +470,22 @@
                   <td class="px-3 py-2 text-right whitespace-nowrap">
                     <button
                       class="text-[10px] text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 px-1.5 py-1 rounded"
-                      title="Cetak slip"
+                      title="Cetak ulang slip (PDF)"
+                      aria-label="Cetak ulang slip (PDF)"
                       @click="cetakSlip(m)"
                     >
                       <i class="fas fa-receipt"></i>
+                    </button>
+                    <!-- v.1.4.3 (Kyai 14 Sep 2026: "admin keu bisa print ulang struk"): cetak
+                         langsung ke printer, sama dengan panel sesudah Simpan. -->
+                    <button
+                      v-if="isDesktop"
+                      class="text-[10px] text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 px-1.5 py-1 rounded"
+                      title="Cetak ulang langsung ke printer"
+                      aria-label="Cetak ulang langsung ke printer"
+                      @click="cetakSlipLangsung(m)"
+                    >
+                      <i class="fas fa-print"></i>
                     </button>
                   </td>
                 </tr>
@@ -708,10 +724,21 @@
               <td class="px-3 py-2 text-right whitespace-nowrap">
                 <button
                   class="text-[10px] text-emerald-600 hover:bg-emerald-50 px-1.5 py-1 rounded mr-1"
-                  title="Cetak slip"
+                  title="Cetak ulang slip (PDF)"
+                  aria-label="Cetak ulang slip (PDF)"
                   @click="cetakSlip(m)"
                 >
                   <i class="fas fa-receipt"></i>
+                </button>
+                <!-- v.1.4.3 (Kyai 14 Sep 2026): cetak ulang langsung ke printer -->
+                <button
+                  v-if="isDesktop"
+                  class="text-[10px] text-amber-600 hover:bg-amber-50 px-1.5 py-1 rounded mr-1"
+                  title="Cetak ulang langsung ke printer"
+                  aria-label="Cetak ulang langsung ke printer"
+                  @click="cetakSlipLangsung(m)"
+                >
+                  <i class="fas fa-print"></i>
                 </button>
                 <!-- Ubah/hapus mutasi = super_admin. Admin keuangan cukup lihat & cetak
                      (koreksi catatan uang tetap kewenangan tertinggi, sejalan dgn CRUD
@@ -1030,8 +1057,13 @@ import {
   ringkasTabunganLembaga,
   ringkasSetorTarik,
   mutasiSetor,
-  kunciLembaga
+  kunciLembaga,
+  // v.1.4.3: saldo di slip cetak ulang = saldo SESUDAH mutasi itu, urutan sama dgn buku besar
+  saldoSetelahMutasi,
+  bandingMutasi
 } from '@/utils/kasLembaga'
+// v.1.0.3: orphan bersaldo tak pernah ditawarkan untuk dihapus
+import { pilahOrphanTabungan } from '@/utils/rujukanKeuanganSantri'
 // Aturan simpulan cara bayar dipakai bersama Buku Induk & pos dana — satu sumber.
 import { metodeTransaksi, METODE_OPTS } from '@/utils/metodeBayar'
 import { cetakSlipTabunganPdf, exportRekapTabunganPdf } from '@/utils/strukBuilder'
@@ -1278,10 +1310,15 @@ const orphanStats = computed(() => {
   const orphans = aggregated.value.filter(
     (t) => getNamaSantri(t.santri_id) === '(unknown)' && !t.nama_cache
   )
+  const pilah = pilahOrphanTabungan(orphans)
   return {
     count: orphans.length,
     totalSaldo: orphans.reduce((s, o) => s + Number(o.saldo || 0), 0),
-    ids: orphans.map((o) => o.santri_id)
+    ids: orphans.map((o) => o.santri_id),
+    // v.1.4.3: hanya yang bersaldo NOL boleh dihapus — lihat pilahOrphanTabungan.
+    idsNol: pilah.idsNol,
+    bersaldo: pilah.bersaldo.length,
+    saldoBersaldo: pilah.saldoBersaldo
   }
 })
 
@@ -1302,12 +1339,10 @@ const ledgerMutasi = computed(() => {
   if (!sid) return []
   const list = (mutasiSource.value || [])
     .filter((m) => String(m.santri_id || m.santriId || '') === sid)
-    .sort((a, b) => {
-      const ta = String(a.tanggal || ''),
-        tb = String(b.tanggal || '')
-      if (ta !== tb) return ta < tb ? -1 : 1 // kronologis (saldo berjalan)
-      return String(a.createdAt || a.id || '') < String(b.createdAt || b.id || '') ? -1 : 1
-    })
+    // Kronologis (saldo berjalan). v.1.4.3: pembandingnya dipakai bersama slip cetak ulang
+    //   (saldoSetelahMutasi) — dua pengurut sendiri-sendiri bisa memberi saldo berbeda untuk
+    //   mutasi bertanggal sama di layar dan di kertas.
+    .sort(bandingMutasi)
   let saldo = 0
   return list.map((m, i) => {
     const nominal = Number(m.nominal) || 0
@@ -1336,12 +1371,15 @@ const ledgerTotals = computed(() => {
 const orphanCleaning = ref(false)
 
 async function cleanupOrphan() {
-  const ids = orphanStats.value.ids
-  if (ids.length === 0) return
+  // v.1.4.3 (Kyai 14 Sep 2026, audit): HANYA santri orphan bersaldo nol, dan hanya super admin.
+  //   Dulu seluruh orphan ikut — termasuk saldo uang titipan santri yang terlanjur kehilangan
+  //   pemilik karena santrinya dihapus atau digabung sebagai duplikat.
+  const ids = orphanStats.value.idsNol
+  if (!isAdmin.value || ids.length === 0) return
   // v.21.115.0528: useConfirm API = function call, bukan .ask()
   const confirmed = await confirmDlg({
-    title: `Hapus PERMANEN ${orphanStats.value.count} mutasi orphan?`,
-    message: `santri_id: ${ids.join(', ')}\nTotal saldo: ${fmtRp(orphanStats.value.totalSaldo)}\n\nMutasi ini akan hilang dari database. Tidak bisa di-undo.`,
+    title: `Hapus mutasi ${ids.length} santri tak dikenal yang bersaldo nol?`,
+    message: `santri_id: ${ids.join(', ')}\nSaldo masing-masing Rp 0 — tak ada uang yang ikut hilang.\n\nMutasinya dihapus dari database (salinannya tersimpan di audit log).`,
     confirmText: 'Hapus',
     cancelText: 'Batal',
     danger: true
@@ -1373,20 +1411,6 @@ async function cleanupOrphan() {
   } finally {
     orphanCleaning.value = false
   }
-}
-
-function dumpOrphan() {
-  console.group('[TabunganView] Orphan mutasi diagnostic')
-  console.log('Orphan santri_id list:', orphanStats.value.ids)
-  console.log('Total saldo orphan:', orphanStats.value.totalSaldo)
-  console.log(
-    'Detail:',
-    aggregated.value.filter((t) => orphanStats.value.ids.includes(t.santri_id))
-  )
-  console.groupEnd()
-  alert(
-    `Orphan dump tersimpan di console (F12). ${orphanStats.value.count} santri_id tidak terhubung ke koleksi santri.`
-  )
 }
 
 // =================== MODAL — input mutasi ===================
@@ -1676,10 +1700,6 @@ const { exportSimple, importFile } = useExcel()
 const importingTab = ref(false)
 const importInput = ref(null)
 
-function saldoSantriById(sid) {
-  const a = aggregated.value.find((x) => String(x.santri_id) === String(sid))
-  return a ? Number(a.saldo) || 0 : 0
-}
 // v.96.0626: cari objek santri (KOP slip butuh NIS/kelas). savedSantri dipakai utk transaksi yg baru disimpan.
 function slipSantriOf(m) {
   const sid = String(m?.santri_id || m?.santriId || '')
@@ -1688,7 +1708,10 @@ function slipSantriOf(m) {
 }
 function slipOpts(m) {
   return {
-    saldo: saldoSantriById(m.santri_id || m.santriId),
+    // v.1.4.3 (Kyai 14 Sep 2026: "print ulang struk"): saldo SESUDAH mutasi ini, bukan saldo
+    //   hari ini. Slip setoran 3 Agustus yang dicetak ulang September dulu mencetak saldo
+    //   September — tak lagi cocok dengan slip asli yang dipegang wali.
+    saldo: saldoSetelahMutasi(mutasiSource.value, m),
     santri: slipSantriOf(m),
     label: pageTitle.value.toUpperCase()
   }
@@ -1739,9 +1762,13 @@ function labelPeriodeMutasi() {
   return mutFilterDay.value ? `${mutFilterDay.value} ${bl}` : bl
 }
 
+// Tabungan & uang saku = titipan santri, bukan kas yayasan: mutasi santri tanpa lembaga
+//   berlabel "Tanpa lembaga", sama dengan kartu & penyaring di layar ini. PDF-nya dulu
+//   menulis "Kas Induk" — keliru sejak awal, dan kini juga bertabrakan dengan kas tunggal
+//   (v.1.4.3), yang menamai baris kas tanpa label "Umum / Yayasan".
 function labelLembagaMutasi() {
   if (!mutFilterLembaga.value) return ''
-  if (mutFilterLembaga.value === KAS_INDUK) return 'Kas Induk'
+  if (mutFilterLembaga.value === KAS_INDUK) return 'Tanpa lembaga'
   const o = rekapLembagaTab.value.find((x) => x.kunci === mutFilterLembaga.value)
   return o?.lembaga || ''
 }
@@ -1789,7 +1816,7 @@ async function cetakLaporanMutasi() {
         tanggal: m.tanggal ? fmtTgl(m.tanggal) : '',
         bukti: m.no_bukti || '',
         santri: m.nama_cache || getNamaSantri(m.santri_id) || '-',
-        lembaga: lembagaMutasi(m) || 'Kas Induk',
+        lembaga: lembagaMutasi(m) || 'Tanpa lembaga',
         metode: met,
         setor: isSetor ? fmtRp(nom) : '',
         tarik: isSetor ? '' : fmtRp(nom),
@@ -1840,7 +1867,7 @@ async function cetakLaporanMutasi() {
         { key: 'tanggal', header: 'Tanggal', width: 26 },
         { key: 'bukti', header: 'No. Bukti', width: 26 },
         { key: 'santri', header: 'Santri', width: 52 },
-        { key: 'lembaga', header: 'Kas Lembaga', width: 28 },
+        { key: 'lembaga', header: 'Lembaga', width: 28 },
         { key: 'metode', header: 'Cara Bayar', width: 24 },
         { key: 'setor', header: 'Setor', width: 26 },
         { key: 'tarik', header: 'Tarik', width: 26 },

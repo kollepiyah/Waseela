@@ -34,6 +34,12 @@ const REPO = BRAND.releaseRepo
 /** Halaman rilis terbaru — SELALU sah, dipakai sebagai cadangan terakhir. */
 export const HALAMAN_RILIS = `${REPO}/releases/latest`
 
+/** Halaman Play Store. BELUM dipasang di tombol mana pun: per 16 Sep 2026 Waseela masih
+ *  di jalur UJI TERTUTUP, jadi tautan ini memulangkan halaman kosong bagi yang bukan
+ *  penguji. Begitu produksi terbit, pindah ke sini — atau lebih cepat lagi, isi
+ *  `settings.downloadAndroid` di Pengaturan Web (menang atas nilai ini, tanpa rilis ulang). */
+export const URL_PLAYSTORE = `https://play.google.com/store/apps/details?id=${BRAND.androidPackage}`
+
 /** Buang awalan gaya tampilan ('v.1.2.8' / 'v1.2.8') -> '1.2.8'. '' kalau tak masuk akal. */
 function normalVersi(versi) {
   const v = String(versi ?? '')

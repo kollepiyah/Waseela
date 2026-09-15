@@ -19,6 +19,9 @@ import { storeToRefs } from 'pinia'
 import RibbonIcon from './RibbonIcon.vue'
 import { useCollectionsStore } from '@/stores/collections'
 import { useSettingsStore } from '@/stores/settings'
+// v.1.4.2: SATU sumber nomor versi (lihat utils/appVersion.js) — label yang diketik
+//   tangan di layar sudah terbukti membeku (kaki Data Santri tertinggal di v.74.0526).
+import { labelVersi } from '@/utils/appVersion'
 import { BRAND } from '@/config/brand'
 
 const collections = useCollectionsStore()
@@ -32,7 +35,7 @@ const lembagaName = computed(
   () => settings.settings?.namaLembaga || settings.settings?.appTitle || BRAND.namaLembaga
 )
 // versi tampil: ambil dari settings bila ada supaya tak menambah titik bump baru di kode
-const version = computed(() => settings.settings?.appVersion || BRAND.version)
+const version = computed(() => labelVersi(settings.settings))
 
 const hijri = computed(() => {
   try {

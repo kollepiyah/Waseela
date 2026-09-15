@@ -1,6 +1,6 @@
 {
   "name": "waseela-ops",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "private": true,
   "description": "Waseela — skrip ops root (brand, tes, rilis web/Android/desktop). Aplikasi Vue ada di app/.",
   "scripts": {

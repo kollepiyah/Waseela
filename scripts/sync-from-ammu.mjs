@@ -26,7 +26,13 @@ import { createHash } from 'crypto'
 import { EXT_SRC, EXT_BACKEND, RULES_SRC, RULES_BACKEND, terapkan, pastikanImportBrand } from './whitelabel-rules.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const HULU = process.env.AMMU_REPO || resolve(ROOT, '..', 'Portal MU')
+// Folder hulu sempat berganti nama (Portal MU → Ammu, 16 Sep 2026). Dicoba keduanya
+// supaya sync tak mati hanya karena foldernya dinamai ulang.
+const NAMA_HULU = ['Ammu', 'Portal MU']
+const HULU =
+  process.env.AMMU_REPO ||
+  NAMA_HULU.map((n) => resolve(ROOT, '..', n)).find((p) => existsSync(p)) ||
+  resolve(ROOT, '..', NAMA_HULU[0])
 const DRY = process.argv.includes('--dry')
 const lf = (s) => s.split('\r\n').join('\n') // repo ini LF (lihat .gitattributes)
 const sha = (s) => createHash('sha256').update(s).digest('hex').slice(0, 16)

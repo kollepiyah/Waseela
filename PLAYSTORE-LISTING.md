@@ -3,12 +3,18 @@
 > **Untuk:** Kyai isi di Play Console. Berkas ini sumber tunggalnya — kalau listing
 > diubah di Console, ubah juga di sini supaya rilis berikutnya tak menebak-nebak.
 > **Bahasa:** Indonesia, **KECUALI bagian 9 "App access"** yang WAJIB Inggris.
-> **Terakhir diperbarui:** 13 Agu 2026 · target rilis perdana `versionCode 2` / `v.1.0.1`
+> **Terakhir diperbarui:** 16 Sep 2026 · di Play: `versionCode 2` / `v.1.0.1` (UJI TERTUTUP)
+> · unggahan berikutnya: `versionCode 4` / `v.1.0.3`
 >
 > `versionCode 1` / `v.1.0.0` **tak pernah sampai ke Play** — versinya sudah naik lebih
 > dulu (impor mesin absensi + Virtual Account dibuang). Yang diunggah pertama kali ke
 > Play adalah `versionCode 2`; memulai dari 2 tak masalah, Play hanya menuntut angkanya
 > selalu NAIK.
+>
+> `versionCode 3` juga TIDAK ada di Play: ia terbit sebagai APK GitHub v.1.0.2 (7 Sep 2026).
+> Karena angka itu sudah sampai ke pengguna, rilis berikutnya langsung ke `versionCode 4` —
+> memakai ulang 3 untuk isi yang berbeda membuat nomor versi berbohong, dan itu persis
+> pelajaran yang dicatat hulu saat mereka menurunkan lalu menaikkan versinya kembali.
 
 ---
 

@@ -17,6 +17,16 @@
 //
 // TIDAK ada baris lama yang ditulis ulang: baris tanpa tag `lembaga` diturunkan
 //   saat DIBACA dari kategorinya. Uang riil sejak 1 Agu 2026 — nol mutasi data.
+//
+// KAS TUNGGAL (Kyai, 14 Sep 2026): "kalau bisyaroh dibebankan ke lembaga pasti ada lembaga
+//   yg minus, karena setiap unit itu saling mensubsidi satu sama lain" dan "selama ini
+//   secara operasional itu kas tunggal, dan jika lembaga membutuhkan baru mengajukan ke
+//   yayasan". Jadi lembaga di berkas ini LABEL SUMBER DANA untuk laporan, BUKAN kas yang
+//   terpisah: saldonya cuma satu (kas yayasan), dan tak ada layar yang boleh menampilkan
+//   "saldo lembaga". Dulu kartu "Kas per lembaga" menampilkan saldo tiap lembaga, sehingga
+//   semua pengeluaran tanpa label — seluruh bisyaroh & operasional — menumpuk di kartu
+//   "Kas Induk / Yayasan" yang terbaca kosong/minus, padahal uangnya ada di kas yang sama.
+//   Keranjang tanpa label itu kini bernama "Umum / Yayasan" (LABEL_KAS_UMUM).
 
 /** Kunci perbandingan nama lembaga: abai huruf besar/kecil, spasi tepi & spasi ganda.
  *  WAJIB dipakai di KEDUA sisi setiap perbandingan — sekolah kustom ditulis
@@ -113,7 +123,7 @@ export function petaKasLembaga(jenisList = []) {
 }
 
 /**
- * Lembaga kas satu baris `keuangan_buku_induk`. '' = Kas Induk (belum berlembaga).
+ * Lembaga kas satu baris `keuangan_buku_induk`. '' = Umum / Yayasan (tanpa label lembaga).
  *
  * Urutan baca — tag di baris DULU, turunan belakangan:
  *   1. `row.lembaga` — ditulis POS & kas manual sejak v.1.2.6. Ini fakta yang
@@ -160,10 +170,14 @@ export function arahNominal(row) {
 /**
  * Rekap kas per lembaga atas sekumpulan baris.
  *
+ * ⚠️ Kas tunggal: `saldo` di sini hanya selisih masuk − keluar BARIS BERLABEL lembaga itu,
+ *   bukan uang yang dimiliki lembaga. Kartu kas (Buku Induk, pos dana) menampilkan
+ *   `masuk`-nya. Tabungan memakai `saldo` dengan sah — itu titipan santri, bukan kas yayasan.
+ *
  * @param {Array} rows baris kas (sudah tersaring periode/metode oleh pemanggil)
- * @param {Function} resolver (row) => nama lembaga ('' = Kas Induk)
+ * @param {Function} resolver (row) => nama lembaga ('' = Umum / Yayasan)
  * @returns {Array<{lembaga,kunci,masuk,keluar,saldo,jumlah}>} lembaga berurut nama
- *   (locale id), Kas Induk SELALU paling akhir — ia keranjang sisa, bukan lembaga.
+ *   (locale id), Umum / Yayasan SELALU paling akhir — ia keranjang sisa, bukan lembaga.
  */
 export function ringkasKasLembaga(rows = [], resolver) {
   const fn = typeof resolver === 'function' ? resolver : () => ''
@@ -184,6 +198,38 @@ export function ringkasKasLembaga(rows = [], resolver) {
       if (!a.kunci !== !b.kunci) return a.kunci ? -1 : 1
       return a.lembaga.localeCompare(b.lembaga, 'id')
     })
+}
+
+/** Nama keranjang baris kas TANPA label lembaga. Satu sumber — dulu tiap layar menulis
+ *  sendiri "Kas Induk" / "Kas Induk / Yayasan" / "Kas Induk / belum ditentukan". */
+export const LABEL_KAS_UMUM = 'Umum / Yayasan'
+
+/** Nama tampilan lembaga sebuah baris/rekap kas: kosong → "Umum / Yayasan". */
+export function labelKasLembaga(nama) {
+  return String(nama == null ? '' : nama).trim() || LABEL_KAS_UMUM
+}
+
+/**
+ * Jumlah sekumpulan baris kas sebagai SATU kas — kas tunggal, tanpa dipecah lembaga.
+ *
+ * Rumus per barisnya arahNominal (cermin `stats` Buku Induk), jadi untuk baris yang sama
+ * `masuk`/`keluar`/`jumlah`-nya PERSIS jumlah seluruh kartu ringkasKasLembaga: kartu
+ * pemasukan per lembaga dan saldo kas yayasan tak bisa berselisih diam-diam.
+ *
+ * @returns {{masuk:number, keluar:number, selisih:number, jumlah:number}} `selisih` =
+ *   masuk − keluar baris yang diberikan; ia mutasi, BUKAN posisi kas.
+ */
+export function jumlahKas(rows = []) {
+  let masuk = 0
+  let keluar = 0
+  let jumlah = 0
+  for (const r of Array.isArray(rows) ? rows : []) {
+    const a = arahNominal(r)
+    masuk += a.masuk
+    keluar += a.keluar
+    jumlah++
+  }
+  return { masuk, keluar, selisih: masuk - keluar, jumlah }
 }
 
 /**
@@ -228,6 +274,52 @@ export function ringkasSetorTarik(mutasi = []) {
 /** Apakah baris mutasi ini SETORAN? Sumber tunggal supaya laporan & rekap tak berselisih. */
 export function mutasiSetor(m) {
   return String(m?.jenis || '').toLowerCase() === 'setor'
+}
+
+/**
+ * Urutan kronologis mutasi: tanggal, lalu waktu catat (atau id). SATU pembanding untuk
+ * buku besar santri di layar DAN saldo di slip cetak ulang — kalau keduanya mengurutkan
+ * sendiri-sendiri, mutasi bertanggal sama bisa punya saldo berbeda di layar dan di kertas.
+ */
+export function bandingMutasi(a, b) {
+  const ta = String(a?.tanggal || '')
+  const tb = String(b?.tanggal || '')
+  if (ta !== tb) return ta < tb ? -1 : 1
+  const ka = String(a?.createdAt || a?.id || '')
+  const kb = String(b?.createdAt || b?.id || '')
+  return ka === kb ? 0 : ka < kb ? -1 : 1
+}
+
+/**
+ * Saldo santri TEPAT SESUDAH mutasi `m` — yang pantas tercetak sebagai "Saldo Akhir" di
+ * slip setor/tarik.
+ *
+ * Kyai, 14 Sep 2026: "di uang saku dan POS dan yg lain, saya ingin admin keu bisa print
+ *   ulang struk." Slip Tabungan/Uang Saku dulu selalu mencetak saldo HARI INI, jadi slip
+ *   setoran 3 Agustus yang dicetak ulang pertengahan September menulis saldo September —
+ *   kertasnya tak cocok lagi dengan kertas yang dipegang wali. Konvensinya sama dengan
+ *   buku besar di layar (mutasiSetor: 'setor' = masuk, selain itu keluar).
+ *
+ * `m` yang belum ada di daftar (baru disimpan, langganan realtime belum tiba) dihitung
+ * pada tempatnya menurut tanggal — tanpa ini slip yang dicetak sesaat sesudah Simpan
+ * belum memuat setoran yang sedang dicetak itu sendiri.
+ */
+export function saldoSetelahMutasi(mutasiList, m) {
+  const sid = String(m?.santri_id ?? m?.santriId ?? '')
+  if (!sid) return 0
+  const idM = String(m?.id ?? '')
+  const milik = (Array.isArray(mutasiList) ? mutasiList : []).filter(
+    (x) => x && String(x.santri_id ?? x.santriId ?? '') === sid
+  )
+  const ada = idM && milik.some((x) => String(x.id) === idM)
+  const urut = (ada ? milik : [...milik, m]).slice().sort(bandingMutasi)
+  let saldo = 0
+  for (const x of urut) {
+    const nominal = Number(x.nominal) || 0
+    saldo += mutasiSetor(x) ? nominal : -nominal
+    if (x === m || (idM && String(x.id) === idM)) return saldo
+  }
+  return saldo
 }
 
 /** Peta santri_id -> lembaga (ngaji, cadangan sekolah) untuk kasLembagaTabungan. */

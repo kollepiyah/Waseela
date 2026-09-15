@@ -23,7 +23,13 @@ import { resolve, dirname, relative, join } from 'path'
 import { fileURLToPath } from 'url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const HULU = process.env.AMMU_REPO || resolve(ROOT, '..', 'Portal MU')
+// Folder hulu sempat berganti nama (Portal MU → Ammu, 16 Sep 2026). Dicoba keduanya —
+// kalau tak ketemu, gerbang ini DIAM-DIAM dilewati (lihat exit 0 di bawah).
+const NAMA_HULU = ['Ammu', 'Portal MU']
+const HULU =
+  process.env.AMMU_REPO ||
+  NAMA_HULU.map((n) => resolve(ROOT, '..', n)).find((p) => existsSync(p)) ||
+  resolve(ROOT, '..', NAMA_HULU[0])
 
 if (!existsSync(HULU)) {
   console.log('\n═══ cek-kebocoran ═══\n')

@@ -172,7 +172,10 @@
           >
             <i class="fas fa-eye mr-1"></i>Lihat Bukti
           </button>
+          <!-- v.1.4.3 (Kyai 14 Sep 2026, audit): transfer TERVERIFIKASI tak bisa dihapus dari
+               sini — lihat hapusTransfer. -->
           <button
+            v-if="p.status !== 'verified'"
             class="ml-auto px-3 py-1.5 text-xs font-bold bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 text-rose-600 rounded-lg cursor-pointer"
             @click="hapusTransfer(p)"
           >
@@ -273,6 +276,8 @@ import { useDesktopShell } from '@/composables/useDesktopShell'
 // v.F6e: adapter Supabase. runTransaction → read-modify-write (getOne+updateOne);
 //   single-tenant + idempoten via applied_transfer_refs, atomicity penuh ditunda dbSafe.
 import { subscribeColl, setOne, deleteOne, getOne, queryColl, updateOne } from '@/services/db'
+// v.1.4.3: hapus baris uang lewat satu pintu — tagihan yang dinaikkannya ikut dikembalikan
+import { hapusBarisKas } from '@/services/hapusBarisKas'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
@@ -358,7 +363,19 @@ function openBukti(p) {
 }
 
 // ===== v.95.0626c: CRUD record transfer (hapus + edit/link tagihan) =====
+// v.1.4.3 (Kyai 14 Sep 2026, audit): record transfer yang sudah TERVERIFIKASI adalah bukti uang
+//   yang sudah masuk Buku Induk (dan mungkin sudah melunasi tagihan). Menghapusnya membuat baris
+//   `bi_trf_*` kehilangan asal-usulnya; "Cek Riwayat vs Tagihan" lalu melaporkannya sebagai
+//   "transfer yatim" — uang yang tak pernah sah — dan menyarankan menghapusnya, padahal sejak
+//   v.1.4.3 menghapus baris itu ikut mengembalikan tagihannya: wali yang sudah membayar ditagih
+//   lagi. Kalau verifikasinya memang keliru, yang dihapus baris transfernya di Buku Induk.
 async function hapusTransfer(p) {
+  if (p?.status === 'verified') {
+    toast.warning(
+      'Transfer yang sudah diverifikasi tak bisa dihapus. Kalau verifikasinya keliru, hapus baris transfernya di Buku Induk — tagihannya ikut kembali.'
+    )
+    return
+  }
   const ok = await confirm({
     title: 'Hapus record transfer?',
     message: `${p.santri_nama} · ${fmtRp(p.nominal)} (${p.kategori || 'Transfer'})\nStatus: ${p.status || 'pending'}\n\nRecord transfer ini dihapus permanen (tidak menghapus catatan buku induk yang sudah dibuat).`,
@@ -525,13 +542,29 @@ async function rejectTransfer(p) {
     //   yang sudah lahir, dan penolakan dulu tak pernah membersihkannya. Uang yang tak
     //   pernah sah tetap duduk di Riwayat. deleteOne menyalin ke audit_log dulu, jadi
     //   jejaknya tak hilang. Baris yang memang tak pernah ada → diabaikan.
-    try {
-      await deleteOne('keuangan_buku_induk', `bi_trf_${p.id}`, {
+    //
+    // v.1.4.3 (Kyai 14 Sep 2026): lewat services/hapusBarisKas, bukan deleteOne langsung.
+    //   Verifikasi yang berhenti di tengah bisa sudah MENAIKKAN tagihannya (update tagihan
+    //   ditulis sebelum status 'verified') — menolak transfer lalu hanya menghapus barisnya
+    //   meninggalkan tagihan yang mengaku lunas atas uang yang ditolak. Kalau tagihannya
+    //   gagal dikembalikan, penolakan DIBATALKAN: transfer tetap di Pending dan bisa diulang.
+    const barisTrf = await getOne('keuangan_buku_induk', `bi_trf_${p.id}`).catch(() => null)
+    if (barisTrf) {
+      const hasil = await hapusBarisKas([barisTrf], {
         sesi: auth.sesiAktif,
         alasan: `transfer ditolak: ${alasan.trim()}`
       })
-    } catch (er) {
-      console.warn('[rejectTransfer] bersihkan buku induk:', er?.message)
+      if (hasil?.tagihanGagal?.length) {
+        toast.error(
+          'Transfer BELUM ditolak: tagihannya gagal dikembalikan (' +
+            hasil.tagihanGagal[0].pesan +
+            '). Coba lagi.'
+        )
+        return
+      }
+      if (hasil?.barisGagal?.length) {
+        console.warn('[rejectTransfer] bersihkan buku induk:', hasil.barisGagal[0].pesan)
+      }
     }
     await setOne('pembayaran_transfer_pending', p.id, {
       ...p,

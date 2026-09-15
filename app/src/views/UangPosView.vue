@@ -77,11 +77,16 @@
               {{ fmtRp(stats.pengeluaran) }}
             </p>
           </div>
+          <!-- v.1.4.3 (Kyai 14 Sep 2026, kas tunggal): dulu berlabel "Saldo Pos" padahal isinya
+               masuk − keluar periode & penyaring yang aktif — kasus yang sama dengan kartu
+               "Saldo Akhir" Buku Induk yang diganti namanya di v.1.3.7. Saat disaring per
+               lembaga, label lama itu terbaca "saldo lembaga": angka yang tak ada. -->
           <div class="bg-cyan-50 border-l-4 border-cyan-500 p-3 rounded-xl">
-            <p class="text-[10px] font-bold text-cyan-700 uppercase">Saldo Pos</p>
+            <p class="text-[10px] font-bold text-cyan-700 uppercase">Selisih Periode</p>
             <p class="text-base md:text-lg font-black text-cyan-800 mt-1">
               {{ fmtRp(stats.saldo) }}
             </p>
+            <p class="text-[9px] text-cyan-700/80 mt-0.5">masuk &minus; keluar</p>
           </div>
         </div>
       </div>
@@ -183,17 +188,19 @@
                     </button>
                   </div>
                 </div>
-                <!-- v.1.2.6 (Kyai): kas per lembaga. Kategori pos ini teks bebas, jadi
-                     lembaganya ditunjuk di sini (mis. beli buku SDI → kas SDI). -->
+                <!-- v.1.2.6 (Kyai): lembaga baris pos. Kategori pos ini teks bebas, jadi
+                     lembaganya ditunjuk di sini (mis. beli buku SDI → dicatat untuk SDI).
+                     v.1.4.3 (Kyai 14 Sep 2026, kas tunggal): LABEL laporan, bukan kas sendiri —
+                     karena itu tak lagi berbunyi "Masuk Kas Lembaga". -->
                 <div>
                   <label class="block text-xs font-bold text-[var(--text-secondary)] mb-1"
-                    >Masuk Kas Lembaga</label
+                    >Dicatat untuk Lembaga</label
                   >
                   <select
                     v-model="inputForm.lembaga"
                     class="w-full px-3 py-2 text-sm border border-[var(--border-default)] rounded-lg bg-[var(--bg-card)] text-[var(--text-primary)]"
                   >
-                    <option value="">Kas Induk / Yayasan</option>
+                    <option value="">{{ LABEL_KAS_UMUM }}</option>
                     <option
                       v-for="o in lembagaOpsi"
                       :key="`kas_${o.nama}`"
@@ -280,7 +287,7 @@
             <option :value="0">Semua tgl</option>
             <option v-for="d in 31" :key="d" :value="d">{{ d }}</option>
           </select>
-          <!-- v.1.2.6 (Kyai): filter kas lembaga -->
+          <!-- v.1.2.6 (Kyai): filter lembaga -->
           <select
             v-model="filterLembaga"
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
@@ -291,7 +298,7 @@
               :key="`fl_${o.kunci || 'induk'}`"
               :value="o.kunci || KAS_INDUK"
             >
-              {{ o.lembaga || 'Kas Induk' }} ({{ o.jumlah }})
+              {{ labelKasLembaga(o.lembaga) }} ({{ o.jumlah }})
             </option>
           </select>
           <select
@@ -309,16 +316,19 @@
             class="px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-[var(--bg-card)] focus:ring-2 focus:ring-cyan-500 outline-none"
           />
         </div>
-        <!-- v.1.2.6 (Kyai): kas tiap lembaga sendiri-sendiri. Klik = saring ke lembaga itu. -->
+        <!-- v.1.2.6 (Kyai): rekap tiap lembaga. Klik = saring ke lembaga itu.
+             v.1.4.3 (Kyai 14 Sep 2026, KAS TUNGGAL): angka besarnya PEMASUKAN, bukan saldo —
+             lembaga itu label sumber dana, kasnya satu (lihat catatan di BukuIndukView). -->
         <div v-if="rekapLembaga.length > 1" class="mt-3">
           <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1.5">
-            <i class="fas fa-sitemap mr-1"></i>{{ pageTitle }} per lembaga
+            <i class="fas fa-sitemap mr-1"></i>Pemasukan {{ pageTitle }} per lembaga
           </p>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             <button
               v-for="o in rekapLembaga"
               :key="`kl_${o.kunci || 'induk'}`"
               type="button"
+              :title="o.kunci ? null : 'Tanpa label lembaga'"
               :class="[
                 'text-left p-2.5 rounded-xl border transition',
                 filterLembaga === (o.kunci || KAS_INDUK)
@@ -330,13 +340,15 @@
               "
             >
               <p class="text-[11px] font-black text-[var(--text-primary)] truncate">
-                {{ o.lembaga || 'Kas Induk / Yayasan' }}
+                {{ labelKasLembaga(o.lembaga) }}
               </p>
-              <p class="text-sm font-black text-cyan-700 dark:text-cyan-300 mt-0.5">
-                {{ fmtRp(o.saldo) }}
+              <p class="text-sm font-black text-emerald-700 dark:text-emerald-300 mt-0.5">
+                {{ fmtRp(o.masuk) }}
+                <span class="text-[10px] font-bold text-[var(--text-secondary)]">masuk</span>
               </p>
               <p class="text-[10px] text-[var(--text-secondary)] mt-0.5">
-                masuk {{ fmtRp(o.masuk) }} · keluar {{ fmtRp(o.keluar) }} · {{ o.jumlah }} trx
+                <template v-if="o.keluar > 0">keluar {{ fmtRp(o.keluar) }} · </template
+                >{{ o.jumlah }} trx
               </p>
             </button>
           </div>
@@ -371,19 +383,20 @@
         <div
           :class="[
             'hidden md:grid gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-700 text-[10px] uppercase font-bold text-[var(--text-secondary)] tracking-wider border-b border-[var(--border-subtle)]',
-            'md:grid-cols-[100px_1fr_120px_120px]'
+            'md:grid-cols-[100px_1fr_120px_120px_auto]'
           ]"
         >
           <span>Tanggal</span>
           <span>Keterangan</span>
           <span class="text-right">Masuk</span>
           <span class="text-right">Keluar</span>
+          <span aria-hidden="true"></span>
         </div>
         <div class="divide-y divide-slate-100 dark:divide-slate-700">
           <div
             v-for="b in filtered"
             :key="b.id"
-            class="px-4 py-2.5 md:grid gap-2 md:grid-cols-[100px_1fr_120px_120px] hover:bg-slate-50 dark:hover:bg-slate-700/30 transition"
+            class="px-4 py-2.5 md:grid gap-2 md:grid-cols-[100px_1fr_120px_120px_auto] hover:bg-slate-50 dark:hover:bg-slate-700/30 transition"
           >
             <span
               class="text-[11px] text-[var(--text-secondary)] font-bold whitespace-nowrap block md:inline"
@@ -437,7 +450,7 @@
               </span>
               <span v-else class="text-[var(--text-tertiary)]">—</span>
             </div>
-            <div class="md:text-right flex items-center md:justify-end gap-2">
+            <div class="md:text-right">
               <span
                 v-if="b.tipe === 'keluar' || Number(b.keluar) > 0"
                 class="text-sm font-black text-rose-700"
@@ -445,6 +458,50 @@
                 {{ fmtRp(b.keluar || b.nominal) }}
               </span>
               <span v-else class="text-[var(--text-tertiary)]">—</span>
+            </div>
+            <!-- v.1.4.3 (Kyai 14 Sep 2026: "admin keu bisa print ulang struk"): cetak ulang
+                 untuk semua admin keuangan; hapus tetap super admin. Kolomnya sendiri —
+                 tombol yang berbagi kolom dengan nominal meluber menimpa angkanya (pelajaran
+                 Buku Induk v.1.3.0). -->
+            <div class="mt-1 md:mt-0 flex items-center md:justify-end gap-1 shrink-0">
+              <template v-if="barisBayarSantri(b)">
+                <button
+                  type="button"
+                  class="text-[10px] text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/30 px-1.5 py-1 rounded"
+                  title="Cetak ulang struk PDF"
+                  aria-label="Cetak ulang struk PDF"
+                  @click="cetakUlang(b, 'pdf')"
+                >
+                  <i class="fas fa-file-pdf"></i>
+                </button>
+                <button
+                  type="button"
+                  class="text-[10px] text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 px-1.5 py-1 rounded"
+                  :title="
+                    cetak.bisaLangsung
+                      ? 'Cetak ulang langsung ke printer'
+                      : 'Buka struk dot-matrix (PDF)'
+                  "
+                  :aria-label="
+                    cetak.bisaLangsung
+                      ? 'Cetak ulang langsung ke printer'
+                      : 'Buka struk dot-matrix (PDF)'
+                  "
+                  @click="cetakUlang(b, 'langsung')"
+                >
+                  <i class="fas fa-print"></i>
+                </button>
+              </template>
+              <button
+                v-else-if="b.sumber === 'manual'"
+                type="button"
+                class="text-[10px] text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 px-1.5 py-1 rounded"
+                title="Cetak bukti kas"
+                aria-label="Cetak bukti kas"
+                @click="cetakBuktiKas(b)"
+              >
+                <i class="fas fa-receipt"></i>
+              </button>
               <button
                 v-if="isAdmin"
                 type="button"
@@ -475,7 +532,14 @@ import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
 import { useRoute } from 'vue-router'
 import { useDesktopShell } from '@/composables/useDesktopShell'
 import { definePageActions } from '@/composables/useRibbonContext'
-import { subscribeColl, subscribeDoc, setOne, deleteOne, serverTimestamp } from '@/services/db'
+import { subscribeColl, subscribeDoc, setOne, serverTimestamp } from '@/services/db'
+// v.1.4.3 (Kyai 14 Sep 2026): hapus baris uang lewat satu pintu — tagihannya ikut kembali.
+import { hapusBarisKas } from '@/services/hapusBarisKas'
+import { ringkasRencanaBatal, pesanHasilHapus, barisBayarSantri } from '@/utils/batalBayarTagihan'
+// v.1.4.3: cetak ulang — pembayaran santri → struk pembayaran, kas manual → bukti kas.
+import { useCetakStruk } from '@/composables/useCetakStruk'
+import { barisSeTransaksi } from '@/utils/trxStruk'
+import { cetakStrukKasPdf } from '@/utils/strukBuilder'
 import { useAuthStore } from '@/stores/auth'
 import { useGedungScope } from '@/composables/useGedungScope'
 import { useToast } from '@/composables/useToast'
@@ -493,7 +557,11 @@ import {
   kasLembagaBaris,
   ringkasKasLembaga,
   arahNominal,
-  kunciLembaga
+  kunciLembaga,
+  // v.1.4.3 (Kyai 14 Sep 2026): kas tunggal — satu label "Umum / Yayasan" & jumlah satu kas
+  jumlahKas,
+  labelKasLembaga,
+  LABEL_KAS_UMUM
 } from '@/utils/kasLembaga'
 
 const route = useRoute()
@@ -553,7 +621,7 @@ const inputForm = reactive({
   tipe: 'masuk',
   metode: 'Tunai', // v.1.2.6: cara bayar (dasar PDF tunai vs transfer)
   kategori: '',
-  lembaga: '', // v.1.2.6: kas lembaga tujuan ('' = Kas Induk/Yayasan)
+  lembaga: '', // v.1.2.6: label lembaga baris ('' = Umum / Yayasan)
   keterangan: '',
   nominal: 0
 })
@@ -574,7 +642,8 @@ const petaKas = computed(() => petaKasLembaga(settingsStore.settings?.keuTagihan
 function kasLembagaDari(b) {
   return kasLembagaBaris(b, petaKas.value)
 }
-// Sentinel "Kas Induk": kuncinya '' dan itu sudah dipakai "Semua lembaga".
+// Sentinel baris tanpa label lembaga ("Umum / Yayasan", dulu "Kas Induk"): kuncinya '' dan
+//   itu sudah dipakai "Semua lembaga".
 const KAS_INDUK = '__induk__'
 
 // Semua penyaring KECUALI lembaga — dasar rekap & opsi filter lembaga, supaya
@@ -623,7 +692,7 @@ const rekapLembaga = computed(() => ringkasKasLembaga(tanpaLembaga.value, kasLem
 // Nama lembaga yang sedang disaring — judul & nama berkas laporan. '' = semua lembaga.
 const labelLembagaAktif = computed(() => {
   if (!filterLembaga.value) return ''
-  if (filterLembaga.value === KAS_INDUK) return 'Kas Induk'
+  if (filterLembaga.value === KAS_INDUK) return LABEL_KAS_UMUM
   return rekapLembaga.value.find((o) => o.kunci === filterLembaga.value)?.lembaga || ''
 })
 
@@ -641,14 +710,10 @@ const filtered = computed(() => {
     )
 })
 
+// Rumusnya jumlahKas — sama dengan kartu per lembaga di bawah, bukan salinan tangan.
 const stats = computed(() => {
-  let masuk = 0,
-    keluar = 0
-  for (const b of filtered.value) {
-    if (b.tipe === 'masuk' || Number(b.masuk) > 0) masuk += Number(b.masuk || b.nominal) || 0
-    if (b.tipe === 'keluar' || Number(b.keluar) > 0) keluar += Number(b.keluar || b.nominal) || 0
-  }
-  return { pemasukan: masuk, pengeluaran: keluar, saldo: masuk - keluar }
+  const j = jumlahKas(filtered.value)
+  return { pemasukan: j.masuk, pengeluaran: j.keluar, saldo: j.selisih }
 })
 
 const years = computed(() => {
@@ -689,7 +754,7 @@ async function cetakLaporan(metodeOnly = '') {
         tanggal: b.tanggal ? formatTgl(b.tanggal) : '',
         keterangan: b.keterangan || '',
         kategori: b.kategori || '',
-        lembaga: kasLembagaDari(b) || 'Kas Induk',
+        lembaga: labelKasLembaga(kasLembagaDari(b)),
         metode: met,
         masuk: masuk ? fmtRp(masuk) : '',
         keluar: keluar ? fmtRp(keluar) : ''
@@ -735,7 +800,7 @@ async function cetakLaporan(metodeOnly = '') {
         { key: 'tanggal', header: 'Tanggal', width: 26 },
         { key: 'keterangan', header: 'Keterangan', width: 66 },
         { key: 'kategori', header: 'Kategori', width: 32 },
-        { key: 'lembaga', header: 'Kas Lembaga', width: 30 },
+        { key: 'lembaga', header: 'Lembaga', width: 30 },
         { key: 'metode', header: 'Cara Bayar', width: 24 },
         { key: 'masuk', header: 'Masuk', width: 30 },
         { key: 'keluar', header: 'Keluar', width: 30 }
@@ -785,7 +850,7 @@ async function simpanInputManual() {
       tipe: inputForm.tipe,
       metode: inputForm.metode || 'Tunai',
       kategori: inputForm.kategori.trim() || pageTitle.value,
-      // v.1.2.6 (Kyai): kas lembaga tujuan; '' = Kas Induk/Yayasan
+      // v.1.2.6 (Kyai): label lembaga baris; '' = Umum / Yayasan
       lembaga: String(inputForm.lembaga || '').trim(),
       keterangan: inputForm.keterangan.trim(),
       nominal: Number(inputForm.nominal) || 0,
@@ -809,20 +874,48 @@ async function simpanInputManual() {
   }
 }
 
+// v.1.4.3 (Kyai 14 Sep 2026, laporan admin keuangan: transaksi yang dihapus tetap "lunas"
+//   di POS). Lewat services/hapusBarisKas — pembayaran santri yang dihapus dari sini ikut
+//   mengembalikan tagihannya, dan dialognya menyebut tagihan mana SEBELUM OK ditekan.
 async function hapusRow(b) {
   if (!isAdmin.value) return
   const label = b.keterangan || b.kategori || b.id
-  if (
-    !confirm(
-      `Hapus PERMANEN record ${pageTitle.value}:\n${label}\nNominal: ${fmtRp(b.nominal || 0)}\n\nJuga terhapus dari Buku Induk. Tidak bisa di-undo.`
-    )
-  )
-    return
   try {
-    await deleteOne('keuangan_buku_induk', b.id)
-    toast.success('Record dihapus')
+    const hasil = await hapusBarisKas([b], {
+      sesi: auth.sesiAktif,
+      alasan: `hapus dari ${pageTitle.value}`,
+      konfirmasi: (rencana) =>
+        confirm(
+          [
+            `Hapus PERMANEN record ${pageTitle.value}:\n${label}\nNominal: ${fmtRp(b.nominal || 0)}\n\nJuga terhapus dari Buku Induk.`,
+            ringkasRencanaBatal(rencana),
+            'Tidak bisa di-undo.'
+          ]
+            .filter(Boolean)
+            .join('\n\n')
+        )
+    })
+    if (!hasil) return
+    const pesan = pesanHasilHapus(hasil)
+    toast[pesan.tipe](pesan.teks)
   } catch (e) {
-    toast.error('Gagal hapus: ' + (e.message || e))
+    toast.error('Gagal hapus: ' + (e?.message || e))
+  }
+}
+
+// v.1.4.3 (Kyai 14 Sep 2026: "admin keu bisa print ulang struk"): layar ini tak pernah punya
+//   tombol cetak apa pun, padahal isinya sebagian besar pembayaran POS (Uang Buku, Uang
+//   Kegiatan, Tabungan Wajib). Pembayaran santri → struk transaksinya UTUH (semua baris
+//   se-transaksi dari buku induk, bukan hanya baris pos ini); kas manual → bukti kas.
+const cetak = useCetakStruk()
+function cetakUlang(b, mode = 'pdf') {
+  return cetak.cetakUlang(barisSeTransaksi(b, bukuRaw.value), mode)
+}
+async function cetakBuktiKas(b) {
+  try {
+    await cetakStrukKasPdf(b, settingsStore.settings || {})
+  } catch (e) {
+    toast.error('Gagal cetak struk: ' + (e?.message || e))
   }
 }
 

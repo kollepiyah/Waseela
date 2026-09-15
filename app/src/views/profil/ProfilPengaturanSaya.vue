@@ -145,7 +145,7 @@
               class="w-full px-3 py-2 border border-[var(--border-default)] rounded-lg text-sm"
             />
             <p class="text-[10px] text-[var(--text-secondary)] italic mt-2">
-              Nomor wali (orang tua) untuk terima notifikasi pondok.
+              Nomor wali (orang tua) untuk terima notifikasi lembaga.
             </p>
           </div>
 

@@ -55,9 +55,9 @@
         <!-- View mode: tombol Kelola -->
         <router-link
           v-if="isFullAccess && !isMasterMode"
-          to="/master-data?tab=santri"
+          :to="alamatKelola"
           class="h-11 md:h-9 px-3 inline-flex items-center gap-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-[var(--text-primary)] text-xs font-bold transition"
-          title="CRUD santri di Master Data"
+          title="CRUD santri di Master Data (penyaring ikut terbawa)"
         >
           <i class="fas fa-edit"></i>Kelola
         </router-link>
@@ -316,17 +316,32 @@
           <option v-for="p in pjPtptOptions" :key="p" :value="p">PJ: {{ p }}</option>
         </select>
       </div>
-      <!-- v.1.2.4: filter per KELAS-GURU (rombel pasangan) — pantau per kelas guru -->
-      <div v-if="isFullAccess && kelasGuruOptions.length" class="mt-2">
+      <!-- v.1.4.2 (Kyai): penyaring Kelas / Jilid / Level. Opsinya diturunkan dari data
+           santri yang boleh dilihat akun ini, bukan daftar tetap — penamaan kelas memang
+           beda-beda per lembaga dan berubah tiap penataan ulang. -->
+      <div v-if="kelasOptions.length" class="mt-2">
         <select
-          v-model="filterKelasGuru"
+          v-model="filterKelas"
           class="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--border-default)] bg-white dark:bg-slate-900 focus:ring-2 focus:ring-teal-500 outline-none"
         >
-          <option value="">Semua kelas (guru)</option>
-          <option v-for="k in kelasGuruOptions" :key="k.optKey" :value="k.optKey">
-            {{ filterLembaga ? '' : k.lembaga + ' — ' }}{{ k.label }} · {{ k.jumlah }} santri
+          <option value="">Semua kelas / jilid / level</option>
+          <option v-for="k in kelasOptions" :key="k.nilai" :value="k.nilai">
+            {{ k.nilai }} · {{ k.jumlah }} santri
           </option>
         </select>
+      </div>
+      <!-- v.1.2.4: filter per KELAS-GURU (rombel pasangan) — pantau per kelas guru.
+           v.1.4.2 (Kyai): bisa dicentang lebih dari satu, "jadi bisa tampil kelas dari
+           beberapa guru" — membandingkan dua rombel tak lagi berarti buka-tutup penyaring. -->
+      <div v-if="isFullAccess && kelasGuruOptions.length" class="mt-2">
+        <MultiSelectFilter
+          v-model="filterKelasGuru"
+          :options="opsiKelasGuru"
+          label="kelas"
+          semua-label="Semua kelas (guru)"
+          placeholder-cari="Cari nama guru…"
+          kosong-label="Belum ada rombel pada lembaga ini."
+        />
       </div>
       <!-- v.1.2.0: sub-tab Qiraati / Sekolah — muncul hanya bila akun ini memang
            menaungi KEDUA sisi (mis. kepala lembaga sekolah yang juga guru qiraati). -->
@@ -381,13 +396,9 @@
     <EmptyState
       v-else-if="santri.length === 0"
       icon="fa-user-slash"
-      :title="
-        search || filterLembaga || filterMukim || filterKelasGuru
-          ? 'Tidak ada santri yang cocok'
-          : 'Belum ada santri'
-      "
+      :title="adaPenyaring ? 'Tidak ada santri yang cocok' : 'Belum ada santri'"
       :description="
-        search || filterLembaga || filterMukim || filterKelasGuru
+        adaPenyaring
           ? 'Coba ubah filter atau kata kunci pencarian'
           : isFullAccess
             ? 'Tambah santri pertama di Master Data'
@@ -560,7 +571,11 @@
     </div>
 
     <p class="text-center text-[10px] text-slate-400 dark:text-[var(--text-secondary)] pt-2">
-      <i class="fas fa-circle-info mr-1"></i>Menampilkan {{ santri.length }} santri · v.74.0526
+      <i class="fas fa-circle-info mr-1"></i>Menampilkan {{ santri.length }} santri<span
+        v-if="versiApp"
+      >
+        · {{ versiApp }}</span
+      >
     </p>
 
     <!-- v.1.2.1 (Kyai): dialog edit kelas santri utk guru (perbaiki impor salah).
@@ -598,12 +613,20 @@ import { useGoogleSheet } from '@/composables/useGoogleSheet'
 import { buildListPdf, buildKopFromSettings } from '@/utils/pdfBuilder'
 import { useToast } from '@/composables/useToast'
 import { useSettingsStore } from '@/stores/settings'
+// v.1.4.2: SATU sumber nomor versi (lihat utils/appVersion.js) — label yang diketik
+//   tangan di layar sudah terbukti membeku (kaki Data Santri tertinggal di v.74.0526).
+import { labelVersi } from '@/utils/appVersion'
 import { useConfirm } from '@/composables/useConfirm'
+// v.1.4.3 (Kyai 14 Sep 2026, audit): santri yang masih punya riwayat keuangan tak bisa dihapus
+import { muatRujukanKeuangan } from '@/services/rujukanSantri'
+import { pesanRujukanKeuangan } from '@/utils/rujukanKeuanganSantri'
 // v.21.115.0528: skeleton loader
 import SkeletonCard from '@/components/layout/SkeletonCard.vue'
 import EmptyState from '@/components/layout/EmptyState.vue' // v.91.0626
 import PageHeader from '@/components/layout/PageHeader.vue' // v.91.0626
 import EditKelasSantriDialog from '@/components/form/EditKelasSantriDialog.vue' // v.1.2.1: edit kelas oleh guru
+// v.1.4.2: penyaring Kelas-Guru bisa dicentang lebih dari satu.
+import MultiSelectFilter from '@/components/form/MultiSelectFilter.vue'
 // v.91.0626: deleteOne = backup ke audit_log dulu. serverTimestamp = shim ISO (db.js).
 import { mergeOne, addOne, deleteOne, getAll, serverTimestamp } from '@/services/db'
 // v.111: registry field santri = sumber tunggal template/ekspor/impor (auto-detect field baru)
@@ -617,6 +640,13 @@ import {
 import { resetUserPassword, provisionAkunSenyap } from '@/services/authSupabase' // reset sandi + buat akun login (Edge Function)
 // v.1.4.1: bawa alamat daftar (beserta pencarian & penyaringnya) ke form, lalu kembali ke situ.
 import { queryDariDaftar } from '@/utils/navKembali'
+// v.1.4.2: penyaring ⇄ URL (SELURUHNYA) + alamat "Kelola" yang membawa penyaring.
+import {
+  bacaFilterQuery,
+  tulisFilterQuery,
+  queryBerubah,
+  alamatBawaFilter
+} from '@/utils/filterQuery'
 import { planAppendNis, applyNisChanges } from '@/utils/nisGenerator' // v.111: auto-NIS pasca impor = APPEND (No. Induk lama tetap; baru lanjut nomor)
 import { BRAND } from '@/config/brand'
 
@@ -630,6 +660,7 @@ const sendingGsheet = ref(false)
 const toast = useToast()
 const confirmDlg = useConfirm()
 const settingsStore = useSettingsStore()
+const versiApp = computed(() => labelVersi(settingsStore.settings))
 const authStore = useAuthStore() // v.100 Batch14: atribusi user utk audit_log generate NIS
 
 const {
@@ -639,6 +670,8 @@ const {
   loading,
   search,
   filterLembaga,
+  filterKelas, // v.1.4.2: penyaring Kelas/Jilid/Level
+  kelasOptions,
   filterKelasGuru,
   kelasGuruOptions,
   filterMukim,
@@ -658,40 +691,104 @@ const pjPtptOptions = pjPtptDistinct
 // v.107: filter <-> URL query — pertahankan filter saat "back" dari halaman detail/profil.
 //   Baca query saat mount + saat berubah (dukung global-search header ?q= + pita ?tempat=).
 //   Tulis query (router.replace) saat filter berubah -> URL daftar membawa filter -> back memulihkannya.
+//
+// v.1.4.2 (Kyai, 12 Sep): "pilih filter … lalu edit dan simpan selalu kembali ke semula
+//   (tampil semua)". Dua sebab yang tersisa, keduanya ditutup di sini — rinciannya
+//   (termasuk kenapa penjaga `_syncingQuery` lama tak pernah menjaga) ada di
+//   utils/filterQuery.js:
+//     1. hanya EMPAT dari delapan penyaring yang ditulis ke URL; Gedung, PJ PTPT,
+//        Kelas-Guru, dan sub-tab Qiraati/Sekolah hilang di setiap perpindahan halaman.
+//     2. tulis-balik ke URL kini dijaga PERBANDINGAN hasil, bukan bendera yang kalah cepat
+//        dari antrean watcher.
 const route = useRoute()
 const router = useRouter()
-let _syncingQuery = false
+// Sub-tab Qiraati/Sekolah (akun guru). Dideklarasikan DI SINI — bukan lagi di dekat
+//   `jumlahSisi` di bawah — karena ia kini ikut disimpan ke URL bersama penyaring lain,
+//   dan `const` di `<script setup>` tidak ter-hoist: dipakai sebelum dideklarasikan =
+//   ReferenceError saat halaman dibuka.
+const sisiTab = ref('qiraati')
+// Satu daftar untuk dibaca DAN ditulis — penyaring baru yang lupa didaftarkan di sini
+// akan langsung terasa sebagai penyaring yang "lupa sendiri" sesudah Simpan.
+const SPEC_FILTER = [
+  { kunci: 'q' },
+  { kunci: 'lembaga' },
+  { kunci: 'tempat' },
+  { kunci: 'status', bawaan: 'aktif' },
+  { kunci: 'gedung' },
+  { kunci: 'pj' },
+  { kunci: 'kelas' },
+  // Boleh lebih dari satu — disimpan dipisah koma (lihat `daftar` di utils/filterQuery.js).
+  { kunci: 'kelasguru', daftar: true },
+  { kunci: 'sisi', bawaan: 'qiraati' }
+]
+// Kunci milik halaman induk (Master Data `?tab=`, sub-tabnya `?sub=`).
+const KEKAL_FILTER = ['tab', 'sub']
+const refFilter = {
+  q: search,
+  lembaga: filterLembaga,
+  tempat: filterMukim,
+  status: filterStatus,
+  gedung: filterGedung,
+  pj: filterPjPtpt,
+  kelas: filterKelas,
+  kelasguru: filterKelasGuru,
+  sisi: sisiTab
+}
+// v.1.4.2: "ada penyaring aktif?" dihitung dari refFilter, bukan dari daftar yang
+//   diketik ulang di template. Daftar lama cuma menyebut empat penyaring — jadi layar
+//   kosong karena penyaring Gedung/PJ/Kelas berbunyi "Belum ada santri", seolah datanya
+//   yang tak ada. Ia juga LANGSUNG salah begitu `filterKelasGuru` jadi larik: larik
+//   kosong itu truthy, sehingga kalimatnya akan selalu "Tidak ada santri yang cocok".
+const adaPenyaring = computed(() =>
+  SPEC_FILTER.some((f) => {
+    const v = refFilter[f.kunci]?.value
+    if (Array.isArray(v)) return v.length > 0
+    return String(v ?? '') !== String(f.bawaan ?? '')
+  })
+)
 function syncFiltersFromQuery() {
-  _syncingQuery = true
-  search.value = route.query.q != null ? String(route.query.q) : ''
-  filterLembaga.value = route.query.lembaga != null ? String(route.query.lembaga) : ''
-  filterMukim.value = route.query.tempat != null ? String(route.query.tempat) : ''
-  filterStatus.value = route.query.status != null ? String(route.query.status) : 'aktif'
-  _syncingQuery = false
+  const nilai = bacaFilterQuery(route.query, SPEC_FILTER)
+  for (const [k, r] of Object.entries(refFilter)) r.value = nilai[k]
 }
 syncFiltersFromQuery()
 watch(() => route.query, syncFiltersFromQuery)
-watch([search, filterLembaga, filterMukim, filterStatus], () => {
-  if (_syncingQuery) return
-  const q = {}
-  // v.1.4.1: kunci milik HALAMAN INDUK dipertahankan. Daftar ini juga tayang di dalam
-  //   Master Data (`/master-data?tab=santri`); query ditulis ulang dari nol, jadi `tab`
-  //   ikut terhapus tiap kali kotak cari diketik dan Master Data melompat ke tab lain.
-  if (route.query.tab) q.tab = route.query.tab
-  if (route.query.sub) q.sub = route.query.sub
-  if (search.value) q.q = search.value
-  if (filterLembaga.value) q.lembaga = filterLembaga.value
-  if (filterMukim.value) q.tempat = filterMukim.value
-  if (filterStatus.value && filterStatus.value !== 'aktif') q.status = filterStatus.value
-  router.replace({ query: q }).catch(() => {})
+watch(Object.values(refFilter), () => {
+  const nilai = {}
+  for (const [k, r] of Object.entries(refFilter)) nilai[k] = r.value
+  const q = tulisFilterQuery(nilai, SPEC_FILTER, route.query, KEKAL_FILTER)
+  if (queryBerubah(route.query, q)) router.replace({ query: q }).catch(() => {})
 })
-// Alamat daftar SEKARANG (sudah memuat q/lembaga/status/tab) — dititipkan ke form supaya
+// Alamat daftar SEKARANG (sudah memuat SELURUH penyaring + tab) — dititipkan ke form supaya
 //   sesudah Simpan ia kembali ke daftar yang sama, bukan ke daftar kosong.
 const queryDaftar = computed(() => queryDariDaftar(route.fullPath))
+// v.1.4.2: tombol/aksi "Kelola" membawa penyaring yang sedang aktif. Sebelumnya ia
+//   menunjuk alamat karangan '/master-data?tab=santri' — dan karena tombol Edit HANYA ada
+//   di Master Data, setiap perjalanan "cari → Kelola → edit" pasti melewati daftar kosong.
+// Label opsi Kelas-Guru — nama lembaga hanya disebut saat penyaring Lembaga belum
+//   dipilih, persis seperti <option> yang digantikan.
+const opsiKelasGuru = computed(() =>
+  kelasGuruOptions.value.map((k) => ({
+    nilai: k.optKey,
+    label: `${filterLembaga.value ? '' : k.lembaga + ' — '}${k.label} · ${k.jumlah} santri`
+  }))
+)
+const alamatKelola = computed(() =>
+  alamatBawaFilter('/master-data', route.query, { tab: 'santri' })
+)
 
-// v.1.2.4: ganti lembaga → reset filter Kelas-Guru (kunci rombel jadi tak relevan)
-watch(filterLembaga, () => {
-  filterKelasGuru.value = ''
+// v.1.2.4: ganti lembaga → reset filter Kelas-Guru (kunci rombel jadi tak relevan).
+// v.1.4.2: dipersempit ke "rombel milik lembaga LAIN". Versi lama mengosongkannya pada
+//   SETIAP perubahan lembaga, termasuk saat penyaring dipulihkan dari URL — dan karena
+//   watcher berjalan sesudah sync selesai, rombel yang baru saja dipulihkan langsung
+//   terhapus lagi. Lembaga kosong ("Semua") sengaja tidak menghapus: rombelnya tetap
+//   menyaring dengan benar dan tetap muncul di dropdown.
+watch(filterLembaga, (l) => {
+  const cur = filterKelasGuru.value
+  if (!Array.isArray(cur) || !cur.length || !l) return
+  const lem = String(l).toLowerCase()
+  // optKey = `${lembaga_huruf_kecil}|${kunciRombel}` — sisakan yang memang milik lembaga ini.
+  const sisa = cur.filter((k) => String(k).split('|')[0] === lem)
+  if (sisa.length !== cur.length) filterKelasGuru.value = sisa
 })
 
 // ── v.1.2.0 (Kyai 21 Jul): pisah Qiraati / Sekolah pakai SUB-TAB, bukan dua section
@@ -718,7 +815,6 @@ function sisiSekolah(s) {
   return ownsSekolah(s, myNamaGuru.value) || headsLembaga(authStore.sesiAktif, s.lembaga_sekolah)
 }
 
-const sisiTab = ref('qiraati')
 // Hitung dari SELURUH santri dalam scope (santriRaw), bukan hasil pencarian — kalau
 //   tidak, sub-tab akan muncul-hilang mengikuti kata kunci.
 const jumlahSisi = computed(() => {
@@ -786,7 +882,7 @@ definePageActions(() => {
       label: 'Kelola',
       icon: 'edit',
       primary: true,
-      on: () => router.push('/master-data?tab=santri')
+      on: () => router.push(alamatKelola.value)
     })
   }
   return acts
@@ -840,7 +936,40 @@ function clearSelection() {
   selected.value = new Set()
 }
 
+// v.1.4.3 (Kyai 14 Sep 2026, audit): santri yang masih punya riwayat keuangan — tabungan, uang
+//   saku, tagihan, atau transaksi di Buku Induk — TIDAK bisa dihapus. Menghapus baris santri tak
+//   ikut menghapus semua itu: tabungannya lalu muncul sebagai "orphan" di Tabungan (yang dulu
+//   menawarkan untuk membuangnya permanen), dan riwayat bayarnya tak bisa lagi ditelusuri ke
+//   siapa pun. Santri yang keluar cukup dinon-aktifkan. Gagal membaca riwayatnya = TIDAK dihapus:
+//   penjaga yang ragu harus menolak, bukan meloloskan.
+async function cekBolehHapusSantri(daftar) {
+  const peta = await muatRujukanKeuangan(daftar.map((s) => s.id))
+  const tertahan = []
+  const bebas = []
+  for (const s of daftar) {
+    const r = peta.get(String(s.id))
+    if (r?.ada) tertahan.push({ s, pesan: pesanRujukanKeuangan(s.nama, r) })
+    else bebas.push(s)
+  }
+  return { tertahan, bebas }
+}
+
 async function deleteSantri(s) {
+  try {
+    const { tertahan } = await cekBolehHapusSantri([s])
+    if (tertahan.length) {
+      toast.warning(
+        `${tertahan[0].pesan} Santri seperti ini tak bisa dihapus — non-aktifkan saja, riwayatnya tetap utuh.`
+      )
+      return
+    }
+  } catch (e) {
+    toast.error(
+      'Riwayat keuangan santri ini tak bisa diperiksa, jadi santri TIDAK dihapus: ' +
+        (e?.message || e)
+    )
+    return
+  }
   const ok = await confirmDlg({
     title: `Hapus ${s.nama}?`,
     message: `Santri "${s.nama}" (No. Induk: ${s.nis || '-'}) akan dihapus permanen. Aksi ini tidak bisa di-undo.`,
@@ -890,11 +1019,41 @@ async function toggleAktifSantri(s) {
 }
 
 async function bulkDelete() {
-  const ids = [...selected.value]
-  if (ids.length === 0) return
+  const terpilih = [...selected.value]
+  if (terpilih.length === 0) return
+  // v.1.4.3: santri yang masih punya riwayat keuangan DILEWATI — lihat cekBolehHapusSantri.
+  const perId = new Map((santri.value || []).map((x) => [String(x.id), x]))
+  let ids = []
+  let lewati = ''
+  bulkSaving.value = true
+  try {
+    const daftar = terpilih.map((id) => perId.get(String(id)) || { id, nama: String(id) })
+    const { tertahan, bebas } = await cekBolehHapusSantri(daftar)
+    ids = bebas.map((x) => x.id)
+    if (tertahan.length) {
+      const nama = tertahan
+        .slice(0, 5)
+        .map((t) => t.s.nama)
+        .join(', ')
+      lewati = ` ${tertahan.length} santri DILEWATI karena masih punya riwayat keuangan (non-aktifkan saja): ${nama}${tertahan.length > 5 ? ', …' : ''}.`
+    }
+  } catch (e) {
+    toast.error(
+      'Riwayat keuangan tak bisa diperiksa, jadi tak ada santri yang dihapus: ' + (e?.message || e)
+    )
+    return
+  } finally {
+    bulkSaving.value = false
+  }
+  if (!ids.length) {
+    toast.warning(
+      'Semua santri terpilih masih punya riwayat keuangan — tak ada yang dihapus. Non-aktifkan saja.'
+    )
+    return
+  }
   const ok = await confirmDlg({
     title: `Hapus ${ids.length} santri?`,
-    message: `${ids.length} santri akan dihapus PERMANEN. Aksi ini tidak bisa di-undo. Lanjutkan?`,
+    message: `${ids.length} santri akan dihapus PERMANEN. Aksi ini tidak bisa di-undo.${lewati} Lanjutkan?`,
     confirmText: 'Hapus Semua',
     danger: true
   })

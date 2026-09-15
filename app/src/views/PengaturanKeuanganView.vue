@@ -490,6 +490,65 @@
                 </p>
               </details>
 
+              <!-- v.1.4.3 (Kyai 14 Sep 2026, laporan admin keuangan: "di POS santrinya terbaca
+                   lunas. padahal tadi sudah dihapus"). Transaksi yang DIHAPUS sebelum v.1.4.3
+                   tak mengembalikan tagihannya; mulai v.1.4.3 penghapusan melakukannya sendiri.
+                   Dibaca dari salinan audit_log, jadi hanya tampil bagi yang boleh membacanya. -->
+              <div
+                v-if="batalTerlewat && batalTerlewat.rencana.length"
+                class="rounded-lg border border-rose-300 dark:border-rose-700 bg-rose-50/70 dark:bg-rose-900/20 p-2 space-y-1"
+              >
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                  <p class="text-[11px] font-black text-rose-800 dark:text-rose-300">
+                    <i class="fas fa-rotate-left mr-1"></i>{{ batalTerlewat.rencana.length }}
+                    tagihan masih mengaku terbayar padahal transaksinya sudah dihapus
+                  </p>
+                  <button
+                    v-if="bolehHapusTagihan"
+                    :disabled="batalBusy"
+                    class="px-3 py-1.5 text-[10px] font-black rounded-lg bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-50"
+                    @click="kembalikanBatalTerlewat"
+                  >
+                    <i
+                      :class="['fas', batalBusy ? 'fa-spinner fa-spin' : 'fa-rotate-left', 'mr-1']"
+                    ></i>
+                    Kembalikan {{ batalTerlewat.rencana.length }} tagihan
+                  </button>
+                </div>
+                <ul class="text-[11px] list-disc pl-4 text-[var(--text-secondary)]">
+                  <li v-for="r in batalTerlewat.rencana.slice(0, 25)" :key="r.tagihanId">
+                    <b>{{ r.nama || r.santriId }}</b> — {{ r.jenis }} {{ r.periode }}: terbayar Rp
+                    {{ rp(r.terbayarLama) }} → Rp {{ rp(r.terbayarBaru) }} ({{ r.statusBaru }})
+                    <span class="opacity-80">
+                      · dihapus:
+                      <template v-for="(h, i) in r.barisHapus" :key="h.id"
+                        ><span v-if="i">, </span>{{ h.trx_id || h.id }} Rp {{ rp(h.nominal)
+                        }}{{ h._hapus.oleh ? ' oleh ' + h._hapus.oleh : ''
+                        }}{{
+                          h._hapus.waktu ? ' (' + h._hapus.waktu.slice(0, 10) + ')' : ''
+                        }}</template
+                      >
+                    </span>
+                  </li>
+                </ul>
+                <p v-if="batalTerlewat.rencana.length > 25" class="text-[10px] italic">
+                  …dan {{ batalTerlewat.rencana.length - 25 }} lagi (semua ikut diproses)
+                </p>
+                <p class="text-[10px] italic opacity-80">
+                  Mulai v.1.4.3 menghapus transaksi langsung mengembalikan tagihannya; daftar ini
+                  berisi penghapusan sebelum itu. Tagihan yang masih ditopang pembayaran lain tak
+                  diturunkan di bawah pembayaran itu. Kalau ada transaksi yang terhapus padahal
+                  uangnya memang diterima, input ulang lewat POS sesudahnya.
+                </p>
+              </div>
+              <p
+                v-if="batalTerlewat && batalTerlewat.ambigu.length"
+                class="text-[10px] italic text-[var(--text-tertiary)]"
+              >
+                {{ batalTerlewat.ambigu.length }} transaksi terhapus cocok dengan lebih dari satu
+                tagihan — tidak diubah, periksa manual.
+              </p>
+
               <div
                 v-if="cocokHasil.statusMeleset.length"
                 class="rounded-lg border border-violet-200 dark:border-violet-800 p-2 space-y-1"
@@ -522,7 +581,8 @@
                   !cocokHasil.kurangTercatat.length &&
                   !cocokHasil.lebihTercatat.length &&
                   !cocokHasil.statusMeleset.length &&
-                  !cocokHasil.transferYatim.length
+                  !cocokHasil.transferYatim.length &&
+                  !batalTerlewat?.rencana?.length
                 "
                 class="text-[11px] font-bold text-emerald-800 dark:text-emerald-200"
               >
@@ -2690,18 +2750,20 @@
               </select>
             </div>
           </div>
-          <!-- Kyai 4 Agu: kas lembaga — uang jenis ini masuk buku kas lembaga mana.
+          <!-- Kyai 4 Agu: lembaga — uang jenis ini dicatat untuk lembaga mana di laporan.
                BEDA dari "Hanya untuk lembaga ini" di Tarif Khusus (itu penyaring siapa
-               yang DITAGIH); yang ini menentukan kasnya. -->
+               yang DITAGIH); yang ini menentukan label laporannya.
+               v.1.4.3 (Kyai 14 Sep 2026, KAS TUNGGAL): label, bukan kas terpisah — uangnya
+               tetap satu kas yayasan. Nama lama "Masuk Kas Lembaga" menyiratkan sebaliknya. -->
           <div>
             <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1 block"
-              >Masuk Kas Lembaga</label
+              >Dicatat untuk Lembaga</label
             >
             <select
               v-model="dlgJenis.kas_lembaga"
               class="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border-default)] bg-[var(--bg-card-elevated)] text-[var(--text-primary)]"
             >
-              <option value="">Kas Induk / belum ditentukan</option>
+              <option value="">{{ LABEL_KAS_UMUM }} (belum ditentukan)</option>
               <option
                 v-for="o in opsiKas"
                 :key="`dlg_kas_${o.nama}`"
@@ -2712,10 +2774,11 @@
               </option>
             </select>
             <p class="text-[10px] text-[var(--text-secondary)] mt-1 italic">
-              <i class="fas fa-info-circle mr-1"></i>Dipakai laporan kas per lembaga. Dibiarkan
-              kosong: kalau "Hanya untuk lembaga ini" berisi <b>tepat satu</b> lembaga, kas ikut
-              lembaga itu — selain itu masuk Kas Induk. Beberapa lembaga boleh BERBAGI satu kas
-              (mis. Kelas Baca diarahkan ke <b>TPQ Pagi</b>) — cukup pilih kas yang sama.
+              <i class="fas fa-info-circle mr-1"></i>Dipakai laporan pemasukan per lembaga — kasnya
+              tetap satu, kas yayasan. Dibiarkan kosong: kalau "Hanya untuk lembaga ini" berisi
+              <b>tepat satu</b> lembaga, uangnya dicatat untuk lembaga itu — selain itu tercatat
+              sebagai {{ LABEL_KAS_UMUM }}. Beberapa lembaga boleh BERBAGI satu label (mis. Kelas
+              Baca dicatat ke <b>TPQ Pagi</b>) — cukup pilih lembaga yang sama.
             </p>
           </div>
           <div>
@@ -3041,10 +3104,10 @@
                 </p>
               </div>
               <!-- Kyai 8 Agu 2026: saringan "sekolah di sini" — sasaran yang paling sering
-                   dipakai: santri ngaji MURNI vs yang juga bersekolah di lembaga pondok. -->
+                   dipakai: santri ngaji MURNI vs yang juga bersekolah di lembaga sendiri. -->
               <div>
                 <p class="text-[10px] text-[var(--text-secondary)] italic mb-1">
-                  <i class="fas fa-school mr-1"></i>Sekolah di lembaga pondok:
+                  <i class="fas fa-school mr-1"></i>Sekolah di lembaga sendiri:
                 </p>
                 <div class="flex flex-wrap gap-1.5">
                   <button
@@ -3397,7 +3460,7 @@
         <!-- Kyai 8 Agu 2026: saringan tambahan yang berlaku untuk SEMUA cara pilih di atas -->
         <div class="mb-2">
           <p class="text-[10px] font-bold text-[var(--text-secondary)] uppercase mb-1">
-            Saring: sekolah di lembaga pondok
+            Saring: sekolah di lembaga sendiri
           </p>
           <div class="flex flex-wrap gap-1.5">
             <button
@@ -3619,7 +3682,7 @@ import {
   SEKOLAH_SINI_OPTS
 } from '@/utils/statusSantri'
 // Kyai 4 Agu: pilihan kas = master + kas bukan-lembaga (TPQ payung, Fullday, Ma'had)
-import { opsiKasLembaga } from '@/utils/kasLembaga'
+import { opsiKasLembaga, LABEL_KAS_UMUM } from '@/utils/kasLembaga'
 import { normalisasiPotongan } from '@/utils/potonganPos'
 // Kyai 7 Agu 2026: simulasi pemasukan bulanan (hanya jenis bulanan)
 import { simulasiPemasukan as hitungPemasukan } from '@/utils/simulasiPemasukan'
@@ -3631,13 +3694,15 @@ import {
   periksaKecocokanBayar,
   payloadTambalKurang,
   payloadSelaraskanStatus,
-  petaBayarPerSel,
   kodePeriodeBaris,
-  kunciSel,
-  jenisTagihan,
-  SUMBER_BAYAR_SANTRI
+  SUMBER_BAYAR_SANTRI,
+  // v.1.4.3: aturan bayar-di-muka untuk tagihan baru — dicerminkan ke cron (prabayar.ts)
+  petaPrabayarPeriode,
+  terapkanPrabayar
 } from '@/utils/cocokBayarTagihan'
-import { statusTagihan as statusTagihanUtil } from '@/utils/tagihan'
+// v.1.4.3 (Kyai 14 Sep 2026): transaksi yang terlanjur dihapus SEBELUM v.1.4.3 tanpa
+//   mengembalikan tagihannya — dibaca lagi dari salinan audit_log.
+import { rencanaBatalBayar, barisDariAuditHapus } from '@/utils/batalBayarTagihan'
 import { writeAuditLog } from '@/utils/auditLog'
 import { useAuthStore } from '@/stores/auth'
 import { isSuperAdmin } from '@/utils/roleScope'
@@ -4004,31 +4069,19 @@ async function hapusKelompok(daftar, sebab) {
 // Gagal baca → kembali ke perilaku lama (terbayar 0) + peringatan, JANGAN membatalkan
 // generate: tagihan yang tak terbit sama sekali lebih merugikan.
 async function petaPrabayar(kodePeriodeList) {
-  const kodes = new Set((kodePeriodeList || []).filter(Boolean))
-  if (!kodes.size) return new Map()
+  if (!(kodePeriodeList || []).some(Boolean)) return new Map()
   try {
     const rows = await queryColl('keuangan_buku_induk', [['sumber', 'in', SUMBER_BAYAR_SANTRI]])
-    return petaBayarPerSel(rows.filter((b) => kodes.has(kodePeriodeBaris(b))))
+    // v.1.4.3 (Kyai 14 Sep 2026, audit): penyaring & penerapannya (`terapkanPrabayar`) pindah
+    //   ke utils/cocokBayarTagihan. Selama hidup di view ini hanya tombol Generate yang
+    //   mematuhinya — cron harian tetap menerbitkan terbayar 0, jadi santri yang membayar di
+    //   muka ditagih ulang tiap awal bulan. Kini cron memakai cerminnya (prabayar.ts).
+    return petaPrabayarPeriode(rows, kodePeriodeList)
   } catch (e) {
     console.warn('[petaPrabayar] gagal baca buku induk:', e?.message)
     toast.warning('Pembayaran di muka tak bisa dibaca — tagihan baru dibuat dengan terbayar 0.')
     return new Map()
   }
-}
-
-/** Terapkan pembayaran di muka ke payload tagihan yang BARU akan ditulis. */
-function terapkanPrabayar(payload, peta) {
-  if (!peta || !peta.size) return payload
-  const kode = kodePeriodeBaris(payload)
-  if (!kode) return payload
-  const bayar = peta.get(kunciSel(payload.santri_id, jenisTagihan(payload), kode))
-  if (!bayar || bayar.total <= 0) return payload
-  // Tak pernah melebihi nominal: kelebihan bayar bukan urusan generator, dan menuliskannya
-  //   membuat tagihan tampak "lebih" di laporan.
-  payload.terbayar = Math.min(bayar.total, payload.nominal || bayar.total)
-  payload.status = statusTagihanUtil(payload.nominal, payload.terbayar)
-  payload.prabayar_dari = bayar.baris.map((b) => b.id).filter(Boolean)
-  return payload
 }
 
 // ── Kyai 5 Sep 2026: Cek Riwayat vs Tagihan ─────────────────────────────────
@@ -4061,6 +4114,42 @@ const ringkasYatim = computed(() =>
     .join(' · ')
 )
 
+// v.1.4.3 (Kyai 14 Sep 2026, laporan admin keuangan: "di POS santrinya terbaca lunas.
+//   padahal tadi sudah dihapus"). Mulai v.1.4.3 menghapus transaksi mengembalikan tagihannya
+//   sendiri (services/hapusBarisKas). Yang TERLANJUR dihapus sebelumnya dibaca lagi dari
+//   salinan audit_log — deleteOne selalu menyalin barisnya lebih dulu, lengkap dengan
+//   tagihan_id-nya. Aturan angkanya SAMA dengan jalur hapus (utils/batalBayarTagihan): tak
+//   pernah di bawah uang yang masih tercatat, jadi baris kembar yang dulu dirapikan tak
+//   menagih ulang siapa pun. audit_log hanya terbaca super admin/admin; bagi yang lain
+//   `batalTerlewat` = null dan bagiannya tak tampil.
+const batalTerlewat = ref(null)
+const batalBusy = ref(false)
+
+async function muatBatalTerlewat(tagihan, buku) {
+  const audit = await queryColl('audit_log', [
+    ['collection', '==', 'keuangan_buku_induk'],
+    ['aksi', '==', 'delete']
+  ]).catch(() => null)
+  if (!audit) return null
+  const terhapus = barisDariAuditHapus(
+    audit,
+    (buku || []).map((b) => String(b.id))
+  )
+  const hasil = rencanaBatalBayar({
+    dihapus: terhapus,
+    tersisa: buku,
+    tagihan,
+    stamp: new Date().toISOString(),
+    operator: _auth.sesiAktif?.nama || _auth.sesiAktif?.guru || 'Admin'
+  })
+  const perId = new Map(terhapus.map((b) => [String(b.id), b]))
+  hasil.rencana = hasil.rencana.map((r) => ({
+    ...r,
+    barisHapus: r.baris.map((id) => perId.get(String(id))).filter(Boolean)
+  }))
+  return hasil
+}
+
 async function periksaCocokBayar() {
   if (cocokBusy.value) return
   cocokBusy.value = true
@@ -4077,11 +4166,67 @@ async function periksaCocokBayar() {
       transferPending: pending,
       namaSantri: new Map((santri || []).map((s) => [String(s.id), s.nama || '']))
     })
+    batalTerlewat.value = await muatBatalTerlewat(tagihan, buku)
   } catch (e) {
     toast.error('Gagal memeriksa: ' + (e?.message || e))
   } finally {
     cocokBusy.value = false
   }
+}
+
+/** Kembalikan tagihan milik transaksi yang sudah terhapus. Rencana DIHITUNG ULANG dari data
+ *  segar tepat sebelum menulis — hasil pemeriksaan di layar bisa sudah berjam-jam umurnya,
+ *  dan kasir bisa sudah menerima pembayaran baru untuk tagihan yang sama. */
+async function kembalikanBatalTerlewat() {
+  const daftar = batalTerlewat.value?.rencana || []
+  if (!daftar.length || batalBusy.value || !bolehHapusTagihan.value) return
+  const nilai = daftar.reduce((s, r) => s + (r.terbayarLama - r.terbayarBaru), 0)
+  if (
+    !confirm(
+      `Kembalikan ${daftar.length} tagihan senilai Rp ${rp(nilai)} ke keadaan sebelum dibayar?\n\n` +
+        'Transaksi pembayarannya SUDAH dihapus dari Riwayat/Buku Induk, tapi tagihannya masih ' +
+        'mengaku terbayar — itulah yang membuat POS menampilkan "lunas". Yang diubah hanya ' +
+        'kolom terbayar + status; nominal tagihan tetap, dan tagihan yang masih ditopang ' +
+        'pembayaran lain tak diturunkan di bawah pembayaran itu.\n\n' +
+        'Kalau ternyata ada transaksi yang terhapus padahal uangnya memang diterima, input ulang ' +
+        'lewat POS sesudah ini.'
+    )
+  )
+    return
+  batalBusy.value = true
+  let ok = 0
+  let gagal = 0
+  try {
+    const [tagihan, buku] = await Promise.all([
+      getAll('keuangan_tagihan'),
+      getAll('keuangan_buku_induk')
+    ])
+    const rencana = (await muatBatalTerlewat(tagihan, buku))?.rencana || []
+    for (const r of rencana) {
+      try {
+        await updateOne('keuangan_tagihan', String(r.tagihanId), r.payload)
+        ok++
+      } catch (e) {
+        gagal++
+        console.warn('[batalTerlewat] gagal', r.tagihanId, e?.message)
+      }
+    }
+    await writeAuditLog({
+      operator: _auth.sesiAktif?.nama || _auth.sesiAktif?.guru || 'Admin',
+      action: 'bulk_update',
+      target: 'keuangan_tagihan',
+      ids: rencana.map((r) => String(r.tagihanId)),
+      detail: `kembalikan tagihan dari transaksi terhapus: ${ok} dikembalikan, ${gagal} gagal`
+    })
+  } catch (e) {
+    toast.error('Gagal mengembalikan tagihan: ' + (e?.message || e))
+    return
+  } finally {
+    batalBusy.value = false
+  }
+  if (gagal) toast.warning(`${ok} tagihan dikembalikan, ${gagal} gagal — cek console.`)
+  else toast.success(`${ok} tagihan dikembalikan ke keadaan sebelum dibayar.`)
+  await periksaCocokBayar()
 }
 
 /** Akui pembayaran yang sudah ada di Buku Induk ke tagihannya.
@@ -4728,7 +4873,7 @@ const dlgOpen = ref(false)
 const dlgIsNew = ref(false)
 const dlgIdx = ref(-1)
 const dlgJenis = ref(null)
-// Kyai 4 Agu: pilihan "Masuk Kas Lembaga" = baris master + kas yang BUKAN lembaga
+// Kyai 4 Agu: pilihan "Dicatat untuk Lembaga" = baris master + kas yang BUKAN lembaga
 //   (TPQ payung, Fullday, Ma'had) — lihat utils/kasLembaga. Nilai yang sedang dipakai
 //   ikut disertakan supaya setelan lama tak lenyap saat disimpan.
 const opsiKas = computed(() => opsiKasLembaga(lembagaRaw.value, dlgJenis.value?.kas_lembaga || ''))
@@ -5531,7 +5676,7 @@ function serializeJenisList(list) {
         jk_only: wlJk,
         shift_only: wlShift,
         sekolah_only: wlSekolah,
-        // Kyai 4 Agu: kas lembaga — uang jenis ini masuk buku kas lembaga mana.
+        // Kyai 4 Agu: lembaga — uang jenis ini dicatat untuk lembaga mana (kas tunggal).
         //   BEDA dari lembaga_only (itu penyaring "siapa yang ditagih").
         kas_lembaga: String(t.kas_lembaga || '').trim(),
         gabung_ke: gabungKe,
@@ -5773,7 +5918,7 @@ function openJenisBaru() {
     status_only: [], // v.1.2.6: whitelist status santri (kosong = semua)
     jk_only: [], // v.1.2.x: whitelist jenis kelamin (kosong = semua)
     shift_only: [], // Kyai 4 Agu: whitelist shift ngaji pagi/sore (kosong = semua)
-    kas_lembaga: '', // Kyai 4 Agu: buku kas lembaga tujuan (kosong = Kas Induk)
+    kas_lembaga: '', // Kyai 4 Agu: label lembaga di laporan (kosong = Umum / Yayasan)
     gabung_ke: [], // Kyai 3-4 Agu: kosong = jenis ini ditagih sendiri
     gabung_syarat: 'punya_sekolah',
     nominal_per_kelas: {},
@@ -5825,7 +5970,7 @@ function normalizeJenisRaw(t) {
       nominal_per_kelas: {},
       nominal_per_santri: {},
       shift_only: [],
-      kas_lembaga: '', // Kyai 4 Agu: buku kas lembaga tujuan (kosong = Kas Induk)
+      kas_lembaga: '', // Kyai 4 Agu: label lembaga di laporan (kosong = Umum / Yayasan)
       gabung_ke: [],
       gabung_syarat: 'punya_sekolah',
       paket: [],

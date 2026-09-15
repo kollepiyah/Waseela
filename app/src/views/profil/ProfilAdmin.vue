@@ -44,7 +44,7 @@
             <p
               class="text-xs md:text-sm font-bold text-emerald-50/90 uppercase tracking-wider mt-1.5"
             >
-              Built-in Super Admin · Pondok
+              Built-in Super Admin · Lembaga
             </p>
             <span
               class="inline-block mt-3 text-[11px] bg-[var(--bg-card)]/25 backdrop-blur-sm text-white font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md"

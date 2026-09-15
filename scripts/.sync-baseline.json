@@ -51,6 +51,10 @@
     "hulu": "b1484b87f16ab8d0",
     "kita": "028780ac9729c060"
   },
+  "app/src/components/form/MultiSelectFilter.vue": {
+    "hulu": "ef8011c6ee7c66db",
+    "kita": "ef8011c6ee7c66db"
+  },
   "app/src/components/form/MultiSelectGuruPengajar.vue": {
     "hulu": "1b6d7e452afbd43f",
     "kita": "1b6d7e452afbd43f"
@@ -76,7 +80,7 @@
     "kita": "80c9e34aad1c38b0"
   },
   "app/src/components/layout/AppSidebar.vue": {
-    "hulu": "e861be5c69cf2223"
+    "hulu": "0274e8ad93a77fbe"
   },
   "app/src/components/layout/BackButton.vue": {
     "hulu": "65cf91b638e4cbe7",
@@ -121,7 +125,7 @@
     "kita": "809e3ec6d5d0b17d"
   },
   "app/src/components/ribbon/RibbonBackstage.vue": {
-    "hulu": "59d2214008f2291f"
+    "hulu": "e2c3b30d90073a46"
   },
   "app/src/components/ribbon/RibbonBar.vue": {
     "hulu": "f5e0cf14b797b174",
@@ -148,7 +152,7 @@
     "kita": "910398b832c073b5"
   },
   "app/src/components/ribbon/RibbonStatusBar.vue": {
-    "hulu": "a8b53b22549b32bc"
+    "hulu": "acca45f1ca9ec5e1"
   },
   "app/src/components/ribbon/RibbonTabBar.vue": {
     "hulu": "dc474c3e98213115",
@@ -206,6 +210,10 @@
     "hulu": "057509d866a47945",
     "kita": "057509d866a47945"
   },
+  "app/src/composables/useCetakStruk.js": {
+    "hulu": "40ec7a62ca6ec5c1",
+    "kita": "40ec7a62ca6ec5c1"
+  },
   "app/src/composables/useClock.js": {
     "hulu": "b307ba3367e00cd4",
     "kita": "b307ba3367e00cd4"
@@ -245,8 +253,8 @@
     "kita": "2ce465df7a547e86"
   },
   "app/src/composables/useGlondongan.js": {
-    "hulu": "433f972028c54aa0",
-    "kita": "433f972028c54aa0"
+    "hulu": "c0cd5d0624fd4f4a",
+    "kita": "c0cd5d0624fd4f4a"
   },
   "app/src/composables/useGoogleSheet.js": {
     "hulu": "2493abbee500ef03",
@@ -265,8 +273,8 @@
     "kita": "c047335e318364fa"
   },
   "app/src/composables/useIzinGuru.js": {
-    "hulu": "14b967bb46b3c857",
-    "kita": "14b967bb46b3c857"
+    "hulu": "e9a199242b97198d",
+    "kita": "e9a199242b97198d"
   },
   "app/src/composables/useKegiatan.js": {
     "hulu": "e8460dbbba1f5123",
@@ -332,8 +340,8 @@
     "kita": "dc2f66d8d42d54eb"
   },
   "app/src/composables/useSantri.js": {
-    "hulu": "6637d8340ad1b479",
-    "kita": "6637d8340ad1b479"
+    "hulu": "c71ffa00224f1009",
+    "kita": "258c5085dea69859"
   },
   "app/src/composables/useSantriForm.js": {
     "hulu": "130bfe996e2647e8",
@@ -376,7 +384,7 @@
     "kita": "e1a57768cb0ec2d4"
   },
   "app/src/main.js": {
-    "hulu": "3e53447594942fd0"
+    "hulu": "22558ad0af290d7c"
   },
   "app/src/router/index.js": {
     "hulu": "8697cde08469eeae"
@@ -389,7 +397,11 @@
     "hulu": "f208f5a53c0bf65a"
   },
   "app/src/services/db.js": {
-    "hulu": "cfb49efce6dd896b"
+    "hulu": "a799590ace195507"
+  },
+  "app/src/services/hapusBarisKas.js": {
+    "hulu": "e12b0c0ddafdc375",
+    "kita": "e12b0c0ddafdc375"
   },
   "app/src/services/importMap.js": {
     "hulu": "e358dfa89b2dbbe4",
@@ -407,13 +419,17 @@
     "hulu": "6bb46bbe1367d5c8",
     "kita": "6bb46bbe1367d5c8"
   },
+  "app/src/services/rujukanSantri.js": {
+    "hulu": "ab51a128f9a73316",
+    "kita": "ab51a128f9a73316"
+  },
   "app/src/services/santriFields.js": {
     "hulu": "195e34aa6ba33032",
     "kita": "3934956cc34cb359"
   },
   "app/src/services/storage.js": {
-    "hulu": "f6a4fa41d2a6f624",
-    "kita": "f6a4fa41d2a6f624"
+    "hulu": "d6d858fa0b7e2718",
+    "kita": "d6d858fa0b7e2718"
   },
   "app/src/services/supabase.js": {
     "hulu": "01de47ddd0add806"
@@ -431,7 +447,7 @@
     "kita": "fc9f7833c0347408"
   },
   "app/src/stores/fingerprint.js": {
-    "hulu": "63f62615e1f6b562"
+    "hulu": "6b2e9013b857eafe"
   },
   "app/src/stores/settings.js": {
     "hulu": "4e26d5a68e31b5a0"
@@ -456,9 +472,17 @@
     "hulu": "69f01b50c2c0a28a",
     "kita": "69f01b50c2c0a28a"
   },
+  "app/src/utils/appVersion.js": {
+    "hulu": "50a8c041574af771",
+    "kita": "50a8c041574af771"
+  },
   "app/src/utils/auditLog.js": {
     "hulu": "2b358ccad8dcfe41",
     "kita": "2b358ccad8dcfe41"
+  },
+  "app/src/utils/batalBayarTagihan.js": {
+    "hulu": "cfc2d18cf1223636",
+    "kita": "cfc2d18cf1223636"
   },
   "app/src/utils/bebanMengajar.js": {
     "hulu": "8d81ca51d91e5bfa",
@@ -467,6 +491,10 @@
   "app/src/utils/bisyarohScope.js": {
     "hulu": "e3c6131808327593",
     "kita": "e3c6131808327593"
+  },
+  "app/src/utils/bucketStorage.js": {
+    "hulu": "05a5b538128a67e7",
+    "kita": "05a5b538128a67e7"
   },
   "app/src/utils/bukuIndukLaporan.js": {
     "hulu": "405f3a22f8bfb3ef",
@@ -477,12 +505,16 @@
     "kita": "2ce5c893c25dce4e"
   },
   "app/src/utils/cocokBayarTagihan.js": {
-    "hulu": "b0b38c4e3dd02aa7",
-    "kita": "b0b38c4e3dd02aa7"
+    "hulu": "67f405cfb7b0083d",
+    "kita": "67f405cfb7b0083d"
   },
   "app/src/utils/escpImage.js": {
     "hulu": "6cd34b8f7c64e2f7",
     "kita": "6cd34b8f7c64e2f7"
+  },
+  "app/src/utils/filterQuery.js": {
+    "hulu": "0c9852a1ffc4926d",
+    "kita": "0c9852a1ffc4926d"
   },
   "app/src/utils/format.js": {
     "hulu": "c14dde0078f6ef2b",
@@ -507,6 +539,10 @@
     "hulu": "5c3c58f824679bf7",
     "kita": "5c3c58f824679bf7"
   },
+  "app/src/utils/izinStatus.js": {
+    "hulu": "44c10c5cbf24c91c",
+    "kita": "44c10c5cbf24c91c"
+  },
   "app/src/utils/jabatanUnit.js": {
     "hulu": "b2c1115d5755f8ac",
     "kita": "b2c1115d5755f8ac"
@@ -528,8 +564,8 @@
     "kita": "b6485456a557b7c6"
   },
   "app/src/utils/kasLembaga.js": {
-    "hulu": "a80e4f674ff4a1cf",
-    "kita": "6afb77f4dbdf29c7"
+    "hulu": "2c20fbdf11e68e7f",
+    "kita": "665ff5b0341c5758"
   },
   "app/src/utils/kelasHitung.js": {
     "hulu": "b1bfc3652c4ebdc7",
@@ -584,9 +620,17 @@
     "hulu": "b130485b135a816b",
     "kita": "b130485b135a816b"
   },
+  "app/src/utils/periodeKas.js": {
+    "hulu": "534de7007f177dfd",
+    "kita": "534de7007f177dfd"
+  },
   "app/src/utils/periodeTagihan.js": {
     "hulu": "27f82d31b98cc86c",
     "kita": "0948a8a327c57044"
+  },
+  "app/src/utils/pesanGalatDb.js": {
+    "hulu": "6e63bf4786c277a3",
+    "kita": "6e63bf4786c277a3"
   },
   "app/src/utils/pesanWa.js": {
     "hulu": "d596d0dfb91377f2",
@@ -647,6 +691,10 @@
     "hulu": "642f3f42b69a27e3",
     "kita": "642f3f42b69a27e3"
   },
+  "app/src/utils/rujukanKeuanganSantri.js": {
+    "hulu": "b154a0dd1e306665",
+    "kita": "b154a0dd1e306665"
+  },
   "app/src/utils/santriIdentitas.js": {
     "hulu": "d624b2855da82278",
     "kita": "d624b2855da82278"
@@ -691,7 +739,7 @@
     "kita": "343429ca9945132e"
   },
   "app/src/utils/tagihan.js": {
-    "hulu": "f2f9f7f53da157fb"
+    "hulu": "14455d902457d582"
   },
   "app/src/utils/tagihanId.js": {
     "hulu": "a5476ae7608b20a9",
@@ -714,8 +762,8 @@
     "kita": "b68a6d1613c922a8"
   },
   "app/src/utils/trxStruk.js": {
-    "hulu": "18e04e7953e49412",
-    "kita": "18e04e7953e49412"
+    "hulu": "bfedaa61958bc5c0",
+    "kita": "bfedaa61958bc5c0"
   },
   "app/src/utils/unduhan.js": {
     "hulu": "efa9b84ac947bd62"
@@ -725,8 +773,8 @@
     "kita": "549f78558c3b72d4"
   },
   "app/src/utils/v100_dedupe.js": {
-    "hulu": "f03264d665814bac",
-    "kita": "f03264d665814bac"
+    "hulu": "cf7d0a0cca2bf6b9",
+    "kita": "cf7d0a0cca2bf6b9"
   },
   "app/src/utils/v100_lembagaFix.js": {
     "hulu": "cb820be106d53ad1",
@@ -740,19 +788,19 @@
     "kita": "d328a6b745752da4"
   },
   "app/src/views/BantuanView.vue": {
-    "hulu": "d6a539ca96ea89d0"
+    "hulu": "647cd82458a40321"
   },
   "app/src/views/BerandaDesktopView.vue": {
     "hulu": "33f70b5e9800ff0e",
     "kita": "33f70b5e9800ff0e"
   },
   "app/src/views/BisyarohView.vue": {
-    "hulu": "c78f6d804d13381f",
-    "kita": "550cb4f195614dfe"
+    "hulu": "4325a4f628866a7c",
+    "kita": "1894f0abaee1c1ad"
   },
   "app/src/views/BukuIndukView.vue": {
-    "hulu": "a04821b17cc235cc",
-    "kita": "09c74e85157ff9b4"
+    "hulu": "22e2a7211ab0a30d",
+    "kita": "bdacd14374f2ea7f"
   },
   "app/src/views/CapaianPrestasiView.vue": {
     "hulu": "91640abeb76dfc85"
@@ -762,15 +810,15 @@
     "kita": "00560fb5cc7e8c26"
   },
   "app/src/views/DashboardView.vue": {
-    "hulu": "7137590e584ee223"
+    "hulu": "6a0e6e652eb05188"
   },
   "app/src/views/FieldSchemaView.vue": {
     "hulu": "f6200db854875c80",
     "kita": "f6200db854875c80"
   },
   "app/src/views/GlondonganView.vue": {
-    "hulu": "55bc3b9255792751",
-    "kita": "cff01f06a4ae42c2"
+    "hulu": "e7be86e82df1f23e",
+    "kita": "9dea0e46740f8f6d"
   },
   "app/src/views/GuruBelumInputView.vue": {
     "hulu": "69df28ff88d059bb",
@@ -781,8 +829,8 @@
     "kita": "2e19822076ca6867"
   },
   "app/src/views/GuruView.vue": {
-    "hulu": "28eea494b5a6fc80",
-    "kita": "58b45285318d9aed"
+    "hulu": "92b437864d2e4ce5",
+    "kita": "ea81cc646bffc58f"
   },
   "app/src/views/HutangPiutangView.vue": {
     "hulu": "783033c76acf1c77",
@@ -867,7 +915,7 @@
     "kita": "37ef13feb6947b5a"
   },
   "app/src/views/MesinAbsensiView.vue": {
-    "hulu": "7120abec7977a9b1"
+    "hulu": "b6d4cbaaf8c25276"
   },
   "app/src/views/NaikKelasView.vue": {
     "hulu": "bfe28d1cbf980880",
@@ -878,8 +926,8 @@
     "kita": "0723e42f041d4524"
   },
   "app/src/views/PembayaranPendingView.vue": {
-    "hulu": "255ff1de8c3a1e42",
-    "kita": "255ff1de8c3a1e42"
+    "hulu": "105e01928966372c",
+    "kita": "105e01928966372c"
   },
   "app/src/views/PembayaranView.vue": {
     "hulu": "2554451c8d8d3562"
@@ -893,25 +941,25 @@
     "kita": "5cc1ba5371fec372"
   },
   "app/src/views/PengaturanKeuanganView.vue": {
-    "hulu": "ce99c7c0f3d24c1d"
+    "hulu": "79f24a1aad3f59e8"
   },
   "app/src/views/PengaturanView.vue": {
     "hulu": "d3ddac7b59278e45"
   },
   "app/src/views/PersonalView.vue": {
-    "hulu": "b46390f4c3b6fea2",
-    "kita": "b46390f4c3b6fea2"
+    "hulu": "a1ed175be8bcf94d",
+    "kita": "a1ed175be8bcf94d"
   },
   "app/src/views/PosSantriView.vue": {
-    "hulu": "b489242105a0d399",
-    "kita": "b2798a377063fd82"
+    "hulu": "b654b7fc03643264",
+    "kita": "22b456349fb693fe"
   },
   "app/src/views/PostsView.vue": {
     "hulu": "89eac6a20298f9e5",
     "kita": "a7ba30e1619ab035"
   },
   "app/src/views/PpdbAdminView.vue": {
-    "hulu": "91ebb95461b543c0"
+    "hulu": "d2953a88fe1d52f2"
   },
   "app/src/views/PpdbDetailView.vue": {
     "hulu": "84a3399aeb213e92",
@@ -929,7 +977,7 @@
   },
   "app/src/views/profil/ProfilPengaturanSaya.vue": {
     "hulu": "aa1c7ed1aa02fd00",
-    "kita": "aa1c7ed1aa02fd00"
+    "kita": "d08bf5045d6e5f61"
   },
   "app/src/views/profil/ProfilSantri.vue": {
     "hulu": "d062b9eac3668908",
@@ -959,8 +1007,8 @@
     "kita": "d31e234fd39d228d"
   },
   "app/src/views/RiwayatPosView.vue": {
-    "hulu": "be2afc134f04f63d",
-    "kita": "be2afc134f04f63d"
+    "hulu": "2305f6fa5ca213ee",
+    "kita": "2305f6fa5ca213ee"
   },
   "app/src/views/RiwayatSantriView.vue": {
     "hulu": "fabe555a0856cb05",
@@ -971,8 +1019,8 @@
     "kita": "3fe0e70c90a5358b"
   },
   "app/src/views/SantriView.vue": {
-    "hulu": "593215347012a113",
-    "kita": "3e6c1f75d2b28b9b"
+    "hulu": "1f550b27f261bba5",
+    "kita": "27ab8a42174a14e8"
   },
   "app/src/views/StatistikHubView.vue": {
     "hulu": "1b92055b6c1b127d",
@@ -995,17 +1043,17 @@
     "kita": "6a895da7430a7cac"
   },
   "app/src/views/TabunganView.vue": {
-    "hulu": "93bb6cf9eb1a2aed"
+    "hulu": "1d64f323b0faa1dd"
   },
   "app/src/views/TagihanView.vue": {
-    "hulu": "bac29b79e59a9d1c"
+    "hulu": "bb73af07718e3c5b"
   },
   "app/src/views/TesKenaikanView.vue": {
     "hulu": "29cc13a641b24c45"
   },
   "app/src/views/UangPosView.vue": {
-    "hulu": "60259a7fbe4be210",
-    "kita": "60259a7fbe4be210"
+    "hulu": "63579d38f25047d5",
+    "kita": "63579d38f25047d5"
   },
   "tests/unit/absenHarian.test.js": {
     "hulu": "ba1c245e4422b50b",
@@ -1014,6 +1062,10 @@
   "tests/unit/absensiMatriks.test.js": {
     "hulu": "71bea2ad2062c83b",
     "kita": "71bea2ad2062c83b"
+  },
+  "tests/unit/batalBayarTagihan.test.js": {
+    "hulu": "4d61ff5a148df48a",
+    "kita": "4d61ff5a148df48a"
   },
   "tests/unit/bebanMengajar.test.js": {
     "hulu": "bb427f2cd48898f2",
@@ -1026,6 +1078,10 @@
   "tests/unit/bisyarohPerTepat.test.js": {
     "hulu": "c72aeaca29f157ba",
     "kita": "c72aeaca29f157ba"
+  },
+  "tests/unit/bucketStorage.test.js": {
+    "hulu": "0404e2d0b73a041d",
+    "kita": "0404e2d0b73a041d"
   },
   "tests/unit/buildAuthEmail.test.js": {
     "hulu": "d09c1d99a9b40a95"
@@ -1050,12 +1106,20 @@
     "hulu": "6bb74f5b48acb415",
     "kita": "1cdf65eb1cb3779d"
   },
+  "tests/unit/dbRealtimePulih.test.js": {
+    "hulu": "b0ad61e8253aff0e",
+    "kita": "f50e0ff2949c71a6"
+  },
   "tests/unit/dbUpdateOne.test.js": {
     "hulu": "b46cd88f4c2481c5"
   },
   "tests/unit/draftGlondongan.test.js": {
     "hulu": "d75fd7cf4a58db20",
     "kita": "d75fd7cf4a58db20"
+  },
+  "tests/unit/filterQuery.test.js": {
+    "hulu": "00a7e95c88e5d05a",
+    "kita": "00a7e95c88e5d05a"
   },
   "tests/unit/formatTanggal.test.js": {
     "hulu": "97ced0588a693e5d"
@@ -1079,6 +1143,14 @@
     "hulu": "c5464c1ec34e5efe",
     "kita": "c5464c1ec34e5efe"
   },
+  "tests/unit/izinStatus.test.js": {
+    "hulu": "e10ce388b92ec088",
+    "kita": "e10ce388b92ec088"
+  },
+  "tests/unit/izinTulisCermin.test.js": {
+    "hulu": "9c626b0c0980d07a",
+    "kita": "9c626b0c0980d07a"
+  },
   "tests/unit/jadwalGuru.test.js": {
     "hulu": "eb3e0fec10e81f92",
     "kita": "eb3e0fec10e81f92"
@@ -1100,8 +1172,12 @@
     "kita": "4f492b4faee91552"
   },
   "tests/unit/kasLembaga.test.js": {
-    "hulu": "0e6a9efef671c72e",
-    "kita": "0e6a9efef671c72e"
+    "hulu": "614d29633c0761a9",
+    "kita": "614d29633c0761a9"
+  },
+  "tests/unit/kasTunggal.test.js": {
+    "hulu": "9c2fd19c55687a05",
+    "kita": "9c2fd19c55687a05"
   },
   "tests/unit/kelasHitung.test.js": {
     "hulu": "1f9994489bb95ffd",
@@ -1158,9 +1234,17 @@
     "hulu": "8c40b5ef96be16bb",
     "kita": "8c40b5ef96be16bb"
   },
+  "tests/unit/periodeKas.test.js": {
+    "hulu": "ac8a31ee3f891594",
+    "kita": "ac8a31ee3f891594"
+  },
   "tests/unit/periodeTagihan.test.js": {
     "hulu": "3e72fc64d75b1f08",
     "kita": "3e72fc64d75b1f08"
+  },
+  "tests/unit/pesanGalatDb.test.js": {
+    "hulu": "79484e67e22da129",
+    "kita": "79484e67e22da129"
   },
   "tests/unit/pjGuru.test.js": {
     "hulu": "1a93454b85942613",
@@ -1177,6 +1261,10 @@
   "tests/unit/potonganPos.test.js": {
     "hulu": "682a6256b2891f56",
     "kita": "682a6256b2891f56"
+  },
+  "tests/unit/prabayarMirrorEdge.test.js": {
+    "hulu": "053da80276bd9709",
+    "kita": "39574d5822e712d0"
   },
   "tests/unit/pratinjauSlip.test.js": {
     "hulu": "d513a38db3b71784",
@@ -1216,6 +1304,14 @@
   "tests/unit/ringkasSetorTarik.test.js": {
     "hulu": "00921d22e81418c6",
     "kita": "00921d22e81418c6"
+  },
+  "tests/unit/rujukanKeuanganSantri.test.js": {
+    "hulu": "947f3efe7266ed0d",
+    "kita": "947f3efe7266ed0d"
+  },
+  "tests/unit/saldoSetelahMutasi.test.js": {
+    "hulu": "4c45bde236658150",
+    "kita": "4c45bde236658150"
   },
   "tests/unit/santriAmpuanGuru.test.js": {
     "hulu": "da1113e01df39cf6",
@@ -1292,6 +1388,10 @@
     "hulu": "afe5516953b221bf",
     "kita": "afe5516953b221bf"
   },
+  "tests/unit/tagihanSudahDibayar.test.js": {
+    "hulu": "6cecd1b90b5b08d9",
+    "kita": "6cecd1b90b5b08d9"
+  },
   "tests/unit/tambalRiwayatPrestasi.test.js": {
     "hulu": "e800444011b620b2",
     "kita": "e800444011b620b2"
@@ -1310,6 +1410,10 @@
   },
   "tests/unit/toTitleCase.test.js": {
     "hulu": "8ac96f0e7d3e947e"
+  },
+  "tests/unit/trxDariBaris.test.js": {
+    "hulu": "b22d23ab37fdb10e",
+    "kita": "159e6089ec48c801"
   },
   "tests/unit/trxStruk.test.js": {
     "hulu": "638cbca5079ec35f",
@@ -1525,8 +1629,20 @@
     "hulu": "9a094d187be99a73",
     "kita": "9a094d187be99a73"
   },
+  "supabase/migrations/20260912120000_izin_guru_staff_write.sql": {
+    "hulu": "0afd3b2c0435d421",
+    "kita": "839a95a3dd8881d2"
+  },
+  "supabase/migrations/20260912130000_supervisi_respon_target.sql": {
+    "hulu": "b48485c29d4777d2",
+    "kita": "b48485c29d4777d2"
+  },
   "supabase/functions/auto-generate-tagihan/index.ts": {
-    "hulu": "0937a4772fb76837"
+    "hulu": "67836c7c755f4cf8"
+  },
+  "supabase/functions/auto-generate-tagihan/prabayar.ts": {
+    "hulu": "39d6b8e66f50f4ed",
+    "kita": "762ac98869147bf6"
   },
   "supabase/functions/auto-generate-tagihan/syahriyah.ts": {
     "hulu": "334a0fe003705e17",

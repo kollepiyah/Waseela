@@ -1,7 +1,7 @@
 # 🤝 HANDOVER — Waseela
 
 > Untuk sesi/dev berikutnya: baca ini dulu, lalu [`RUNBOOK-PEMBELI.md`](RUNBOOK-PEMBELI.md).
-> Terakhir diperbarui: **7 Sep 2026** — sync hulu v.1.4.1 + notif pembaruan Android dimatikan.
+> Terakhir diperbarui: **16 Sep 2026** — sync hulu v.1.4.3 + rilis **v.1.0.3 / `versionCode 4`**.
 > Audit terbaru: [`AUDIT-SEP-2026.md`](AUDIT-SEP-2026.md).
 
 ---
@@ -20,14 +20,16 @@
 ## TL;DR
 
 **Waseela** = produk portal manajemen lembaga pendidikan milik **Bakafrawi Project**,
-diturunkan dari repo hulu **Ammu Online** (`D:\Aplikasi Project\Portal MU`).
+diturunkan dari repo hulu **Ammu Online** (`D:\Aplikasi Project\Ammu` — foldernya sempat
+bernama `Portal MU`; sync & kedua gerbang menerima dua-duanya).
 
 - **Single-tenant**: 1 pemasangan = 1 lembaga = 1 project Supabase sendiri.
 - **Backend**: Supabase (data/auth/storage). Firebase tinggal FCM + App Check + Hosting.
 - **Klien**: Vue 3 SPA + Android (Capacitor) + Desktop (Electron).
-- **Status (13 Agu 2026)**: **sudah LIVE** di Firebase Hosting, pembeli sudah bisa login
-  dan memakai. Versi **v.1.0.1** (`versionCode 2`). Tes 928 hijau, build hijau, empat
-  gerbang white-label lulus. Branch kerja: `refork/ammu-single-tenant`.
+- **Status (16 Sep 2026)**: **sudah LIVE** di Firebase Hosting, pembeli sudah bisa login
+  dan memakai. Versi **v.1.0.3** (`versionCode 4`) di atas basis hulu **v.1.4.3**. Tes 1579
+  hijau, build hijau, empat gerbang white-label lulus. Branch kerja: `refork/ammu-single-tenant`.
+  Di Play Store yang ada baru **v.1.0.1 / `versionCode 2`, jalur UJI TERTUTUP**.
 
 ---
 
@@ -63,7 +65,7 @@ Basis re-fork = hulu commit **`e255c5d`** (8 Agu 2026).
 | Panel demo & konsol super-admin | **Dibuang** | Ikut model SaaS yang ditinggalkan |
 | Merek aplikasi | **Tetap Waseela**, hak cipta Bakafrawi Project | Pembeli tak mengganti merek app — hanya mengisi identitas lembaganya di kop |
 | Identitas lembaga | **Runtime**, lewat UI Pengaturan | Pembeli mengisi sendiri, tanpa rebuild |
-| Repo hulu | **BACA-SAJA, selamanya** | Tak ada tulis/hapus/git di `Portal MU`; `sync-from-ammu.mjs` satu arah |
+| Repo hulu | **BACA-SAJA, selamanya** | Tak ada tulis/hapus/git di repo `Ammu`; `sync-from-ammu.mjs` satu arah |
 | Virtual Account (BMT) | **DIBUANG** v.1.0.1 (kode + tabel + RPC) | Terikat satu BMT milik lembaga hulu; pembeli tak memakai, integrasinya tak pernah hidup |
 | Mesin absensi pembeli | **Solution X609**, jalur utama **tarik langsung TCP 4370** | Mesin bicara protokol ZKTeco; Desktop menariknya sendiri — tanpa software vendor, tanpa langkah operator |
 | Cadangan saat PC tak sejaringan | **Baca `att2000.mdb`** software Attendance Management (2 Sep 2026) | Pembeli sudah memasang software bawaannya. Menutup celah "mesin ditarik lewat flashdisk" yang dulu hanya bisa lewat impor berkas manual. Menempel pada software vendor, jadi bisa BASI — karena itu cadangan, bukan pengganti |
@@ -112,6 +114,13 @@ sengaja tak pernah menarik `kopMuassis.js` maupun `muassis.png`.
 **Aturan main:** kalau sync membawa literal identitas baru, tambahkan aturannya di
 `scripts/whitelabel-rules.mjs` — **jangan menambal berkasnya langsung**, tambalan itu
 hilang di sync berikutnya. Gerbang akan menolak sampai aturannya ada.
+
+**Gerbang bisa DIAM karena foldernya dinamai ulang (16 Sep 2026).** Repo hulu berganti nama
+`Portal MU` → `Ammu`, dan `cek-kebocoran.mjs` memang dirancang keluar dengan `exit 0` bila repo
+hulu tak ada (supaya CI tanpa repo hulu tak merah). Dua hal bertemu: sync BERHENTI dengan galat
+(kelihatan), tapi gerbang pembanding cuma mencetak satu baris "dilewati" lalu menyatakan sukses —
+gerbang yang paling mahal justru yang paling sunyi saat mati. Ketiga skrip kini mencoba **dua nama**
+folder. Kalau kelak ia dinamai ulang lagi, tambahkan namanya di `NAMA_HULU`.
 
 **Gerbang juga bisa salah tuduh (7 Sep 2026).** `POLA_JEJAK` mencari `ammu` di mana saja,
 dan hulu memperkenalkan `jamMulaiShift` — huruf "j-**ammu**-lai". Sync v.1.4.1 tertahan oleh
@@ -246,16 +255,43 @@ diputuskan: `santri` menyentuh nama tabel DB, jadi jangan disapu tanpa arahan Ky
 
 ## Sisa pekerjaan
 
-Web sudah live. Yang tersisa (per 1 Sep 2026):
+Web sudah live. Yang tersisa (per 16 Sep 2026):
 
-**Menyusul sync hulu v.1.4.1 (7 Sep 2026) — belum dikerjakan**
-A. **`npx supabase db push`** — EMPAT migrasi belum sampai ke Supabase pembeli:
-   `20260812120000_auth_email_internal_ketat.sql`, `20260831120000_santri_upd_kepala_lembaga.sql`,
-   `20260813090000_buang_va_bmt.sql`, dan dua migrasi prestasi baru
+**Rilis v.1.0.3 / vc4 — urutannya MENGIKAT (dikerjakan Kyai)**
+0. **`npx supabase db push`** — TUJUH berkas migrasi belum sampai ke Supabase pembeli:
+   `20260812120000_auth_email_internal_ketat.sql`, `20260813090000_buang_va_bmt.sql`,
+   `20260831120000_santri_upd_kepala_lembaga.sql`, dua migrasi prestasi
    (`20260902120000_arsip_prestasi_bulanan.sql` → disempurnakan
-   `20260904120000_arsip_prestasi_periode_laporan.sql`; yang kedua menimpa yang pertama,
-   dorong berurutan).
-A2. **Jadwalkan `arsip-prestasi-bulanan` di pg_cron** — migrasinya hanya membuat fungsinya,
+   `20260904120000_arsip_prestasi_periode_laporan.sql`), plus dua bawaan sync v.1.4.3:
+   `20260912120000_izin_guru_staff_write.sql` dan `20260912130000_supervisi_respon_target.sql`.
+   Dorong SEKALIGUS — yang terakhir memakai `auth_heads_lembaga()` yang lahir di migrasi
+   31 Agu, dan urutan cap waktunya memang sudah benar. Tanpa langkah ini aplikasi TIDAK
+   rusak, tapi dua perbaikan yang sudah diiklankan di Bantuan v.1.0.3 (izin bagi pegawai
+   kantor & tanggapan supervisi) tetap ditolak basis data.
+1. **`npx supabase functions deploy auto-generate-tagihan`** — cron tagihan bulanan kini
+   mengakui pembayaran di muka lewat `prabayar.ts`. Tanpa deploy, fungsi lama tetap jalan
+   dan santri yang membayar di muka ditagih ulang tiap awal bulan.
+2. **`npm run deploy`** — build + gerbang + Firebase Hosting.
+3. **`npm run build:aab`** → **uji AAB-nya di HP sungguhan** (login, notifikasi, widget Jam
+   Hijri & Kalender, ekspor PDF, kasir POS) → unggah ke Play Console.
+4. Desktop & APK, bila pembeli memakainya: `npm run electron:release` lalu `npm run build:apk`,
+   keduanya ke rilis GitHub `v1.0.3` yang SAMA — rinciannya di RUNBOOK §5.
+
+**Play Store — keadaan 16 Sep 2026**
+- Yang ada di sana baru **v.1.0.1 / `versionCode 2`, jalur UJI TERTUTUP**. Unggahan berikutnya
+  `versionCode 4`.
+- `versionCode 3` sengaja DILEWATI: ia sudah sampai ke pengguna sebagai APK GitHub v.1.0.2,
+  jadi memakainya ulang untuk isi yang berbeda membuat nomor versi berbohong.
+- Tautan "Pasang Android" di Login & Bantuan **sengaja masih ke APK GitHub**: selama uji
+  tertutup, tautan Play memulangkan halaman kosong bagi yang bukan penguji. Begitu produksi
+  terbit, `URL_PLAYSTORE` sudah siap di `app/src/utils/unduhan.js` — atau lebih cepat lagi,
+  isi `settings.downloadAndroid` di Pengaturan Web (menang atas kode, tanpa rilis ulang).
+- APK GitHub ditandatangani kunci UPLOAD kita. Kalau Play App Signing memakai kunci milik
+  Google, HP yang sudah memasang APK itu **tak bisa** diperbarui dari Play — harus copot lalu
+  pasang sekali. Datanya di server, jadi yang hilang cuma sesi login.
+
+**Sumbat lama yang masih berdiri**
+A. **Jadwalkan `arsip-prestasi-bulanan` di pg_cron** — migrasinya hanya membuat fungsinya,
    TIDAK menjadwalkannya, dan tak ada tombol pemicu di aplikasi. Tanpa langkah ini papan
    peringkat tak pernah diarsipkan tiap tanggal 25 dan tak ada gejala apa pun. Ini sumbat
    yang sama dengan temuan pg_cron di audit Agustus — sekarang dua fitur bergantung padanya.
@@ -263,21 +299,13 @@ B. **Daftarkan `app.waseela.id://auth-callback`** di Supabase → Auth → URL C
    Redirect URLs. Tanpa itu login Google di Android tetap mentok di halaman galat browser:
    Supabase mengabaikan deep link-nya dan memulangkan ke Site URL. Intent-filter di
    `AndroidManifest.xml` sudah dipasang, tapi ia tak berarti apa-apa sendirian.
-C. **Bangun ulang APK** — perubahan manifest hanya berlaku sesudah build baru.
-D. **Migrasi BMT hulu sengaja DIBLOKIR.** `20260905120000_bmt_alokasi_utuh.sql` menulis ulang
+C. **Migrasi BMT hulu sengaja DIBLOKIR.** `20260905120000_bmt_alokasi_utuh.sql` menulis ulang
    RPC `apply_bmt_payment` + tabel `keuangan_va_inbox` yang sudah kita DROP; kalau tertarik,
    `db push` gagal. Aturannya sudah di `ABAIKAN` (`scripts/sync-from-ammu.mjs`).
 
 > Tes Sekolah SENGAJA tak ditarik (keputusan Kyai). Berkas intinya di `ABAIKAN`,
 > perangkainya di `MILIK_WASEELA` — lihat `scripts/sync-from-ammu.mjs`. Kalau kelak
 > dipakai: buang dari kedua daftar, tarik ulang, lalu push migrasi `..._tes_sekolah.sql`.
-
-**Rilis v.1.0.1 — dikerjakan Kyai, urutannya mengikat**
-0. `npm run electron:release` (rilis GitHub `v1.0.1`) → lalu `npm run build:apk` dan
-   unggah `dist-release/Waseela.apk` **ke rilis v1.0.1 itu juga**. Tombol unduh di
-   halaman login memakai `/releases/latest/download/`, jadi APK & installer harus berada
-   di satu rilis yang sama — rinciannya di RUNBOOK §5. Migrasi
-   `20260813090000_buang_va_bmt.sql` juga perlu di-`db push` ke Supabase pembeli.
 
 **Wajib sebelum dianggap selesai**
 1. **Uji cetak kop kosong** — satu-satunya gerbang yang tak bisa diotomatiskan: cetak
@@ -294,8 +322,8 @@ remnya untuk APK yang SUDAH terpasang: bundel di dalamnya masih membawa cek-otom
 tetap menembak berkas itu tiap dibuka — tanpa `apkUrl`, putusannya `belum-siap` dan ia diam.
 Mengisinya lagi = notifikasi hidup kembali di semua HP tersebut.
 
-> Konsekuensi yang disengaja: sampai Waseela tayang di Play Store, pembeli **tak punya
-> jalur pembaruan Android otomatis**. Tautan PASANG tetap hidup (layar login & Bantuan →
+> Konsekuensi yang disengaja: sampai Waseela tayang di jalur PRODUKSI Play Store, pembeli
+> **tak punya jalur pembaruan Android otomatis** (uji tertutup hanya menjangkau penguji). Tautan PASANG tetap hidup (layar login & Bantuan →
 > `utils/unduhan.js` → GitHub Releases); yang mati hanya pemberitahuannya.
 > `useAndroidUpdate.js` sengaja tak dihapus — menghidupkannya kembali cukup memanggil
 > `cekOtomatis()` lagi dan mengisi ulang `apkUrl`.

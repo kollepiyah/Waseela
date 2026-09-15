@@ -134,6 +134,8 @@ export const RULES_SRC = [
   ['AMMU simpan PIN fingerprint', 'Aplikasi menyimpan PIN fingerprint'],
   ["id='admin' (ammuadmin)", "id='admin'"],
   ['laporan keuangan Ammu tetap satu wajah', 'laporan keuangan tetap satu wajah'],
+  ['penamaan kelas di Ammu memang', 'penamaan kelas di tiap lembaga memang'],
+  ['untuk terima notifikasi pondok.', 'untuk terima notifikasi lembaga.'],
   ['Pengaturan Postingan / Ammu Channel', 'Pengaturan Postingan / Kanal Informasi'],
   ['v.21.84.0527: Ammu Channel —', 'v.21.84.0527: Kanal informasi —'],
   ['silhouette putih Ammu', 'silhouette putih logo app'],

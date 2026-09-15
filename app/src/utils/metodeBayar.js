@@ -10,8 +10,10 @@
 export const METODE_OPTS = ['Tunai', 'Transfer']
 
 // sumber yang PASTI non-tunai walau field `metode` kosong (baris lama)
-// v.1.0.1: sumber Virtual Account ('va', 'va_bmt', 'bmt') dibuang bersama fitur VA.
-const SUMBER_TRANSFER = ['transfer_verified']
+// v.1.0.1: fitur Virtual Account dibuang; v.1.0.3: nilai sumbernya TETAP dikenali di sini.
+//   Basis data pembeli tak punya baris VA, jadi ini cabang mati — tapi mengenalinya gratis
+//   dan membuat perakit struk hulu (utils/trxStruk) lulus apa adanya tiap sync.
+const SUMBER_TRANSFER = ['transfer_verified', 'bmt_va', 'va_bmt']
 
 /** 'Tunai' | 'Transfer' untuk satu baris keuangan_buku_induk.
  *

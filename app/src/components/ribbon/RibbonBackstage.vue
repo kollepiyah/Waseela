@@ -204,6 +204,9 @@ import { useRouter } from 'vue-router'
 import RibbonIcon from './RibbonIcon.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
+// v.1.4.2: SATU sumber nomor versi (lihat utils/appVersion.js) — label yang diketik
+//   tangan di layar sudah terbukti membeku (kaki Data Santri tertinggal di v.74.0526).
+import { labelVersi } from '@/utils/appVersion'
 import {
   listPrinters,
   getDefaultPrinter,
@@ -316,7 +319,7 @@ const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
 const lembagaName = computed(
   () => settings.settings?.namaLembaga || BRAND.namaLembaga
 )
-const version = computed(() => settings.settings?.appVersion || BRAND.version)
+const version = computed(() => labelVersi(settings.settings))
 const userName = computed(() => auth.sesiAktif?.nama || auth.sesiAktif?.name || 'Pengguna')
 
 const infoRows = computed(() => [

@@ -99,6 +99,7 @@ auth.initAuth()
 
 // v.21.24c.0526: STATIC import settings — fix race dengan view init.
 import { useSettingsStore } from './stores/settings'
+import { APP_VERSION_RAW } from '@/utils/appVersion'
 const settingsStore = useSettingsStore(pinia)
 settingsStore
   .load()
@@ -205,7 +206,9 @@ async function initSentry() {
     window.Sentry.init({
       dsn,
       tracesSampleRate: 0.1,
-      release: `${BRAND.sentryRelease}@${BRAND.version.replace(/^v\./, '')}`,
+      // v.1.0.3: versi dari __APP_VERSION__ (package.json), bukan diketik ulang — tag rilis
+      //   Sentry yang salah mengelompokkan galat produksi ke versi yang keliru.
+      release: `${BRAND.sentryRelease}@${APP_VERSION_RAW || BRAND.version.replace(/^v\./, '')}`,
       environment: window.location.hostname.includes('localhost') ? 'dev' : 'prod'
     })
 

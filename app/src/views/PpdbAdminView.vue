@@ -298,7 +298,11 @@
         </div>
 
         <p class="text-center text-[10px] text-[var(--text-tertiary)] pt-2">
-          <i class="fas fa-circle-info mr-1"></i>{{ filteredPpdb.length }} pendaftar · v.1.3.4
+          <i class="fas fa-circle-info mr-1"></i>{{ filteredPpdb.length }} pendaftar<span
+            v-if="versiApp"
+          >
+            · {{ versiApp }}</span
+          >
         </p>
       </div>
       <!-- /blok Riwayat -->
@@ -308,6 +312,8 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+// v.1.4.2: SATU sumber nomor versi — lihat utils/appVersion.js.
+import { APP_VERSION } from '@/utils/appVersion'
 import { RouterLink, useRoute } from 'vue-router'
 import { subscribeColl, updateOne, deleteOne, subscribeDoc, mergeOne } from '@/services/db'
 import { useAuthStore } from '@/stores/auth'
@@ -520,6 +526,8 @@ onUnmounted(() => {
 
 // Watch lembaga selection → load existing assets ke form
 import { watch as _watchAssets } from 'vue'
+// Label versi di kaki layar — dulu diketik tangan di sini dan ikut membeku.
+const versiApp = APP_VERSION
 _watchAssets(psbAssetLembaga, (l) => {
   if (!l) {
     psbAssetSyarat.value = ''

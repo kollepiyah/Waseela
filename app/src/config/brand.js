@@ -21,7 +21,7 @@ export const BRAND = {
   appTitle: 'Waseela',
   txtHeaderBar: 'Waseela',
   copyrightName: 'BAKAFRAWI PROJECT', // tahun dirender dinamis di komponen
-  version: 'v.1.0.2', // versi rilis Waseela (selaras app/package.json & android versionName)
+  version: 'v.1.0.3', // versi rilis Waseela (selaras app/package.json & android versionName)
   sentryRelease: 'waseela',
 
   // ── Identitas lembaga pembeli (diisi lewat UI Pengaturan) ─────────────────
@@ -54,7 +54,9 @@ export const BRAND = {
   // argumen --config.nsis.artifactName di skrip win7). Kalau salah satu diubah,
   // tests/unit/unduhanRilis.test.js GAGAL — itu memang tujuannya.
   releaseRepo: 'https://github.com/kollepiyah/waseela',
-  artifactBase: 'Waseela'
+  artifactBase: 'Waseela',
+  // applicationId Android (app/android/app/build.gradle) — dasar URL halaman Play Store.
+  androidPackage: 'app.waseela.id'
 }
 
 // ── Firebase: HANYA pipa notifikasi (FCM) + App Check ────────────────────────

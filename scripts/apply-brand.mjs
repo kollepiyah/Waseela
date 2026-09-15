@@ -150,7 +150,10 @@ if (existsSync(resolve(SRC, 'logo.png')) && !AUDIT_ONLY) {
 // ── 4. Audit: aset yang masih identik dengan repo asal ──────────────────────
 // Kalau repo Ammu ada di mesin ini, bandingkan byte-per-byte. Ini jaring terakhir
 // untuk gambar — satu-satunya cara menangkap logo lembaga lain yang ikut tersalin.
-const AMMU = resolve(ROOT, '..', 'Portal MU', 'vue-app')
+// Folder hulu sempat berganti nama (Portal MU → Ammu, 16 Sep 2026) — dicoba keduanya.
+const AMMU =
+  ['Ammu', 'Portal MU'].map((n) => resolve(ROOT, '..', n, 'vue-app')).find((p) => existsSync(p)) ||
+  resolve(ROOT, '..', 'Ammu', 'vue-app')
 const CEK_TIRU = [
   ['public/logo.png', 'public/logo.png'],
   ['public/pwa-192.png', 'public/pwa-192.png'],

@@ -284,9 +284,11 @@
           </div>
         </div>
 
-        <!-- Tautan PASANG, bukan pembaruan. Cek pembaruan in-app dimatikan (Kyai,
-             7 Sep 2026) mengikuti hulu; APK tetap dari GitHub Releases karena Waseela
-             belum tayang di Play Store. -->
+        <!-- Tautan PASANG, bukan pembaruan. Cek pembaruan in-app dimatikan (Kyai, 7 Sep 2026)
+             mengikuti hulu; APK tetap dari GitHub Releases karena per 16 Sep 2026 Waseela masih
+             di jalur UJI TERTUTUP Play Store — tautan Play akan kosong bagi yang bukan penguji.
+             Saat produksi terbit: pakai URL_PLAYSTORE (utils/unduhan.js) atau isi
+             settings.downloadAndroid di Pengaturan Web. -->
         <div class="mt-5 pt-4 border-t border-[var(--border-subtle)]">
           <p class="text-sm font-bold text-[var(--text-primary)] mb-1">
             <i class="fab fa-android text-emerald-600 mr-1"></i>Aplikasi Android
@@ -460,6 +462,9 @@ import { ref, computed, watch, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { mergeOne } from '@/services/db'
 import { useSettingsStore } from '@/stores/settings'
+// v.1.4.2: SATU sumber nomor versi (lihat utils/appVersion.js) — label yang diketik
+//   tangan di layar sudah terbukti membeku (kaki Data Santri tertinggal di v.74.0526).
+import { labelVersi } from '@/utils/appVersion'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { useDesktopShell } from '@/composables/useDesktopShell'
@@ -559,7 +564,7 @@ const introText = computed(() =>
 const lembagaName = computed(
   () => settings.settings?.namaLembaga || BRAND.namaLembaga
 )
-const version = computed(() => settings.settings?.appVersion || BRAND.version)
+const version = computed(() => labelVersi(settings.settings))
 const logoSrc = computed(() => settings.settings?.logoUrl || '/logo.png')
 
 const sections = [
@@ -806,6 +811,33 @@ async function resetFaq() {
 //   pertama. Menampilkannya membuat pembaca mengira sudah melewati rilis yang tak
 //   pernah mereka alami.
 const rilis = [
+  {
+    versi: 'v.1.0.3',
+    tgl: 'September 2026',
+    items: [
+      'Menghapus transaksi yang salah input kini ikut mengembalikan tagihannya. Dulu transaksi yang dihapus dari Riwayat POS, Buku Induk, atau Uang Kegiatan/Uang Buku hanya hilang catatan uangnya, sementara tagihan santri tetap terbaca lunas di POS. Sebelum menghapus, layar menyebut tagihan mana saja yang akan kembali ditagih.',
+      'Tagihan dari transaksi yang terlanjur dihapus sebelum pembaruan ini bisa dipulihkan super admin lewat Pengaturan Keuangan › Tagihan › Cek Riwayat vs Tagihan.',
+      'Tagihan bulanan yang terbit otomatis tak lagi menagih ulang pembayaran di muka. Santri yang sudah membayar bulan depan lewat POS menerima tagihan bulan itu dalam keadaan lunas.',
+      'Tombol Bayar di halaman Tagihan membuka POS untuk santri itu, sehingga pembayarannya tercatat di Buku Induk, bisa memilih tunai/transfer, dan struknya bisa dicetak.',
+      'Yang tak bisa dihapus lagi: tagihan yang sudah dibayar (hapus dulu transaksinya), transfer yang sudah diverifikasi, dan santri yang masih punya tabungan, tagihan, atau riwayat pembayaran — non-aktifkan saja supaya riwayatnya tetap utuh.',
+      'Struk bisa dicetak ulang dari daftar Transaksi Terakhir di POS, Riwayat POS, Buku Induk, Uang Kegiatan/Uang Buku/Tabungan Wajib, serta Tabungan dan Uang Saku. Slip Tabungan dan Uang Saku yang dicetak ulang menampilkan saldo pada saat transaksi itu, bukan saldo hari ini.',
+      'POS Santri menampilkan semua santri, tidak lagi hanya 50 nama pertama. Buku Induk bisa disaring dari tanggal ke tanggal lewat pilihan "Rentang tanggal".',
+      'Buku Induk menampilkan satu saldo kas lembaga, tidak lagi dipecah per lembaga — kartu per lembaga kini menampilkan pemasukan. "Kas Induk" berganti nama menjadi "Umum / Yayasan", "Masuk Kas Lembaga" menjadi "Dicatat untuk Lembaga", dan "Saldo Pos" menjadi "Selisih Periode". Tidak ada data yang diubah.',
+      'Data tidak lagi diam-diam basi sesudah HP atau laptop ditinggal. Sambungan ke server yang terputus saat perangkat tidur atau berpindah jaringan kini dipasang ulang sendiri, dan data disegarkan begitu aplikasi dipakai lagi.',
+      'Pengajuan Izin / Sakit / Cuti yang selalu gagal bagi pegawai kantor kini bisa dikirim, lampiran surat dokter bisa diunggah, dan riwayat perizinan bisa dilihat per orang di halaman Personal. Izin yang dibatalkan sendiri tak lagi tertulis "Ditolak".',
+      'Tanggapan atas Catatan Supervisi bisa dikirim oleh orang yang dicatat — catatan dan penilaiannya sendiri tetap tak bisa ia ubah. Pesan gagal juga tak lagi berbahasa mesin: kini menyebut apakah ini soal hak akses, sesi kedaluwarsa, atau sambungan terputus.',
+      'Data Santri: penyaring dan kata pencarian tidak hilang lagi sesudah mengedit, ada penyaring baru Kelas / Jilid / Level, dan penyaring Kelas (nama guru) bisa dicentang lebih dari satu. Nomor versi di kaki layar juga tak lagi tertinggal.',
+      'Beberapa tombol perapih yang tugasnya sudah selesai dicabut: Bersihkan residu (Buku Induk), Bersihkan baris glondongan yatim, Dump console (Tabungan), dan Hapus riwayat scan (Mesin Absensi).'
+    ]
+  },
+  {
+    versi: 'v.1.0.2',
+    tgl: 'September 2026',
+    items: [
+      'Sinkron mesin absensi Solution lewat jaringan: aplikasi Desktop menarik sendiri log scan dari mesin, tanpa software bawaan dan tanpa langkah operator.',
+      'Cadangan bila PC tidak sejaringan dengan mesin: aplikasi Desktop bisa membaca langsung berkas att2000.mdb milik software Attendance Management.'
+    ]
+  },
   {
     versi: 'v.1.0.1',
     tgl: 'Agustus 2026',
