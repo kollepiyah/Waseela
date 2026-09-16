@@ -18,7 +18,7 @@
 
 ---
 
-## ⚠️ Baca dulu: dua jebakan yang sudah terbukti memakan waktu
+## ⚠️ Baca dulu: tiga jebakan yang sudah terbukti memakan waktu
 
 **1. Kolom "Detail login" dibatasi 500 karakter.** Versi panjang bergaya langkah 1–5
 pernah tembus 724 karakter dan **kolomnya sendiri yang ditolak** — bukan akunnya. Kalau
@@ -38,6 +38,14 @@ otomatis Play membaca kolom username/sandi, bukan kolom instruksi.
 > **"either tab works"**. Kalau kelak fungsi itu diubah, teks bagian 9 **wajib** ikut
 > diubah — menjanjikan "either tab" pada build yang tak mendukungnya lebih buruk daripada
 > tak memberi instruksi sama sekali.
+
+**3. "Perlindungan Otomatis" menuntut `minSdkVersion` ≥ 24.** Unggahan `versionCode 4`
+ditolak di PINTU MASUK — bukan saat peninjauan — dengan pesan *"versi SDK minimum 24 atau
+yang lebih tinggi"*, padahal AAB-nya sah dan `versionCode 2` dulu naik dengan minSdk 23.
+Yang berubah bukan berkasnya melainkan setelan Play. Waseela dinaikkan ke **24** (16 Sep
+2026, keputusan Kyai): perangkat Android 6.0 tak lagi bisa memasang atau memperbarui.
+Kalau suatu saat Android 6 perlu dilayani lagi, matikan dulu Perlindungan Otomatis di Play
+Console → Integritas aplikasi — keduanya tak bisa hidup bersamaan.
 
 ---
 

@@ -282,6 +282,10 @@ Web sudah live. Yang tersisa (per 16 Sep 2026):
   `versionCode 4`.
 - `versionCode 3` sengaja DILEWATI: ia sudah sampai ke pengguna sebagai APK GitHub v.1.0.2,
   jadi memakainya ulang untuk isi yang berbeda membuat nomor versi berbohong.
+- **`minSdkVersion` naik 23 → 24** (16 Sep 2026): "Perlindungan Otomatis" Play menolak AAB
+  ber-minSdk 23 di pintu unggah — bukan saat peninjauan. Konsekuensinya Android 6.0 tak lagi
+  terlayani. Kalau kelak perlu turun lagi, matikan dulu Perlindungan Otomatis di Play Console
+  → Integritas aplikasi; keduanya tak bisa hidup bersamaan.
 - Tautan "Pasang Android" di Login & Bantuan **sengaja masih ke APK GitHub**: selama uji
   tertutup, tautan Play memulangkan halaman kosong bagi yang bukan penguji. Begitu produksi
   terbit, `URL_PLAYSTORE` sudah siap di `app/src/utils/unduhan.js` — atau lebih cepat lagi,

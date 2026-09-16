@@ -69,8 +69,9 @@ try {
   run('npx cap sync android', { cwd: VUE_APP })
 
   log('Step 2: Run gradle assembleRelease (generate signed APK)')
-  const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew'
-  run(`${gradlew} assembleRelease`, { cwd: ANDROID_DIR })
+  // Path penuh — lihat catatan yang sama di build-aab.cjs.
+  const gradlew = path.join(ANDROID_DIR, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew')
+  run(`"${gradlew}" assembleRelease`, { cwd: ANDROID_DIR })
 
   if (fs.existsSync(APK_PATH)) {
     const size = (fs.statSync(APK_PATH).size / 1024 / 1024).toFixed(2)

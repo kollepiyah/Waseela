@@ -1,5 +1,10 @@
 ext {
-    minSdkVersion = 23
+    // v.1.0.3 (16 Sep 2026): 23 -> 24. Play Console MENOLAK unggahan AAB (vc4) selama
+    //   "Perlindungan Otomatis" hidup — fitur itu menuntut minSdk >= 24. Konsekuensi yang
+    //   disengaja (keputusan Kyai): perangkat Android 6.0 tak bisa lagi memasang/memperbarui.
+    //   Kalau kelak perlu turun lagi ke 23, matikan dulu Perlindungan Otomatis di Play Console
+    //   → Integritas aplikasi; keduanya tak bisa hidup bersamaan.
+    minSdkVersion = 24
     // v.1.2.1: Play mewajibkan target Android 16 (API 36) — tenggat 31 Agu 2026.
     //   Capacitor 8.4.2 SUDAH default ke 36; berkas inilah yang menahannya di 35.
     //   Perubahan perilaku Android 16 yang menyala saat target 36, sudah dicek:

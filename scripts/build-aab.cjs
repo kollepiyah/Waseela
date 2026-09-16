@@ -67,9 +67,11 @@ try {
   run('npx cap sync android', { cwd: VUE_APP })
 
   log('Step 2: Run gradle bundleRelease (generate signed AAB)')
-  // Windows: gradlew.bat, Linux/Mac: ./gradlew
-  const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew'
-  run(`${gradlew} bundleRelease`, { cwd: ANDROID_DIR })
+  // PATH PENUH, bukan `gradlew.bat` polos: sebagian shell menyalakan
+  //   NoDefaultCurrentDirectoryInExePath sehingga cmd tak lagi mencari di direktori kerja,
+  //   dan langkah ini gagal "is not recognized" padahal berkasnya ada.
+  const gradlew = path.join(ANDROID_DIR, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew')
+  run(`"${gradlew}" bundleRelease`, { cwd: ANDROID_DIR })
 
   if (fs.existsSync(AAB_PATH)) {
     const size = (fs.statSync(AAB_PATH).size / 1024 / 1024).toFixed(2)
