@@ -265,8 +265,8 @@
     "kita": "48e76497a6dad0b3"
   },
   "app/src/composables/useGuruForm.js": {
-    "hulu": "24be8f4f87956d6a",
-    "kita": "24be8f4f87956d6a"
+    "hulu": "a535e94af906fbc1",
+    "kita": "a535e94af906fbc1"
   },
   "app/src/composables/useHaptic.js": {
     "hulu": "c047335e318364fa",
@@ -544,8 +544,8 @@
     "kita": "44c10c5cbf24c91c"
   },
   "app/src/utils/jabatanUnit.js": {
-    "hulu": "b2c1115d5755f8ac",
-    "kita": "b2c1115d5755f8ac"
+    "hulu": "089ae040a50212f2",
+    "kita": "089ae040a50212f2"
   },
   "app/src/utils/jadwalGuru.js": {
     "hulu": "a8affae8113fa354",
@@ -825,8 +825,8 @@
     "kita": "69df28ff88d059bb"
   },
   "app/src/views/GuruFormView.vue": {
-    "hulu": "e7066a017b278212",
-    "kita": "2e19822076ca6867"
+    "hulu": "3d9dcf7629f6443d",
+    "kita": "ad2022ea1baa943d"
   },
   "app/src/views/GuruView.vue": {
     "hulu": "92b437864d2e4ce5",
@@ -1120,6 +1120,10 @@
   "tests/unit/filterQuery.test.js": {
     "hulu": "00a7e95c88e5d05a",
     "kita": "00a7e95c88e5d05a"
+  },
+  "tests/unit/formGuruJabatan.test.js": {
+    "hulu": "feff9be06fc3c5bf",
+    "kita": "06882cd412bc9611"
   },
   "tests/unit/formatTanggal.test.js": {
     "hulu": "97ced0588a693e5d"

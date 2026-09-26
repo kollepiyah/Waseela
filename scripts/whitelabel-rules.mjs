@@ -289,7 +289,10 @@ export const RULES_BACKEND = [
   ['PONDOK PESANTREN MAMBAUL ULUM', 'LEMBAGA CONTOH'],
   ['YAYASAN MAMBAUL ULUM', 'YAYASAN CONTOH'],
   ["'ammu.id'", "'contoh.id'"],
-  [', Jombang', ', Kota Contoh']
+  [', Jombang', ', Kota Contoh'],
+
+  // tests/unit/formGuruJabatan.test.js (hulu v.1.4.6) — komentar fixture menyebut merek hulu.
+  ['Master persis bentuk Ammu', 'Master persis bentuk hulu']
 ]
 
 /** Regex gerbang audit — apa pun yang cocok = white-label belum tuntas. */
