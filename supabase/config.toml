@@ -38,3 +38,6 @@ verify_jwt = false # dipanggil pg_cron harian (service-role internal)
 
 [functions.hiview-absen]
 verify_jwt = false # webhook mesin absensi; dijaga secret HIVIEW_PUSH_SECRET
+
+[functions.pintu-bakafrawi]
+verify_jwt = false # dasbor Bakafrawi Studio (angka teknis saja); dijaga secret PINTU_BAKAFRAWI_RAHASIA, read only
